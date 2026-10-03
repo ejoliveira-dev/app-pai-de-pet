@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="img/logo-ofc-2-jpg-github.jpg" width="180">
+    <img src="img/logo-ofc-2-jpg-github.jpg" width="350">
 </p>
 
 # Tutus 🐾
