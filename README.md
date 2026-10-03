@@ -1,4 +1,8 @@
- # Tutus
+<p align="center">
+    <img src="img/logo-ofc-2-jpg-github.jpg" width="180">
+</p>
+
+# Tutus 🐾
 
 O **Tutus** é um aplicativo móvel desenvolvido para tutores de animais de estimação, reunindo em um único ambiente ferramentas para organização dos cuidados dos pets e interação entre tutores.
 
@@ -10,13 +14,14 @@ Além disso, o Tutus oferece um espaço de interação onde os tutores podem com
 
 ## Problemas que o aplicativo busca solucionar
 
-- Desorganização das informações relacionadas aos cuidados dos pets.
-- Dificuldade para acompanhar informações como peso, alimentação, vacinas, consultas e medicamentos.
-- Excesso de conteúdos variados nas redes sociais tradicionais, dificultando a criação de um espaço dedicado exclusivamente ao universo pet.
+- Desorganização das informações relacionadas aos cuidados dos pets;
+- Dificuldade para acompanhar informações como peso, alimentação, vacinas, consultas e medicamentos;
+- Excesso de conteúdos variados nas redes sociais tradicionais;
+- Falta de um espaço de interação dedicado exclusivamente ao universo pet.
 
 ## Público-alvo
 
-Tutores de animais de estimação em geral, independentemente da espécie do animal.
+Tutores de animais de estimação em geral, independentemente da espécie.
 
 ## Diferencial
 
@@ -24,19 +29,38 @@ O diferencial do Tutus é reunir **organização e interação social em um úni
 
 ## Funcionalidades
 
-- Cadastro e login de usuários.
-- Cadastro de um ou mais pets.
-- Perfil privado do pet.
-- Registro de peso, alimentação, vacinas, consultas, banhos e medicamentos.
-- Gráficos para acompanhamento de informações do pet.
-- Perfil público do pet.
-- Publicações de fotos e vídeos.
-- Feed com publicações de outros tutores.
-- Interação entre tutores.
-- Personalização do tema do aplicativo.
+- Cadastro e login de usuários;
+- Cadastro de um ou mais pets;
+- Perfil privado do pet;
+- Acompanhamento de peso e alimentação;
+- Registro, notificações e lembretes de vacinas, consultas e medicamentos;
+- Gráficos para acompanhamento de informações do pet;
+- Perfil público do pet;
+- Publicações de fotos e vídeos;
+- Feed com publicações de outros tutores (comunidade!);
+- Interação entre tutores;
+- Personalização do tema do aplicativo;
 - Perfil e configurações do tutor.
-- Notificações e lembretes para consultas e medicamentos.
+
+## Tecnologias (utilizadas até o momento)
+
+- React Native.
+- Expo.
+- JavaScript.
+- Git & Github.
 
 ## Status do projeto
 
-Projeto em desenvolvimento.
+**Em desenvolvimento.**
+
+## Desenvolvedoras 👩‍💻
+
+- Éveny Oliveira.
+- Isabele Moura.
+
+---
+
+<p align="center">
+  Projeto acadêmico desenvolvido para a disciplina de Programação para
+  Dispositivos Móveis em Android.
+</p>
