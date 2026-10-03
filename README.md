@@ -42,7 +42,7 @@ O diferencial do Tutus é reunir **organização e interação social em um úni
 - Personalização do tema do aplicativo;
 - Perfil e configurações do tutor.
 
-## Tecnologias (utilizadas até o momento)
+## Tecnologias utilizadas (até o momento)
 
 - React Native.
 - Expo.
@@ -53,7 +53,7 @@ O diferencial do Tutus é reunir **organização e interação social em um úni
 
 **Em desenvolvimento.**
 
-## Desenvolvedoras 👩‍💻
+## Equipe 👩‍💻
 
 - Éveny Oliveira.
 - Isabele Moura.
