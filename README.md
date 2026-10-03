@@ -4,30 +4,19 @@
 
 # Tutus 🐾
 
-O **Tutus** é um aplicativo móvel desenvolvido para tutores de animais de estimação, reunindo em um único ambiente ferramentas para organização dos cuidados dos pets e interação entre tutores.
+O **Tutus** é o aplicativo móvel idealizado para este projeto acadêmico, voltado para tutores de animais de estimação e visando reunir, em um único ambiente, recursos para a organização dos cuidados dos pets e a interação entre tutores.
 
-## Objetivo
+## Sobre o projeto
 
-O aplicativo tem como objetivo facilitar o acompanhamento da rotina e dos cuidados dos animais de estimação, permitindo o registro de informações importantes em um ambiente privado.
+O **Tutus** está sendo desenvolvido como parte de um projeto acadêmico voltado para o desenvolvimento de aplicações móveis, tendo como principal ferramenta a ser o usada o *React Native*. A proposta é criar um ambiente que auxilie na organização da rotina e no acompanhamento dos principais cuidados relacionados aos animais de estimação.
 
-Além disso, o Tutus oferece um espaço de interação onde os tutores podem compartilhar momentos e conteúdos relacionados aos seus pets.
+O aplicativo está sendo planejado para permitir o registro e acompanhamento de informações como peso, alimentação, vacinas, consultas e medicamentos, mantendo esses dados em uma área privada destinada ao gerenciamento de cada animal. Com isso, busca-se facilitar a organização dessas informações e torná-las mais acessíveis no dia a dia do tutor.
 
-## Problemas que o aplicativo busca solucionar
+Além da área de gerenciamento, o projeto prevê uma comunidade dedicada ao universo pet, na qual os tutores poderão compartilhar momentos e conteúdos relacionados aos seus animais e interagir com outros usuários. Dessa forma, o **Tutus** busca unir organização dos cuidados e interação social em uma mesma aplicação.
 
-- Desorganização das informações relacionadas aos cuidados dos pets;
-- Dificuldade para acompanhar informações como peso, alimentação, vacinas, consultas e medicamentos;
-- Excesso de conteúdos variados nas redes sociais tradicionais;
-- Falta de um espaço de interação dedicado exclusivamente ao universo pet.
+A proposta também busca minimizar problemas como a desorganização das informações relacionadas aos cuidados dos pets, dificuldade para acompanhar e registrar dados importantes, o excesso de conteúdos variados presentes nas redes sociais tradicionais e a falta de um espaço de interação dedicado exclusivamente ao universo pet.
 
-## Público-alvo
-
-Tutores de animais de estimação em geral, independentemente da espécie.
-
-## Diferencial
-
-O diferencial do Tutus é reunir **organização e interação social em um único aplicativo**, permitindo que o tutor acompanhe os cuidados do pet e, ao mesmo tempo, compartilhe conteúdos e interaja com outros tutores.
-
-## Funcionalidades
+## Funcionalidades planejadas
 
 - Cadastro e login de usuários;
 - Cadastro de um ou mais pets;
