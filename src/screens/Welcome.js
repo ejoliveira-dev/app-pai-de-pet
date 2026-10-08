@@ -50,7 +50,6 @@ export default function Welcome({ navigation }) {
 
                 <View>
 
-
                     <Text style={styles.descricao}>
                         Pronto para cuidar, organizar e compartilhar a rotina do seu pet com outros amigos tutores?
                     </Text>
