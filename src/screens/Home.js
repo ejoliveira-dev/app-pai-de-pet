@@ -2,8 +2,14 @@ import { View, Text } from 'react-native';
 
 export default function Welcome() {
   return (
-    <View>
-      <Text>---</Text>
+    <View style={StyleSheet.container}>
+            {/* Cabeçalho */}
+
+            {/* Pet selecionado */}
+
+            {/* Resumo de hoje */}
+
+            {/* Próximos cuidados */}
     </View>
   );
 }
