@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native'; /* componentes básicos do react native; view = div.*/
+import { View, Text, StyleSheet, Image, Pressable, TouchableOpacity } from 'react-native'; /* componentes básicos do react native; view = div.*/
 /* flex-box = algoritmo de layout do react native*/
 
 import * as Font from 'expo-font';
@@ -30,15 +30,17 @@ export default function Welcome({ navigation }) {
 
     return (
         <View style={styles.container}>
-
-            <View style={styles.logoContainer}> {/* top. */}
+             
+            {/* top. */}
+            <View style={styles.logoContainer}> 
                 <Image
                     source={require('../../assets/images/logo-ofc-png-empty2.png')}
                     style={styles.logo}
                 />
             </View>
-
-            <View style={styles.conteudo}> {/* bottom/info.*/}
+            
+            {/* bottom/info.*/}
+            <View style={styles.conteudo}> 
 
                 <Text style={styles.saudacao}>
                     Olá, humano!
@@ -55,14 +57,14 @@ export default function Welcome({ navigation }) {
                     </Text>
                 </View>
 
-                <Pressable
+                <TouchableOpacity
                     style={styles.botao}
                     onPress={() => navigation.navigate('Login')} >
 
                     <Text style={styles.textoBotao}>
                         Começar
                     </Text>
-                </Pressable>
+                </TouchableOpacity>
 
 
             </View>
