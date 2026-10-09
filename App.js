@@ -5,15 +5,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Splash from './src/screens/Splash';
 import Welcome from './src/screens/Welcome';
 import Login from './src/screens/Login';
-import Home from './src/screens/Home';
+import ListaPets from './src/screens/ListaPets';
 
 const Stack = createNativeStackNavigator(); /* cria o navegador responsável pela sequencia das telas. */
 
 export default function App() {
   return (
 
-    <NavigationContainer> 
-    {/* controla a navegação do app.*/}
+    <NavigationContainer>
+      {/* controla a navegação do app.*/}
 
       <Stack.Navigator
         initialRouteName="Splash"
@@ -38,9 +38,10 @@ export default function App() {
         />
 
         <Stack.Screen
-          name="Home"
-          component={Home}
+          name="ListaPets"
+          component={ListaPets}
         />
+
       </Stack.Navigator>
 
     </NavigationContainer>

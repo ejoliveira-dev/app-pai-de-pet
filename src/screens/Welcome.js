@@ -33,7 +33,7 @@ export default function Welcome({ navigation }) {
 
             <View style={styles.logoContainer}> {/* top. */}
                 <Image
-                    source={require('../../assets/images/logo-ofc-png-empty.png')}
+                    source={require('../../assets/images/logo-ofc-png-empty2.png')}
                     style={styles.logo}
                 />
             </View>
@@ -74,7 +74,7 @@ export default function Welcome({ navigation }) {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'FFEAC8',
+        backgroundColor: '#FFFDF8',
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
@@ -87,8 +87,8 @@ const styles = StyleSheet.create({
     },
 
     logo: {
-        width: 190,
-        height: 190,
+        width: 250,
+        height: 250,
         resizeMode: 'contain',
     },
 
@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingBottom: 65,
     },
 
     /* bloco inferior. */
@@ -103,11 +104,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#FA9F2A',
         width: '95%',
         minHeight: 300,
-        paddingTop: 50,
+        paddingTop: 40,
         paddingBottom: 40,
         paddingHorizontal: 50,
         borderRadius: 36,
-        marginBottom: 10,
+        marginBottom: 30,
         justifyContent: 'flex-start',
         alignItems: 'flex-start',
     },
@@ -116,14 +117,14 @@ const styles = StyleSheet.create({
         paddingTop: 15,
         color: '#332716',
         fontFamily: 'Ruwudu-Bold',
-        fontSize: 42,
+        fontSize: 36,
         lineHeight: 40,
     },
 
     titulo: {
         color: '#332716',
         fontFamily: 'Ruwudu-Bold',
-        fontSize: 30,
+        fontSize: 27,
         lineHeight: 40,
         textAlign: 'left',
         paddingTop: 10,
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
     descricao: {
         color: '#332716',
         fontFamily: 'Ruwudu-Regular',
-        fontSize: 25,
+        fontSize: 21,
         marginTop: 5,
         lineHeight: 30,
         textAlign: 'left',
@@ -140,16 +141,18 @@ const styles = StyleSheet.create({
 
     botao: {
         backgroundColor: '#332716',
-        paddingVertical: 12,
-        paddingHorizontal: 30,
-        borderRadius: 15,
-        marginTop: 25,
+        marginTop: 20,
+        width: 200,
+        height: 50,
+        borderRadius: 30,
         alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center'
     },
 
     textoBotao: {
-        color: '#FFEAC8',
+        color: '#FFFDF8',
         fontFamily: 'Ruwudu-Bold',
-        fontSize: 18,
+        fontSize: 20,
     },
 });
