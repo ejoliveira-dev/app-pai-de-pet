@@ -6,6 +6,7 @@ import Splash from './src/screens/Splash';
 import Welcome from './src/screens/Welcome';
 import Login from './src/screens/Login';
 import ListaPets from './src/screens/ListaPets';
+import MainTabs from "./src/navigation/MainTabs";
 
 const Stack = createNativeStackNavigator(); /* cria o navegador responsável pela sequencia das telas. */
 
@@ -40,6 +41,11 @@ export default function App() {
         <Stack.Screen
           name="ListaPets"
           component={ListaPets}
+        />
+
+        <Stack.Screen
+          name="MainTabs"
+          component={MainTabs}
         />
 
       </Stack.Navigator>

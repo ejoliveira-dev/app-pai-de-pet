@@ -16,7 +16,7 @@ export default function ListaPets({navigation}) {
                     De quem vamos cuidar hoje?
                 </Text>
 
-                <TouchableOpacity style={style.petCard}>
+                <TouchableOpacity style={style.petCard} onPress={() => navigation.navigate('MainTabs')}>
                     <Image
                         source={require("../../assets/images/pet1.jpg")}
                         style={style.petImagem}
@@ -31,7 +31,7 @@ export default function ListaPets({navigation}) {
                     <Text style={style.seta}>›</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={style.petCard}>
+                <TouchableOpacity style={style.petCard} onPress={() => navigation.navigate('MainTabs')}>
                     <Image
                         source={require("../../assets/images/pet2.png")}
                         style={style.petImagem}
