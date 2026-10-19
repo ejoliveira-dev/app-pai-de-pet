@@ -7,6 +7,7 @@ import Welcome from './src/screens/Welcome';
 import Login from './src/screens/Login';
 import ListaPets from './src/screens/ListaPets';
 import MainTabs from "./src/navigation/MainTabs";
+import CadastroPets from "./src/screens/CadastroPets";
 
 const Stack = createNativeStackNavigator(); /* cria o navegador responsável pela sequencia das telas. */
 
@@ -46,6 +47,11 @@ export default function App() {
         <Stack.Screen
           name="MainTabs"
           component={MainTabs}
+        />
+
+        <Stack.Screen
+          name="CadastroPets"
+          component={CadastroPets}
         />
 
       </Stack.Navigator>
