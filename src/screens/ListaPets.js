@@ -55,7 +55,7 @@ export default function ListaPets({ navigation }) {
     return (
         <View style={style.container}>
 
-            <ScrollView style={{ flex: 1 }} conteudoContainerStyle={style.conteudo} showsVerticalScrollIndicator={false} >
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={style.conteudo} showsVerticalScrollIndicator={false} >
 
                 <Text style={style.titulo}>
                     De quem vamos cuidar hoje?
@@ -78,9 +78,14 @@ export default function ListaPets({ navigation }) {
                         <TouchableOpacity
                             key={pet.id_pet}
                             style={style.petCard}
-                            onPress={() => navigation.navigate("MainTabs", {
-                                petSelecionado: pet
-                            })}
+                            onPress={() =>
+                                navigation.navigate("MainTabs", {
+                                    screen: "Inicio",
+                                    params: {
+                                        petSelecionado: pet
+                                    }
+                                })
+                            }
                         >
 
                             {pet.foto_perfil ? (

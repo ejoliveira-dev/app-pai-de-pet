@@ -5,25 +5,40 @@ export const style = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#FFFDF8",
-        paddingHorizontal: 22,
     },
 
     conteudo: {
-        paddingTop: 65,
+        paddingTop: 30,
+        paddingHorizontal: 22,
         paddingBottom: 40,
     },
 
     titulo: {
-        fontSize: 35,
-        fontFamily: "Ruwudu-Bold",
-        color: "#332716",
+    fontSize: 38,
+    fontFamily: "Ruwudu-Bold",
+    color: "#332716",
+    lineHeight: 40,
+    textAlign: "center",
     },
 
-    subtitulo: {
-        fontSize: 19,
-        fontFamily: "Ruwudu-Regular",
-        color: "#75571F",
-        marginBottom: 20,
+    boxTitulo: {
+    backgroundColor: "#FA9F2A",
+    width: "100%",
+    borderRadius: 32,
+    paddingVertical: 25,
+    paddingHorizontal: 29,
+    marginBottom: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    },
+
+   subtitulo: {
+    fontSize: 25,
+    fontFamily: "Ruwudu-Regular",
+    color: "#332716",
+    marginTop: 8,
+    lineHeight: 28,
+    textAlign: "center",
     },
 
     label: {
@@ -35,14 +50,14 @@ export const style = StyleSheet.create({
     },
 
     input: {
-        backgroundColor: "#FFFFFF",
-        borderWidth: 1,
-        borderColor: "#FA9F2A",
-        borderRadius: 15,
-        minHeight: 55,
-        paddingHorizontal: 15,
-        fontSize: 16,
-        color: "#332716",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#FA9F2A",
+    borderRadius: 20,
+    minHeight: 55,
+    paddingHorizontal: 18,
+    fontSize: 16,
+    color: "#332716",
     },
 
     inputGrande: {
@@ -79,16 +94,16 @@ export const style = StyleSheet.create({
 
     // Campo de seleção
     seletor: {
-        backgroundColor: "#FFFFFF",
-        borderWidth: 1,
-        borderColor: "#FA9F2A",
-        borderRadius: 15,
-        minHeight: 55,
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#FA9F2A",
+    borderRadius: 20,
+    minHeight: 55,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     },
 
     textoSeletor: {
@@ -173,21 +188,21 @@ export const style = StyleSheet.create({
     },
 
     fotoContainer: {
-        alignItems: "center",
-        marginTop: 10,
-        marginBottom: 25,
+    alignItems: "center",
+    marginTop: 5,
+    marginBottom: 30,
     },
 
     fotoBotao: {
-        width: 115,
-        height: 115,
-        borderRadius: 60,
-        backgroundColor: "#FFEAC8",
-        borderWidth: 2,
-        borderColor: "#FA9F2A",
-        justifyContent: "center",
-        alignItems: "center",
-        overflow: "hidden",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#FFEAC8",
+    borderWidth: 2,
+    borderColor: "#FA9F2A",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
     },
 
     fotoPreview: {
@@ -207,5 +222,13 @@ export const style = StyleSheet.create({
         fontSize: 14,
         fontFamily: "Ruwudu-Regular",
         color: "#75571F",
+    },
+
+    mensagemErro: {
+    color: "#D64545",
+    fontSize: 14,
+    fontFamily: "Ruwudu-Regular",
+    marginTop: 6,
+    marginBottom: 5,
     },
 });

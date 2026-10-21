@@ -3,7 +3,61 @@ import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-nati
 
 import { Ionicons } from '@expo/vector-icons';
 
-export default function Home() {
+
+function calcularIdade(dataNascimento) {
+  if (!dataNascimento) return "Idade não informada";
+
+  // separa a data no formato DD/MM/AAAA
+  const [dia, mes, ano] = dataNascimento.split("/").map(Number);
+
+  const nascimento = new Date(ano, mes - 1, dia);
+  const hoje = new Date();
+
+  if (
+    Number.isNaN(nascimento.getTime()) ||
+    nascimento.getFullYear() !== ano ||
+    nascimento.getMonth() !== mes - 1 ||
+    nascimento.getDate() !== dia ||
+    nascimento > hoje
+  ) {
+    return "Data de nascimento inválida";
+  }
+
+  // calcula os meses completos
+  let totalMeses =
+    (hoje.getFullYear() - ano) * 12 +
+    (hoje.getMonth() - (mes - 1));
+
+  if (hoje.getDate() < dia) {
+    totalMeses--;
+  }
+
+  const anos = Math.floor(totalMeses / 12);
+  const meses = totalMeses % 12;
+
+  if (totalMeses === 0) {
+    return "Menos de 1 mês";
+  }
+
+  if (anos === 0) {
+    return `${meses} ${meses === 1 ? "mês" : "meses"}`;
+  }
+
+  if (meses === 0) {
+    return `${anos} ${anos === 1 ? "ano" : "anos"}`;
+  }
+
+  return `${anos} ${anos === 1 ? "ano" : "anos"} e ${meses} ${meses === 1 ? "mês" : "meses"}`;
+}
+
+
+export default function Home({ navigation, route }) {
+  const pet = route.params?.petSelecionado;
+
+  const idade = pet?.data_nascimento
+  ? calcularIdade(pet.data_nascimento)
+  : pet?.idade_Aproximada || "Idade não informada";
+
   return (
     <View style={styles.container}>
 
@@ -26,30 +80,55 @@ export default function Home() {
           {/* pet selecionado */}
           <View style={styles.petCard}>
 
-            <Image
-              source={require('../../assets/images/pet1.jpg')}
-              style={styles.fotoPet}
-            />
+            {pet?.foto_perfil ? (
+              <Image
+                source={{ uri: pet.foto_perfil }}
+                style={styles.fotoPet}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.fotoPet,
+                  {
+                    backgroundColor: "#FFEAC8",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="paw"
+                  size={30}
+                  color="#FA9F2A"
+                />
+              </View>
+            )}
 
             <View style={styles.infoPet}>
+
               <Text style={styles.nomePet}>
-                Estevão
+                {pet?.nome || "Nenhum pet selecionado"}
               </Text>
 
               <Text style={styles.dadosPet}>
-                Hamster • 6 meses
+                {pet
+                  ? `${pet.especie} • ${idade}`
+                  : "Escolha um pet na lista"}
               </Text>
+
             </View>
 
-            <Pressable style={styles.botaoTrocar} onPress={() => navigation.navigate('ListaPets')}>
-
+            <Pressable
+              style={styles.botaoTrocar}
+              onPress={() => navigation.navigate("ListaPets")}
+            >
               <Ionicons
                 name="swap-horizontal"
                 size={24}
                 color="#332716"
               />
-
             </Pressable>
+
           </View>
 
         </View>

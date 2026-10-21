@@ -54,6 +54,25 @@ export default function CadastroPet({ navigation }) {
     // para o tutor informar a data ou uma estimativa
     const [modoIdade, setModoIdade] = useState("aproximada");
     const [dataNascimento, setDataNascimento] = useState("");
+
+    function formatarData(texto) {
+        const numeros = texto.replace(/\D/g, "").slice(0, 8);
+
+        if (numeros.length > 4) {
+            return (
+                numeros.slice(0, 2) + "/" +
+                numeros.slice(2, 4) + "/" +
+                numeros.slice(4)
+            );
+        }
+
+        if (numeros.length > 2) {
+            return numeros.slice(0, 2) + "/" + numeros.slice(2);
+        }
+
+        return numeros;
+    }
+
     const [idadeAproximada, setIdadeAproximada] = useState("Não sei a idade");
 
     const [observacoes, setObservacoes] = useState("");
@@ -64,15 +83,31 @@ export default function CadastroPet({ navigation }) {
 
     // verifica se uma data é válida.
     function dataValida(valor) {
-        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+        const partes = valor.split("/");
+
+        if (partes.length !== 3) {
             return false;
         }
 
-        const [dia, mes, ano] = valor.split("/").map(Number);
+        const dia = Number(partes[0]);
+        const mes = Number(partes[1]);
+        const ano = Number(partes[2]);
+
+        if (
+            partes[0].length !== 2 ||
+            partes[1].length !== 2 ||
+            partes[2].length !== 4
+        ) {
+            return false;
+        }
+
+        if (ano < 1900 || mes < 1 || mes > 12 || dia < 1) {
+            return false;
+        }
+
         const data = new Date(ano, mes - 1, dia);
 
         return (
-            ano >= 1900 &&
             data.getFullYear() === ano &&
             data.getMonth() === mes - 1 &&
             data.getDate() === dia &&
@@ -237,13 +272,15 @@ export default function CadastroPet({ navigation }) {
                 contentContainerStyle={style.conteudo}
                 keyboardShouldPersistTaps="handled"
             >
-                <Text style={style.titulo}>
-                    Cadastrar Pet
-                </Text>
+                <View style={style.boxTitulo}>
+                    <Text style={style.titulo}>
+                        Cadastrar Pet
+                    </Text>
 
-                <Text style={style.subtitulo}>
-                    Vamos conhecer seu companheiro?
-                </Text>
+                    <Text style={style.subtitulo}>
+                        Vamos conhecer seu companheiro?
+                    </Text>
+                </View>
 
                 <View style={style.fotoContainer}>
 
@@ -310,13 +347,16 @@ export default function CadastroPet({ navigation }) {
                             setErroEspecie(!texto.trim());
                         }}
                     />
-                )}
+                )
+                }
 
-                {erroEspecie && (
-                    <Text style={style.mensagemErro}>
-                        Por favor, selecione ou informe a espécie do seu pet.
-                    </Text>
-                )}
+                {
+                    erroEspecie && (
+                        <Text style={style.mensagemErro}>
+                            Por favor, selecione ou informe a espécie do seu pet.
+                        </Text>
+                    )
+                }
 
                 <Text style={style.label}>Raça</Text>
                 <TextInput
@@ -359,42 +399,46 @@ export default function CadastroPet({ navigation }) {
                 </TouchableOpacity>
 
                 {/* data exata */}
-                {modoIdade === "data" && (
-                    <>
-                        <Text style={style.label}>
-                            Data de nascimento *
-                        </Text>
+                {
+                    modoIdade === "data" && (
+                        <>
+                            <Text style={style.label}>
+                                Data de nascimento *
+                            </Text>
 
-                        <TextInput
-                            style={style.input}
-                            placeholder="DD/MM/AAAA"
-                            placeholderTextColor="#9A8A75"
-                            value={dataNascimento}
-                            onChangeText={setDataNascimento}
-                            keyboardType="numeric"
-                            maxLength={10}
-                        />
-                    </>
-                )}
+                            <TextInput
+                                style={style.input}
+                                placeholder="DD/MM/AAAA"
+                                placeholderTextColor="#9A8A75"
+                                value={dataNascimento}
+                                onChangeText={(texto) => { setDataNascimento(formatarData(texto)) }}
+                                keyboardType="numeric"
+                                maxLength={10}
+                            />
+                        </>
+                    )
+                }
 
                 {/* Idade aproximada */}
-                {modoIdade === "aproximada" && (
-                    <>
-                        <Text style={style.label}>
-                            Idade aproximada
-                        </Text>
-
-                        <TouchableOpacity
-                            style={style.seletor}
-                            onPress={() => setModalTipo("idade")}
-                        >
-                            <Text style={style.textoSeletor}>
-                                {idadeAproximada}
+                {
+                    modoIdade === "aproximada" && (
+                        <>
+                            <Text style={style.label}>
+                                Idade aproximada
                             </Text>
-                            <Text style={style.seta}>⌄</Text>
-                        </TouchableOpacity>
-                    </>
-                )}
+
+                            <TouchableOpacity
+                                style={style.seletor}
+                                onPress={() => setModalTipo("idade")}
+                            >
+                                <Text style={style.textoSeletor}>
+                                    {idadeAproximada}
+                                </Text>
+                                <Text style={style.seta}>⌄</Text>
+                            </TouchableOpacity>
+                        </>
+                    )
+                }
 
                 <Text style={style.textoAjuda}>
                     Não tem problema se você não souber a idade
@@ -431,11 +475,12 @@ export default function CadastroPet({ navigation }) {
                         Voltar
                     </Text>
                 </TouchableOpacity>
-            </ScrollView>
+            </ScrollView >
 
             {/* JANELA DE SELEÇÃO */}
-            <Modal
-                visible={modalTipo !== null}
+            < Modal
+                visible={modalTipo !== null
+                }
                 transparent
                 animationType="slide"
                 onRequestClose={() => setModalTipo(null)}
@@ -472,7 +517,7 @@ export default function CadastroPet({ navigation }) {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
-        </View>
+            </Modal >
+        </View >
     );
 }

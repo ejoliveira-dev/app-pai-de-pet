@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 
-import { Text, View, Image, TextInput, TouchableOpacity, Pressable } from 'react-native';
+import { Text, View, Image, TextInput, TouchableOpacity, Pressable, Alert } from 'react-native';
 
 import { style } from "../../src/styles/LoginStyles";
 
@@ -11,6 +11,43 @@ import logo from "../../assets/images/logo-ofc-png-empty2.png";
 
 
 export default function Login({ navigation }) {
+
+    const [email, setEmail] = useState("");
+    const [senha, setSenha] = useState("");
+
+    function entrar() {
+        // pra verificar se o e-mail foi preenchido.
+        if (!email.trim()) {
+            Alert.alert("Atenção!", "Informe seu e-mail.");
+            return;
+        }
+
+        // pra verificar o formato do e-mail.
+        const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailValido.test(email.trim())) {
+            Alert.alert("E-mail inválido", "Digite um e-mail válido.");
+            return;
+        }
+
+        // pra verifica se a senha foi preenchida.
+        if (!senha) {
+            Alert.alert("Atenção!", "Informe sua senha.");
+            return;
+        }
+
+        // exigindo pelo menos 6 caracteres.
+        if (senha.length < 6) {
+            Alert.alert(
+                "Senha inválida",
+                "A senha deve conter pelo menos 6 caracteres."
+            );
+            return;
+        }
+
+        navigation.navigate("ListaPets");
+    }
+
     return (
         <View style={style.container}>
 
@@ -33,21 +70,49 @@ export default function Login({ navigation }) {
             </View>
 
             <View style={style.boxMid}>
+
                 <TextInput
                     placeholder="Endereço de e-mail"
                     style={style.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
                 />
 
                 <TextInput
-                    secureTextEntry={true}
                     placeholder="Senha"
                     style={style.input}
+                    value={senha}
+                    onChangeText={setSenha}
+                    secureTextEntry={true}
                 />
+
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("EsqueceuSenha")}
+                    style={{
+                        alignSelf: "center",
+                        marginTop: -10,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: "#FA9F2A",
+                            fontSize: 16,
+                            fontFamily: "Ruwudu-Bold",
+                            textDecorationLine: "underline",
+                        }}
+                    >
+                        Esqueci minha senha
+                    </Text>
+                </TouchableOpacity>
+
             </View>
 
             <View style={style.boxBottom}>
 
-                <TouchableOpacity style={style.botao} onPress={() => navigation.navigate('ListaPets')}>
+                <TouchableOpacity style={style.botao} onPress={entrar}>
                     <Text style={style.textoBotao}>
                         Entrar
                     </Text>
@@ -94,9 +159,12 @@ export default function Login({ navigation }) {
                     <Text style={style.textoConta}>
                         Primeira vez por aqui?
                     </Text>
-                    <Text style={style.linkCriarConta}>
-                        Crie uma conta
-                    </Text>
+
+                    <TouchableOpacity onPress={() => navigation.navigate("CriarConta")}>
+                        <Text style={style.linkCriarConta}>
+                            Crie uma conta
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -113,6 +181,6 @@ export default function Login({ navigation }) {
                 </Pressable>
             </View>
 
-        </View>
+        </View >
     );
 }
