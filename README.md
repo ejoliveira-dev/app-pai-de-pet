@@ -16,10 +16,20 @@ Além da área de gerenciamento, o projeto prevê uma comunidade dedicada ao uni
 
 A proposta também busca minimizar problemas como a desorganização das informações relacionadas aos cuidados dos pets, dificuldade para acompanhar e registrar dados importantes, o excesso de conteúdos variados presentes nas redes sociais tradicionais e a falta de um espaço de interação dedicado exclusivamente ao universo pet.
 
+## Funcionalidades Implementadas
+
+- Telas parcialmente finalizadas: Splash Screen, Welcome, Login;
+- Navegação entre as principais telas em desenvolvimento utilizando React Navigation;
+- Estrutura de navegação inferior com as abas Início, Comunidade, Meu Pet e Tutor;
+- Telas de Login, Criar Conta e Esqueci Minha Senha com validações de campos obrigatórios, formato de e-mail, tamanho mínimo da senha e confirmação de senha, além de mensagens de erro (todas as telas de autenticação funcionam apenas demonstrativamente no momento);
+- Cadastro de um ou mais pets, com nome, espécie, raça, data de nascimento ou idade aproximada, foto de perfil e observações, incluindo validações dos campos obrigatórios;
+- Lista de Pets com exibição dos animais cadastrados, suas informações básicas e opção de seleção;
+- Armazenamento local dos dados dos pets utilizando AsyncStorage, permitindo recuperar os cadastros mesmo após fechar o aplicativo;
+- Home com exibição das informações do pet selecionado;
+
 ## Funcionalidades planejadas
 
-- Cadastro e login de usuários;
-- Cadastro de um ou mais pets;
+- Implementação da autenticação real de usuários e recuperação de senha por e-mail;
 - Perfil privado do pet;
 - Acompanhamento de peso e alimentação;
 - Registro, notificações e lembretes de vacinas, consultas e medicamentos;
@@ -30,6 +40,9 @@ A proposta também busca minimizar problemas como a desorganização das informa
 - Interação entre tutores;
 - Personalização do tema do aplicativo;
 - Perfil e configurações do tutor.
+- Edição e exclusão dos pets cadastrados;
+- Integração dos registros de cuidados às informações individuais de cada pet;
+- Aprimoramento das interfaces e da experiência de navegação.
 
 ## Tecnologias utilizadas (até o momento)
 
