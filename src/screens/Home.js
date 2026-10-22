@@ -1,4 +1,12 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// usestate = guarda o pet que vai ser mostrado na home.
+// usecallback = auxilia na execução da função de carregamento.
+// usefocuseffect = atualiza os dados quando a home recebe o foco.
+// asyncstorage = recupera e guarda a seleção do pet.
+
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -52,11 +60,74 @@ function calcularIdade(dataNascimento) {
 
 
 export default function Home({ navigation, route }) {
-  const pet = route.params?.petSelecionado;
+  const petRecebido = route.params?.petSelecionado;
+  const [pet, setPet] = useState(petRecebido || null);
+
+  useFocusEffect(
+    useCallback(() => {
+      let ativo = true;
+
+      async function carregarPetSelecionado() {
+        try {
+          // pra recuperar os pets que já foram cadastrados
+          const dadosSalvos = await AsyncStorage.getItem("@tutus:pets");
+
+          const lista = dadosSalvos
+            ? JSON.parse(dadosSalvos)
+            : [];
+
+          if (!Array.isArray(lista)) {
+            throw new Error("Lista de pets inválida");
+          }
+
+          // verificando se um pet foi selecionado
+          const idRecebido = petRecebido?.id_pet;
+
+          // recuperando a última seleção
+          const idAnterior = await AsyncStorage.getItem(
+            "@tutus:petSelecionadoId"
+          );
+
+          const idProcurado = idRecebido || idAnterior;
+
+          // procura o pet entre os cadastrados
+          const petAtualizado = lista.find(
+            (item) => String(item.id_pet) === String(idProcurado)
+          ) || null;
+
+          // salva a seleção atual
+          if (idRecebido && petAtualizado) {
+            await AsyncStorage.setItem(
+              "@tutus:petSelecionadoId",
+              String(idRecebido)
+            );
+          }
+
+          if (ativo) {
+            setPet(petAtualizado);
+          }
+
+        } catch (erro) {
+          console.error("Erro ao carregar pet:", erro);
+
+          if (ativo) {
+            setPet(petRecebido || null);
+          }
+        }
+      }
+
+      carregarPetSelecionado();
+
+      return () => {
+        ativo = false;
+      };
+
+    }, [petRecebido?.id_pet])
+  );
 
   const idade = pet?.data_nascimento
-  ? calcularIdade(pet.data_nascimento)
-  : pet?.idade_Aproximada || "Idade não informada";
+    ? calcularIdade(pet.data_nascimento)
+    : pet?.idade_Aproximada || "Idade não informada";
 
   return (
     <View style={styles.container}>

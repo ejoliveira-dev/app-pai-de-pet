@@ -153,7 +153,7 @@ export default function CadastroPet({ navigation }) {
         setSalvando(true);
 
         try {
-            // pra recuperar os pets já cadasreados
+            // pra recuperar os pets já cadastrados no dispositivo do usuário; trecho principal do código.
             const dadosSalvos = await AsyncStorage.getItem("@tutus:pets");
 
             const pets = dadosSalvos
@@ -180,7 +180,7 @@ export default function CadastroPet({ navigation }) {
                     `pet-${idPet}.${extensao}`
                 );
 
-                origem.copy(destino);
+                await origem.copy(destino);
                 fotoSalva = destino.uri;
             }
 
@@ -202,7 +202,7 @@ export default function CadastroPet({ navigation }) {
                 observacoes: observacoes.trim(),
             };
 
-            // adicionar o novo pet à lista existente.
+            // adicionar o novo pet à lista existente; lista atualizada.
             const listaAtualizada = [...pets, novoPet];
 
             // armazenar a lista no dispositivo.

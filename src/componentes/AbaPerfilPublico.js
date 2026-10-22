@@ -1,13 +1,61 @@
 
-import React, { useRef, useState, useMemo } from "react";
-import { View, Text, Image, Pressable, ScrollView, StyleSheet, Animated, PanResponder, useWindowDimensions } from "react-native";
+import React, { useRef, useState, useMemo, useEffect } from "react";
+import { View, Text, Image, Pressable, ScrollView, StyleSheet, Animated, PanResponder, useWindowDimensions, TextInput } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const ALTURA_FECHADA = 125;
+const ALTURA_FECHADA = 96;
 
-export default function AbaPerfilPublico() {
+function calcularIdadePet(pet) {
+    if (!pet) return "";
+
+    if (!pet.data_nascimento) {
+        return pet.idade_Aproximada || "Idade não informada";
+    }
+
+    const [dia, mes, ano] = pet.data_nascimento
+        .split("/")
+        .map(Number);
+
+    const nascimento = new Date(ano, mes - 1, dia);
+    const hoje = new Date();
+
+    if (
+        nascimento.getFullYear() !== ano ||
+        nascimento.getMonth() !== mes - 1 ||
+        nascimento.getDate() !== dia ||
+        nascimento > hoje
+    ) {
+        return "Idade não informada";
+    }
+
+    let totalMeses =
+        (hoje.getFullYear() - ano) * 12 +
+        hoje.getMonth() - (mes - 1);
+
+    if (hoje.getDate() < dia) {
+        totalMeses--;
+    }
+
+    const anos = Math.floor(totalMeses / 12);
+    const meses = totalMeses % 12;
+
+    if (anos === 0) {
+        return totalMeses === 0
+            ? "Menos de 1 mês"
+            : `${meses} ${meses === 1 ? "mês" : "meses"}`;
+    }
+
+    return `${anos} ${anos === 1 ? "ano" : "anos"}`;
+}
+
+export default function AbaPerfilPublico({
+    pet,
+    publicacoes = [],
+    onPublicar
+}) {
     const { height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
 
@@ -15,6 +63,62 @@ export default function AbaPerfilPublico() {
 
     const [aberto, setAberto] = useState(false);
     const [mostrarFundo, setMostrarFundo] = useState(false);
+
+    const [bio, setBio] = useState("");
+    const [editandoBio, setEditandoBio] = useState(false);
+
+    useEffect(() => {
+        let ativo = true;
+
+        setBio("");
+        setEditandoBio(false);
+
+        async function carregarBio() {
+            if (!pet?.id_pet) return;
+
+            try {
+                const salva = await AsyncStorage.getItem(
+                    `@tutus:bioPublica:${pet.id_pet}`
+                );
+
+                if (ativo) {
+                    setBio(salva || "");
+                }
+            } catch (erro) {
+                console.error("Erro ao carregar bio:", erro);
+            }
+        }
+
+        carregarBio();
+
+        return () => {
+            ativo = false;
+        };
+    }, [pet?.id_pet]);
+
+    async function salvarBio() {
+        if (!pet?.id_pet) return;
+
+        try {
+            await AsyncStorage.setItem(
+                `@tutus:bioPublica:${pet.id_pet}`,
+                bio.trim()
+            );
+
+            setBio(bio.trim());
+            setEditandoBio(false);
+
+        } catch (erro) {
+            console.error("Erro ao salvar bio:", erro);
+        }
+    }
+
+    const fotosPet = publicacoes.filter(
+        (publicacao) =>
+            pet &&
+            String(publicacao.id_pet) === String(pet.id_pet) &&
+            publicacao.foto_uri
+    );
 
     const animacao = useRef(new Animated.Value(0)).current;
 
@@ -106,41 +210,49 @@ export default function AbaPerfilPublico() {
                 {/* parte que o usuário puxa */}
                 <View {...gesto.panHandlers}>
 
-                    <View {...gesto.panHandlers}>
+                    {/* barrinha para arrastar */}
+                    <View style={styles.indicadorContainer}>
+                        <View style={styles.indicador} />
+                    </View>
 
-                        {/* barrinha para arrastar */}
-                        <View style={styles.indicadorContainer}>
-                            <View style={styles.indicador} />
-                        </View>
-
-                        {/* cabeçalho do pet */}
-                        <Pressable
-                            style={styles.cabecalho}
-                            onPress={aberto ? fecharPerfil : abrirPerfil}
-                        >
+                    {/* cabeçalho do pet */}
+                    <Pressable
+                        style={styles.cabecalho}
+                        onPress={aberto ? fecharPerfil : abrirPerfil}
+                    >
+                        {pet?.foto_perfil ? (
                             <Image
-                                source={require("../../assets/images/pet1.jpg")}
+                                source={{ uri: pet.foto_perfil }}
                                 style={styles.fotoPet}
                             />
-
-                            <View style={styles.infoPet}>
-                                <Text style={styles.nomePet}>
-                                    Estavão
-                                </Text>
-
-                                <Text style={styles.dadosPet}>
-                                    Hamster • 6 meses
-                                </Text>
+                        ) : (
+                            <View style={[styles.fotoPet, styles.semFoto]}>
+                                <Ionicons
+                                    name="paw"
+                                    size={30}
+                                    color="#FA9F2A"
+                                />
                             </View>
+                        )}
 
-                            <Ionicons
-                                name={aberto ? "chevron-up" : "chevron-down"}
-                                size={26}
-                                color="#332716"
-                            />
-                        </Pressable>
+                        <View style={styles.infoPet}>
+                            <Text style={styles.nomePet}>
+                                {pet?.nome || "Nenhum pet selecionado"}
+                            </Text>
 
-                    </View>
+                            <Text style={styles.dadosPet}>
+                                {pet
+                                    ? `${pet.especie} • ${calcularIdadePet(pet)}`
+                                    : "Escolha um pet na lista"}
+                            </Text>
+                        </View>
+
+                        <Ionicons
+                            name={aberto ? "chevron-up" : "chevron-down"}
+                            size={26}
+                            color="#332716"
+                        />
+                    </Pressable>
 
                 </View>
 
@@ -156,9 +268,44 @@ export default function AbaPerfilPublico() {
                             Perfil público
                         </Text>
 
-                        <Text style={styles.biografia}>
-                            Um hamster cheio de personalidade! 🐹
-                        </Text>
+                        {pet ? (
+                            editandoBio ? (
+                                <View>
+                                    <TextInput
+                                        style={[styles.biografia, styles.campoBio]}
+                                        value={bio}
+                                        onChangeText={setBio}
+                                        placeholder="Conte um pouco sobre seu pet..."
+                                        placeholderTextColor="#8C8177"
+                                        multiline
+                                        maxLength={160}
+                                    />
+
+                                    <Pressable
+                                        style={styles.publicar}
+                                        onPress={salvarBio}
+                                    >
+                                        <Text style={styles.textoPublicar}>
+                                            Salvar biografia
+                                        </Text>
+                                    </Pressable>
+                                </View>
+                            ) : (
+                                <Pressable onPress={() => setEditandoBio(true)}>
+                                    <Text style={styles.biografia}>
+                                        {bio || "Toque para adicionar uma biografia."}
+                                    </Text>
+
+                                    <Text style={styles.editarBio}>
+                                        Editar bio
+                                    </Text>
+                                </Pressable>
+                            )
+                        ) : (
+                            <Text style={styles.biografia}>
+                                Selecione um pet para visualizar o perfil.
+                            </Text>
+                        )}
 
                         <View style={styles.divisor} />
 
@@ -167,25 +314,26 @@ export default function AbaPerfilPublico() {
                         </Text>
 
                         <View style={styles.fotosContainer}>
-
-                            <Image
-                                source={require("../../assets/images/pet1.jpg")}
-                                style={styles.fotoPublicacao}
-                            />
-
-                            <Image
-                                source={require("../../assets/images/pet1.jpg")}
-                                style={styles.fotoPublicacao}
-                            />
-
-                            <Image
-                                source={require("../../assets/images/pet1.jpg")}
-                                style={styles.fotoPublicacao}
-                            />
-
+                            {fotosPet.length === 0 ? (
+                                <Text style={styles.biografia}>
+                                    Este pet ainda não possui publicações.
+                                </Text>
+                            ) : (
+                                fotosPet.map((publicacao) => (
+                                    <Image
+                                        key={String(publicacao.id)}
+                                        source={{ uri: publicacao.foto_uri }}
+                                        style={styles.fotoPublicacao}
+                                    />
+                                ))
+                            )}
                         </View>
 
-                        <View style={styles.publicar}>
+                        <Pressable
+                            style={styles.publicar}
+                            onPress={onPublicar}
+                            disabled={!pet || !onPublicar}
+                        >
                             <Ionicons
                                 name="add-circle-outline"
                                 size={22}
@@ -193,9 +341,9 @@ export default function AbaPerfilPublico() {
                             />
 
                             <Text style={styles.textoPublicar}>
-                                Nova publicação (em breve)
+                                {onPublicar ? "Nova publicação" : "Publicações em preparação"}
                             </Text>
-                        </View>
+                        </Pressable>
 
                     </ScrollView>
                 )}
@@ -218,54 +366,62 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        backgroundColor: "#FFEAC8",
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
+        backgroundColor: "#FFF7EC",
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
         overflow: "hidden",
-        elevation: 12,
+
+        borderBottomWidth: 1,
+        borderBottomColor: "#EADFCB",
+
+        elevation: 5,
+        shadowColor: "#332716",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.10,
+        shadowRadius: 6,
+
         zIndex: 12,
     },
 
     cabecalho: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 22,
-        paddingTop: 15,
-        paddingBottom: 5,
+        paddingHorizontal: 20,
+        paddingTop: 6,
+        paddingBottom: 8,
     },
 
     fotoPet: {
-        width: 62,
-        height: 62,
-        borderRadius: 31,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
     },
 
     infoPet: {
         flex: 1,
-        marginLeft: 15,
+        marginLeft: 12,
     },
 
     nomePet: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 24,
+        fontSize: 25,
         color: "#332716",
     },
 
     dadosPet: {
         fontFamily: "Ruwudu-Regular",
-        fontSize: 16,
+        fontSize: 20,
         color: "#75571F",
-        marginTop: -5,
+        marginTop: 1,
     },
 
     indicadorContainer: {
         alignItems: "center",
-        paddingTop: 9,
-        paddingBottom: 8,
+        paddingTop: 3,
     },
 
     indicador: {
-        width: 42,
+        width: 38,
         height: 4,
         borderRadius: 10,
         backgroundColor: "#B89967",
@@ -306,14 +462,15 @@ const styles = StyleSheet.create({
 
     fotosContainer: {
         flexDirection: "row",
+        flexWrap: "wrap",
         gap: 8,
         marginTop: 10,
         marginBottom: 25,
     },
 
     fotoPublicacao: {
-        flex: 1,
-        height: 100,
+        width: "31%",
+        aspectRatio: 1,
         borderRadius: 12,
     },
 
@@ -334,7 +491,35 @@ const styles = StyleSheet.create({
     },
 
     containerAba: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 100,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 999,
+        elevation: 20,
+    },
+
+    semFoto: {
+        backgroundColor: "#FFFDF8",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    campoBio: {
+        borderWidth: 1,
+        borderColor: "#B89967",
+        borderRadius: 12,
+        padding: 12,
+        minHeight: 85,
+        textAlignVertical: "top",
+        color: "#332716",
+    },
+
+    editarBio: {
+        fontFamily: "Ruwudu-Bold",
+        fontSize: 15,
+        color: "#80502D",
+        marginTop: 8,
     },
 });

@@ -1,10 +1,194 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Modal, TextInput } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from "expo-image-picker";
+import { File, Paths } from "expo-file-system";
 
 import AbaPerfilPublico from "../componentes/AbaPerfilPublico";
 
 export default function Comunidade() {
+
+    const [pet, setPet] = useState(null);
+    const [publicacoes, setPublicacoes] = useState([]);
+    const [modalAberto, setModalAberto] = useState(false);
+    const [legenda, setLegenda] = useState("");
+    const [foto, setFoto] = useState(null);
+    const [salvando, setSalvando] = useState(false);
+
+    useFocusEffect(
+        useCallback(() => {
+            let ativo = true;
+
+            async function carregarPet() {
+                try {
+                    const id = await AsyncStorage.getItem(
+                        '@tutus:petSelecionadoId'
+                    );
+
+                    const dados = await AsyncStorage.getItem(
+                        '@tutus:pets'
+                    );
+
+                    const lista = dados ? JSON.parse(dados) : [];
+
+                    const encontrado = Array.isArray(lista)
+                        ? lista.find(
+                            item => String(item.id_pet) === id
+                        )
+                        : null;
+
+                    const postsSalvos = await AsyncStorage.getItem(
+                        "@tutus:publicacoes"
+                    );
+
+                    const listaPosts = postsSalvos
+                        ? JSON.parse(postsSalvos)
+                        : [];
+
+                    if (ativo) {
+                        setPet(encontrado || null);
+
+                        setPublicacoes(
+                            Array.isArray(listaPosts) ? listaPosts : []
+                        );
+                    }
+
+                } catch (erro) {
+                    console.error(
+                        'Erro ao carregar pet público:',
+                        erro
+                    );
+
+                    if (ativo) setPet(null);
+                }
+            }
+
+            carregarPet();
+
+            return () => {
+                ativo = false;
+            };
+
+        }, [])
+    );
+
+    // abre o formulário de publicação
+    function abrirPublicacao() {
+        if (!pet) {
+            Alert.alert(
+                "Selecione um pet",
+                "Escolha um pet antes de publicar."
+            );
+            return;
+        }
+
+        setModalAberto(true);
+    }
+
+    // fecha o formulário
+    function fecharPublicacao() {
+        if (salvando) return;
+
+        setModalAberto(false);
+        setLegenda("");
+        setFoto(null);
+    }
+
+    // seleciona uma fotografia
+    async function selecionarFoto() {
+        try {
+            const resultado = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ["images"],
+                allowsEditing: false,
+                quality: 0.8,
+            });
+
+            if (!resultado.canceled && resultado.assets?.length) {
+                setFoto(resultado.assets[0].uri);
+            }
+        } catch (erro) {
+            console.error("Erro ao selecionar foto:", erro);
+            Alert.alert("Erro", "Não foi possível selecionar a foto.");
+        }
+    }
+
+    // salva a publicação
+    async function publicar() {
+        if (salvando || !pet) return;
+
+        if (!legenda.trim() && !foto) {
+            Alert.alert(
+                "Publicação vazia",
+                "Escreva uma legenda ou escolha uma foto."
+            );
+            return;
+        }
+
+        setSalvando(true);
+
+        try {
+            let fotoSalva = null;
+
+            if (foto) {
+                const extensao =
+                    foto.match(/\.(jpg|jpeg|png|webp|heic)(?:\?.*)?$/i)?.[1]
+                    || "jpg";
+
+                const origem = new File(foto);
+
+                const destino = new File(
+                    Paths.document,
+                    `tutus-post-${Date.now()}.${extensao}`
+                );
+
+                await origem.copy(destino);
+                fotoSalva = destino.uri;
+            }
+
+            const novaPublicacao = {
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                id_pet: pet.id_pet,
+                nome_pet: pet.nome,
+                foto_pet: pet.foto_perfil || null,
+                foto_uri: fotoSalva,
+                legenda: legenda.trim(),
+                criado_em: new Date().toISOString(),
+            };
+
+            const listaAtualizada = [
+                novaPublicacao,
+                ...publicacoes
+            ];
+
+            await AsyncStorage.setItem(
+                "@tutus:publicacoes",
+                JSON.stringify(listaAtualizada)
+            );
+
+            setPublicacoes(listaAtualizada);
+            setLegenda("");
+            setFoto(null);
+            setModalAberto(false);
+
+            Alert.alert(
+                "Sucesso",
+                "Publicação criada!"
+            );
+
+        } catch (erro) {
+            console.error("Erro ao publicar:", erro);
+            Alert.alert(
+                "Erro",
+                "Não foi possível salvar a publicação."
+            );
+        } finally {
+            setSalvando(false);
+        }
+    }
 
     return (
         <View style={styles.container}>
@@ -22,12 +206,7 @@ export default function Comunidade() {
 
                     <TouchableOpacity
                         style={styles.botaoPublicar}
-                        onPress={() =>
-                            Alert.alert(
-                                'Nova publicação',
-                                'Essa funcionalidade será desenvolvida em breve.'
-                            )
-                        }
+                        onPress={abrirPublicacao}
                     >
                         <Ionicons
                             name="add"
@@ -41,53 +220,148 @@ export default function Comunidade() {
                     </TouchableOpacity>
                 </View>
 
-                {/* publicação de exemplo */}
-                <View style={styles.cardPublicacao}>
-
-                    <View style={styles.cabecalhoPost}>
-                        <Image
-                            source={require('../../assets/images/pet2.png')}
-                            style={styles.fotoPost}
-                        />
-
-                        <View style={styles.infoPost}>
-                            <Text style={styles.autorPost}>
-                                Jully
-                            </Text>
-
-                            <Text style={styles.dataPost}>
-                                Publicação de exemplo
-                            </Text>
-                        </View>
-
-                        <Ionicons
-                            name="ellipsis-horizontal"
-                            size={23}
-                            color="#332716"
-                        />
-                    </View>
-
-                    <Image
-                        source={require('../../assets/images/pet2.png')}
-                        style={styles.imagemPost}
-                        resizeMode="cover"
-                    />
-
+                {/* publicações cadastradas */}
+                {publicacoes.length === 0 ? (
                     <Text style={styles.legendaPost}>
-                        Curtindo uma tarde tranquila! 🐾
+                        Nenhuma publicação ainda. Que tal criar a primeira? 🐾
                     </Text>
+                ) : (
+                    publicacoes.map((post) => (
+                        <View
+                            key={String(post.id)}
+                            style={styles.cardPublicacao}
+                        >
 
-                    <View style={styles.acoesPost}>
-                        <Ionicons name="heart-outline" size={25} color="#332716" />
-                        <Ionicons name="chatbubble-outline" size={23} color="#332716" />
-                        <Ionicons name="paper-plane-outline" size={23} color="#332716" />
-                    </View>
+                            <View style={styles.cabecalhoPost}>
 
-                </View>
+                                {post.foto_pet ? (
+                                    <Image
+                                        source={{ uri: post.foto_pet }}
+                                        style={styles.fotoPost}
+                                    />
+                                ) : (
+                                    <View style={[
+                                        styles.fotoPost,
+                                        {
+                                            backgroundColor: "#FFEAC8",
+                                            alignItems: "center",
+                                            justifyContent: "center"
+                                        }
+                                    ]}>
+                                        <Ionicons
+                                            name="paw"
+                                            size={22}
+                                            color="#FA9F2A"
+                                        />
+                                    </View>
+                                )}
+
+                                <View style={styles.infoPost}>
+                                    <Text style={styles.autorPost}>
+                                        {post.nome_pet}
+                                    </Text>
+
+                                    <Text style={styles.dataPost}>
+                                        {new Date(post.criado_em)
+                                            .toLocaleDateString("pt-BR")}
+                                    </Text>
+                                </View>
+
+                            </View>
+
+                            {post.foto_uri ? (
+                                <Image
+                                    source={{ uri: post.foto_uri }}
+                                    style={styles.imagemPost}
+                                    resizeMode="cover"
+                                />
+                            ) : null}
+
+                            {!!post.legenda && (
+                                <Text style={styles.legendaPost}>
+                                    {post.legenda}
+                                </Text>
+                            )}
+
+                        </View>
+                    ))
+                )}
 
             </ScrollView>
 
-            <AbaPerfilPublico />
+            <AbaPerfilPublico
+                pet={pet}
+                publicacoes={publicacoes}
+                onPublicar={abrirPublicacao}
+            />
+
+            <Modal
+                visible={modalAberto}
+                animationType="slide"
+                transparent
+                onRequestClose={fecharPublicacao}
+            >
+                <View style={styles.modalFundo}>
+                    <View style={styles.modalConteudo}>
+
+                        <Text style={styles.tituloFeed}>
+                            Nova publicação
+                        </Text>
+
+                        <Text style={styles.legendaPost}>
+                            Publicando como: {pet?.nome}
+                        </Text>
+
+                        <TextInput
+                            style={styles.campoLegenda}
+                            placeholder="O que seu pet está aprontando?"
+                            placeholderTextColor="#8C8177"
+                            value={legenda}
+                            onChangeText={setLegenda}
+                            multiline
+                            maxLength={500}
+                        />
+
+                        <TouchableOpacity
+                            style={styles.botaoModal}
+                            onPress={selecionarFoto}
+                            disabled={salvando}
+                        >
+                            <Text style={styles.textoPublicar}>
+                                Escolher foto
+                            </Text>
+                        </TouchableOpacity>
+
+                        {foto && (
+                            <Image
+                                source={{ uri: foto }}
+                                style={styles.imagemPost}
+                                resizeMode="cover"
+                            />
+                        )}
+
+                        <TouchableOpacity
+                            style={styles.botaoModal}
+                            onPress={publicar}
+                            disabled={salvando}
+                        >
+                            <Text style={styles.textoPublicar}>
+                                {salvando ? "Salvando..." : "Publicar"}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={fecharPublicacao}
+                            disabled={salvando}
+                        >
+                            <Text style={styles.cancelar}>
+                                Cancelar
+                            </Text>
+                        </TouchableOpacity>
+
+                    </View>
+                </View>
+            </Modal>
 
         </View>
     );
@@ -97,12 +371,13 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
+        position: 'relative',
         backgroundColor: '#FFFDF8',
     },
 
     conteudo: {
-        paddingHorizontal: 22,
-        paddingTop: 150,
+        paddingHorizontal: 20,
+        paddingTop: 135,
         paddingBottom: 35,
     },
 
@@ -181,20 +456,20 @@ const styles = StyleSheet.create({
     },
 
     botaoPublicar: {
-        backgroundColor: '#332716',
-        borderRadius: 30,
-        paddingHorizontal: 18,
-        height: 44,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: "#80502D",
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        height: 42,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
         gap: 5,
     },
 
     textoPublicar: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 16,
-        color: '#FFFDF8',
+        fontFamily: "Ruwudu-Bold",
+        fontSize: 14,
+        color: "#FFFDF8",
     },
 
     // publicações
@@ -322,6 +597,43 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#75571F',
         marginTop: 15,
+    },
+
+    modalFundo: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        padding: 20,
+    },
+
+    modalConteudo: {
+        backgroundColor: "#FFFDF8",
+        borderRadius: 22,
+        padding: 20,
+        gap: 12,
+    },
+
+    campoLegenda: {
+        borderWidth: 1,
+        borderColor: "#EADFCB",
+        borderRadius: 12,
+        padding: 12,
+        minHeight: 100,
+        textAlignVertical: "top",
+        color: "#332716",
+    },
+
+    botaoModal: {
+        backgroundColor: "#332716",
+        padding: 14,
+        borderRadius: 12,
+        alignItems: "center",
+    },
+
+    cancelar: {
+        textAlign: "center",
+        padding: 12,
+        color: "#A52C2C",
     },
 
 });
