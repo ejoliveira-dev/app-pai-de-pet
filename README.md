@@ -18,31 +18,29 @@ A proposta também busca minimizar problemas como a desorganização das informa
 
 ## Funcionalidades Implementadas
 
-- Telas parcialmente finalizadas: Splash Screen, Welcome, Login;
-- Navegação entre as principais telas em desenvolvimento utilizando React Navigation;
+- Telas Splash Screen, Welcome, Login, Criar Conta e Recuperação de Senha, com validações básicas, autenticação demonstrativa e estrutura básica.
+- Navegação entre as principais telas e abas em desenvolvimento utilizando React Navigation;
 - Estrutura de navegação inferior com as abas Início, Comunidade, Meu Pet e Tutor;
-- Telas de Login, Criar Conta e Esqueci Minha Senha com validações de campos obrigatórios, formato de e-mail, tamanho mínimo da senha e confirmação de senha, além de mensagens de erro (todas as telas de autenticação funcionam apenas demonstrativamente no momento);
-- Cadastro de um ou mais pets, com nome, espécie, raça, data de nascimento ou idade aproximada, foto de perfil e observações, incluindo validações dos campos obrigatórios;
-- Lista de Pets com exibição dos animais cadastrados, suas informações básicas e opção de seleção;
-- Armazenamento local dos dados dos pets utilizando AsyncStorage, permitindo recuperar os cadastros mesmo após fechar o aplicativo;
-- Home com exibição das informações do pet selecionado;
+- Perfil do Tutor com visualização dos pets cadastrados e estrutura inicial de configurações e privacidade.
+- Comunidade com feed básico, perfil público do pet e publicações locais de fotos e legendas;
+- Perfil privado do pet com registro e gerenciamento de alimentação, peso, vacinas, consultas e medicamentos;
+- Cadastro de um ou mais pets;
+- Lista de seleção dos pets;
+- Cadastro, listagem e seleção de pets, com validação de campos e armazenamento local via AsyncStorage;
+- Persistência dos dados individuais de cada pet, permitindo recuperá-los após reiniciar o aplicativo;
+- Home com resumo dos cuidados, gráficos de acompanhamento, previsão de refeições e lembretes (Ainda em fase de experimentação);
 
 ## Funcionalidades planejadas
 
 - Implementação da autenticação real de usuários e recuperação de senha por e-mail;
-- Perfil privado do pet;
-- Acompanhamento de peso e alimentação;
-- Registro, notificações e lembretes de vacinas, consultas e medicamentos;
-- Gráficos para acompanhamento de informações do pet;
-- Perfil público do pet;
-- Publicações de fotos e vídeos;
-- Feed com publicações de outros tutores (comunidade!);
-- Interação entre tutores;
-- Personalização do tema do aplicativo;
-- Perfil e configurações do tutor.
+- Aprimoramento do perfil público do pet e da experiência na Comunidade;
+- Publicações de vídeos e interação entre tutores de diferentes dispositivos;
+- Implementação de uma comunidade com compartilhamento remoto de publicações;
+- Personalização geral do tema do aplicativo;
+- Finalização das informações da conta, privacidade e personalização do Perfil do Tutor;
 - Edição e exclusão dos pets cadastrados;
-- Integração dos registros de cuidados às informações individuais de cada pet;
-- Aprimoramento das interfaces e da experiência de navegação.
+- Integração com serviços remotos para armazenamento e compartilhamento de dados;
+- Aprimoramento das interfaces, design e experiência de navegação.
 
 ## Tecnologias utilizadas (até o momento)
 

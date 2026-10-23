@@ -1,10 +1,11 @@
 
-import React, { useRef, useState, useMemo, useEffect } from "react";
-import { View, Text, Image, Pressable, ScrollView, StyleSheet, Animated, PanResponder, useWindowDimensions, TextInput } from "react-native";
+import React, { useRef, useState, useMemo, useEffect, useCallback } from "react";
+import { View, Text, Image, Pressable, ScrollView, StyleSheet, Animated, PanResponder, useWindowDimensions, TextInput, Modal } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from '@react-navigation/native';
 
 const ALTURA_FECHADA = 96;
 
@@ -66,6 +67,46 @@ export default function AbaPerfilPublico({
 
     const [bio, setBio] = useState("");
     const [editandoBio, setEditandoBio] = useState(false);
+
+
+    const [tutorPublico, setTutorPublico] = useState(null);
+    const [modalTutor, setModalTutor] = useState(false);
+
+    useFocusEffect(
+        useCallback(() => {
+            let ativo = true;
+
+            async function carregarTutor() {
+                try {
+                    const dados = await AsyncStorage.getItem(
+                        '@tutus:perfilTutor'
+                    );
+
+                    const tutor = dados ? JSON.parse(dados) : null;
+
+                    if (ativo) {
+                        setTutorPublico(
+                            tutor?.exibirNoPerfilPublico &&
+                                tutor?.nome?.trim()
+                                ? tutor
+                                : null
+                        );
+                    }
+
+                } catch (erro) {
+                    console.error('Erro ao carregar tutor público:', erro);
+                    if (ativo) setTutorPublico(null);
+                }
+            }
+
+            carregarTutor();
+
+            return () => {
+                ativo = false;
+            };
+        }, [])
+    );
+
 
     useEffect(() => {
         let ativo = true;
@@ -307,6 +348,29 @@ export default function AbaPerfilPublico({
                             </Text>
                         )}
 
+                        {tutorPublico && (
+                            <Pressable
+                                style={styles.botaoTutorPublico}
+                                onPress={() => setModalTutor(true)}
+                            >
+                                <Ionicons
+                                    name="person-circle-outline"
+                                    size={26}
+                                    color="#80502D"
+                                />
+
+                                <Text style={styles.textoTutorPublico}>
+                                    Conheça o tutor
+                                </Text>
+
+                                <Ionicons
+                                    name="chevron-forward"
+                                    size={19}
+                                    color="#80502D"
+                                />
+                            </Pressable>
+                        )}
+
                         <View style={styles.divisor} />
 
                         <Text style={styles.tituloSecao}>
@@ -349,6 +413,49 @@ export default function AbaPerfilPublico({
                 )}
 
             </Animated.View>
+
+            <Modal
+                visible={modalTutor && !!tutorPublico}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setModalTutor(false)}
+            >
+                <View style={styles.fundoModalTutor}>
+
+                    <Pressable
+                        style={StyleSheet.absoluteFillObject}
+                        onPress={() => setModalTutor(false)}
+                    />
+
+                    <View style={styles.cartaoTutorPublico}>
+
+                        <Ionicons
+                            name="person-circle"
+                            size={75}
+                            color="#80502D"
+                        />
+
+                        <Text style={styles.nomeTutorPublico}>
+                            {tutorPublico?.nome}
+                        </Text>
+
+                        <Text style={styles.descricaoTutorPublico}>
+                            Tutor de {pet?.nome}
+                        </Text>
+
+                        <Pressable
+                            style={styles.fecharTutor}
+                            onPress={() => setModalTutor(false)}
+                        >
+                            <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>
+                                Fechar
+                            </Text>
+                        </Pressable>
+
+                    </View>
+
+                </View>
+            </Modal>
 
         </View>
     );
@@ -522,4 +629,61 @@ const styles = StyleSheet.create({
         color: "#80502D",
         marginTop: 8,
     },
+
+
+    botaoTutorPublico: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFEAC8',
+        padding: 14,
+        borderRadius: 15,
+        marginTop: 15,
+        gap: 10,
+    },
+
+    textoTutorPublico: {
+        flex: 1,
+        color: '#332716',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+
+    fundoModalTutor: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 25,
+    },
+
+    cartaoTutorPublico: {
+        backgroundColor: '#FFFDF8',
+        borderRadius: 25,
+        padding: 30,
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: 340,
+    },
+
+    nomeTutorPublico: {
+        fontSize: 23,
+        fontWeight: 'bold',
+        color: '#332716',
+        marginTop: 10,
+    },
+
+    descricaoTutorPublico: {
+        fontSize: 15,
+        color: '#75571F',
+        marginTop: 5,
+    },
+
+    fecharTutor: {
+        backgroundColor: '#80502D',
+        paddingHorizontal: 30,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginTop: 22,
+    },
+
 });
