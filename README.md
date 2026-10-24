@@ -28,7 +28,7 @@ A proposta também busca minimizar problemas como a desorganização das informa
 - Lista de seleção dos pets;
 - Cadastro, listagem e seleção de pets, com validação de campos e armazenamento local via AsyncStorage;
 - Persistência dos dados individuais de cada pet, permitindo recuperá-los após reiniciar o aplicativo;
-- Home com resumo dos cuidados, gráficos de acompanhamento, previsão de refeições e lembretes (Ainda em fase de experimentação);
+- Home com resumo dos cuidados, gráficos de acompanhamento, previsão de refeições e lembretes (Ainda em fase de experimentação).
 
 <p align="center">
   <img src="assets/images/screen-welcome.jpeg" alt="Boas-vindas" width="210">
