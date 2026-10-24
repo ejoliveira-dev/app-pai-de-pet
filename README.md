@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="img/logo-ofc-2-jpg-github.png" width="450">
+    <img src="assets/images/logo-ofc-2-jpg-github.png" width="450">
 </p>
 
 # Tutus 🐾
@@ -31,9 +31,9 @@ A proposta também busca minimizar problemas como a desorganização das informa
 - Home com resumo dos cuidados, gráficos de acompanhamento, previsão de refeições e lembretes (Ainda em fase de experimentação);
 
 <p align="center">
-  <img src="img/screen-welcome.jpeg" alt="Boas-vindas" width="210">
-  <img src="img/acreen-login.jpeg" alt="Login" width="210">
-  <img src="img/screen-tutor.jpeg" alt="Perfil do Tutor" width="210">
+  <img src="assets/images/screen-welcome.jpeg" alt="Boas-vindas" width="210">
+  <img src="assets/images/acreen-login.jpeg" alt="Login" width="210">
+  <img src="assets/images/screen-tutor.jpeg" alt="Perfil do Tutor" width="210">
 </p>
 
 <p align="center">
