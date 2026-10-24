@@ -30,6 +30,16 @@ A proposta também busca minimizar problemas como a desorganização das informa
 - Persistência dos dados individuais de cada pet, permitindo recuperá-los após reiniciar o aplicativo;
 - Home com resumo dos cuidados, gráficos de acompanhamento, previsão de refeições e lembretes (Ainda em fase de experimentação);
 
+<p align="center">
+  <img src="img/screen-welcome.jpeg" alt="Boas-vindas" width="210">
+  <img src="img/acreen-login.jpeg" alt="Login" width="210">
+  <img src="img/screen-tutor.jpeg" alt="Perfil do Tutor" width="210">
+</p>
+
+<p align="center">
+  <em>Boas-vindas • Login • Perfil do Tutor</em>
+</p>
+
 ## Funcionalidades planejadas
 
 - Implementação da autenticação real de usuários e recuperação de senha por e-mail;
