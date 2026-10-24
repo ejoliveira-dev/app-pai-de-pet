@@ -32,7 +32,7 @@ A proposta também busca minimizar problemas como a desorganização das informa
 
 <p align="center">
   <img src="assets/images/screen-welcome.jpeg" alt="Boas-vindas" width="210">
-  <img src="assets/images/acreen-login.jpeg" alt="Login" width="210">
+  <img src="assets/images/screen-login.jpeg" alt="Login" width="210">
   <img src="assets/images/screen-tutor.jpeg" alt="Perfil do Tutor" width="210">
 </p>
 
