@@ -1,4 +1,3 @@
-
 import React, {
   useCallback,
   useEffect,
@@ -15,7 +14,11 @@ import {
   View
 } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import {
+  carregarResumoPet,
+  salvarIntervaloAlimentacao
+} from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -27,15 +30,6 @@ const VAZIO = {
   consultas: [],
   medicamentos: []
 };
-
-// Recupera uma lista salva no AsyncStorage
-function listaSegura(valor) {
-  if (!valor) return [];
-
-  const resultado = JSON.parse(valor);
-
-  return Array.isArray(resultado) ? resultado : [];
-}
 
 // Converte datas DD/MM/AAAA
 function dataBR(texto) {
@@ -154,6 +148,8 @@ export default function PainelHome({
   onAbrirCuidados
 }) {
 
+  const db = useSQLiteContext();
+
   const id = pet?.id_pet;
 
   const [dados, setDados] = useState(VAZIO);
@@ -205,39 +201,9 @@ export default function PainelHome({
 
         try {
 
-          const [
-            registros,
-            vacinas,
-            consultas,
-            medicamentos,
-            horas
-          ] = await Promise.all([
+          const resumo = await carregarResumoPet(db, id);
 
-            AsyncStorage.getItem(
-              `@tutus:registros:${id}`
-            ),
-
-            AsyncStorage.getItem(
-              `@tutus:vacinas:${id}`
-            ),
-
-            AsyncStorage.getItem(
-              `@tutus:cuidados:consulta:${id}`
-            ),
-
-            AsyncStorage.getItem(
-              `@tutus:cuidados:medicamento:${id}`
-            ),
-
-            AsyncStorage.getItem(
-              `@tutus:intervaloAlimentacao:${id}`
-            )
-
-          ]);
-
-          const historico = registros
-            ? JSON.parse(registros)
-            : {};
+          const horas = resumo.intervalo;
 
           const intervaloSalvo = Number(horas);
 
@@ -245,19 +211,15 @@ export default function PainelHome({
 
             setDados({
 
-              alimentacao: Array.isArray(historico.alimentacao)
-                ? historico.alimentacao
-                : [],
+              alimentacao: resumo.alimentacao,
 
-              peso: Array.isArray(historico.peso)
-                ? historico.peso
-                : [],
+              peso: resumo.peso,
 
-              vacinas: listaSegura(vacinas),
+              vacinas: resumo.vacinas,
 
-              consultas: listaSegura(consultas),
+              consultas: resumo.consultas,
 
-              medicamentos: listaSegura(medicamentos)
+              medicamentos: resumo.medicamentos
 
             });
 
@@ -307,7 +269,7 @@ export default function PainelHome({
         ativo = false;
       };
 
-    }, [id])
+    }, [db, id])
   );
 
   // Salva o intervalo entre refeições
@@ -329,10 +291,7 @@ export default function PainelHome({
 
     try {
 
-      await AsyncStorage.setItem(
-        `@tutus:intervaloAlimentacao:${id}`,
-        entrada
-      );
+      await salvarIntervaloAlimentacao(db, id, entrada);
 
       setIntervalo(Number(entrada));
 

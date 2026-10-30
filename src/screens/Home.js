@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import { buscarPet, obterPetSelecionadoId, definirPetSelecionadoId } from '../database/Database';
 
 // usestate = guarda o pet que vai ser mostrado na home.
 // usecallback = auxilia na execução da função de carregamento.
@@ -61,6 +62,8 @@ function calcularIdade(dataNascimento) {
 
 
 export default function Home({ navigation, route }) {
+  const db = useSQLiteContext();
+
   const petRecebido = route.params?.petSelecionado;
   const [pet, setPet] = useState(petRecebido || null);
 
@@ -70,38 +73,16 @@ export default function Home({ navigation, route }) {
 
       async function carregarPetSelecionado() {
         try {
-          // pra recuperar os pets que já foram cadastrados
-          const dadosSalvos = await AsyncStorage.getItem("@tutus:pets");
-
-          const lista = dadosSalvos
-            ? JSON.parse(dadosSalvos)
-            : [];
-
-          if (!Array.isArray(lista)) {
-            throw new Error("Lista de pets inválida");
-          }
-
-          // verificando se um pet foi selecionado
           const idRecebido = petRecebido?.id_pet;
-
-          // recuperando a última seleção
-          const idAnterior = await AsyncStorage.getItem(
-            "@tutus:petSelecionadoId"
-          );
-
+          const idAnterior = await obterPetSelecionadoId(db);
           const idProcurado = idRecebido || idAnterior;
 
-          // procura o pet entre os cadastrados
-          const petAtualizado = lista.find(
-            (item) => String(item.id_pet) === String(idProcurado)
-          ) || null;
+          const petAtualizado = idProcurado
+            ? await buscarPet(db, idProcurado)
+            : null;
 
-          // salva a seleção atual
           if (idRecebido && petAtualizado) {
-            await AsyncStorage.setItem(
-              "@tutus:petSelecionadoId",
-              String(idRecebido)
-            );
+            await definirPetSelecionadoId(db, idRecebido);
           }
 
           if (ativo) {
@@ -123,7 +104,7 @@ export default function Home({ navigation, route }) {
         ativo = false;
       };
 
-    }, [petRecebido?.id_pet])
+    }, [db, petRecebido?.id_pet])
   );
 
   const idade = pet?.data_nascimento
@@ -233,10 +214,10 @@ const styles = StyleSheet.create({
   },
 
   blocoPet: {
-  backgroundColor: '#FA9F2A',
-  borderRadius: 28,
-  padding: 22,
-  marginBottom: 28,
+    backgroundColor: '#FA9F2A',
+    borderRadius: 28,
+    padding: 22,
+    marginBottom: 28,
   },
 
   saudacao: {

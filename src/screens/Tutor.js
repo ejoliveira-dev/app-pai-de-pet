@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable, TextInput, Switch, Alert, Modal } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import { listarPets, obterPerfilTutor, salvarPerfilTutor, definirPetSelecionadoId } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 
@@ -16,6 +17,7 @@ const PERFIL_INICIAL = {
 };
 
 export default function Tutor({ navigation }) {
+    const db = useSQLiteContext();
 
     const [perfil, setPerfil] = useState(PERFIL_INICIAL);
     const [pets, setPets] = useState([]);
@@ -34,19 +36,10 @@ export default function Tutor({ navigation }) {
 
             async function carregarDados() {
                 try {
-                    const [dadosTutor, dadosPets] =
-                        await Promise.all([
-                            AsyncStorage.getItem('@tutus:perfilTutor'),
-                            AsyncStorage.getItem('@tutus:pets')
-                        ]);
-
-                    const tutorSalvo = dadosTutor
-                        ? JSON.parse(dadosTutor)
-                        : {};
-
-                    const lista = dadosPets
-                        ? JSON.parse(dadosPets)
-                        : [];
+                    const [tutorSalvo, lista] = await Promise.all([
+                        obterPerfilTutor(db),
+                        listarPets(db)
+                    ]);
 
                     const perfilAtual = {
                         ...PERFIL_INICIAL,
@@ -55,7 +48,7 @@ export default function Tutor({ navigation }) {
 
                     if (ativo) {
                         setPerfil(perfilAtual);
-                        setPets(Array.isArray(lista) ? lista : []);
+                        setPets(lista);
                     }
 
                 } catch (erro) {
@@ -69,7 +62,7 @@ export default function Tutor({ navigation }) {
             return () => {
                 ativo = false;
             };
-        }, [])
+        }, [db])
     );
 
     // Salva alterações do perfil
@@ -77,10 +70,7 @@ export default function Tutor({ navigation }) {
         const atualizado = { ...perfil, ...alteracoes };
 
         try {
-            await AsyncStorage.setItem(
-                '@tutus:perfilTutor',
-                JSON.stringify(atualizado)
-            );
+            await salvarPerfilTutor(db, atualizado);
 
             setPerfil(atualizado);
             return true;
@@ -161,10 +151,7 @@ export default function Tutor({ navigation }) {
     // seleciona um pet e abre a Home
     async function selecionarPet(pet) {
         try {
-            await AsyncStorage.setItem(
-                '@tutus:petSelecionadoId',
-                String(pet.id_pet)
-            );
+            await definirPetSelecionadoId(db, pet.id_pet);
 
             navigation.navigate('Inicio', {
                 petSelecionado: pet

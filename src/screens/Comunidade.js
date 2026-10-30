@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import { buscarPet, obterPetSelecionadoId, listarPublicacoes, inserirPublicacao } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Modal, TextInput } from 'react-native';
@@ -11,6 +12,7 @@ import { File, Paths } from "expo-file-system";
 import AbaPerfilPublico from "../componentes/AbaPerfilPublico";
 
 export default function Comunidade() {
+    const db = useSQLiteContext();
 
     const [pet, setPet] = useState(null);
     const [publicacoes, setPublicacoes] = useState([]);
@@ -25,36 +27,15 @@ export default function Comunidade() {
 
             async function carregarPet() {
                 try {
-                    const id = await AsyncStorage.getItem(
-                        '@tutus:petSelecionadoId'
-                    );
+                    const id = await obterPetSelecionadoId(db);
 
-                    const dados = await AsyncStorage.getItem(
-                        '@tutus:pets'
-                    );
+                    const encontrado = id ? await buscarPet(db, id) : null;
 
-                    const lista = dados ? JSON.parse(dados) : [];
-
-                    const encontrado = Array.isArray(lista)
-                        ? lista.find(
-                            item => String(item.id_pet) === id
-                        )
-                        : null;
-
-                    const postsSalvos = await AsyncStorage.getItem(
-                        "@tutus:publicacoes"
-                    );
-
-                    const listaPosts = postsSalvos
-                        ? JSON.parse(postsSalvos)
-                        : [];
+                    const listaPosts = await listarPublicacoes(db);
 
                     if (ativo) {
-                        setPet(encontrado || null);
-
-                        setPublicacoes(
-                            Array.isArray(listaPosts) ? listaPosts : []
-                        );
+                        setPet(encontrado);
+                        setPublicacoes(listaPosts);
                     }
 
                 } catch (erro) {
@@ -73,7 +54,7 @@ export default function Comunidade() {
                 ativo = false;
             };
 
-        }, [])
+        }, [db])
     );
 
     // abre o formulário de publicação
@@ -164,10 +145,7 @@ export default function Comunidade() {
                 ...publicacoes
             ];
 
-            await AsyncStorage.setItem(
-                "@tutus:publicacoes",
-                JSON.stringify(listaAtualizada)
-            );
+           await inserirPublicacao(db, novaPublicacao);
 
             setPublicacoes(listaAtualizada);
             setLegenda("");

@@ -1,10 +1,14 @@
-
 import React, { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import { View, Text, Image, Pressable, ScrollView, StyleSheet, Animated, PanResponder, useWindowDimensions, TextInput, Modal } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSQLiteContext } from "expo-sqlite";
+import {
+    obterPerfilTutor,
+    obterBioPublica,
+    salvarBioPublica
+} from "../database/Database";
 import { useFocusEffect } from '@react-navigation/native';
 
 const ALTURA_FECHADA = 96;
@@ -57,6 +61,8 @@ export default function AbaPerfilPublico({
     publicacoes = [],
     onPublicar
 }) {
+    const db = useSQLiteContext();
+
     const { height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
 
@@ -78,11 +84,7 @@ export default function AbaPerfilPublico({
 
             async function carregarTutor() {
                 try {
-                    const dados = await AsyncStorage.getItem(
-                        '@tutus:perfilTutor'
-                    );
-
-                    const tutor = dados ? JSON.parse(dados) : null;
+                    const tutor = await obterPerfilTutor(db);
 
                     if (ativo) {
                         setTutorPublico(
@@ -104,7 +106,7 @@ export default function AbaPerfilPublico({
             return () => {
                 ativo = false;
             };
-        }, [])
+        }, [db])
     );
 
 
@@ -118,9 +120,7 @@ export default function AbaPerfilPublico({
             if (!pet?.id_pet) return;
 
             try {
-                const salva = await AsyncStorage.getItem(
-                    `@tutus:bioPublica:${pet.id_pet}`
-                );
+                const salva = await obterBioPublica(db, pet.id_pet);
 
                 if (ativo) {
                     setBio(salva || "");
@@ -135,16 +135,13 @@ export default function AbaPerfilPublico({
         return () => {
             ativo = false;
         };
-    }, [pet?.id_pet]);
+    }, [db, pet?.id_pet]);
 
     async function salvarBio() {
         if (!pet?.id_pet) return;
 
         try {
-            await AsyncStorage.setItem(
-                `@tutus:bioPublica:${pet.id_pet}`,
-                bio.trim()
-            );
+            await salvarBioPublica(db, pet.id_pet, bio.trim());
 
             setBio(bio.trim());
             setEditandoBio(false);

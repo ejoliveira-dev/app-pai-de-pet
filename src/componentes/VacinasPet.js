@@ -5,7 +5,14 @@ import {
     View, Text, TextInput, TouchableOpacity, Alert, StyleSheet
 } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import {
+    obterPetSelecionadoId,
+    listarVacinas,
+    inserirVacina,
+    alterarStatusVacina,
+    removerVacina
+} from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 // formata automaticamente a data
@@ -45,6 +52,8 @@ function validarData(valor) {
 }
 
 export default function VacinasPet() {
+    const db = useSQLiteContext();
+
     const [petId, setPetId] = useState(null);
     const [vacinas, setVacinas] = useState([]);
     const [nome, setNome] = useState('');
@@ -61,19 +70,11 @@ export default function VacinasPet() {
                 if (ativo) setCarregando(true);
 
                 try {
-                    const id = await AsyncStorage.getItem(
-                        '@tutus:petSelecionadoId'
-                    );
+                    const id = await obterPetSelecionadoId(db);
 
-                    const dados = id
-                        ? await AsyncStorage.getItem(`@tutus:vacinas:${id}`)
-                        : null;
-
-                    const lista = dados ? JSON.parse(dados) : [];
-
-                    if (!Array.isArray(lista)) {
-                        throw new Error('Dados inválidos');
-                    }
+                    const lista = id
+                        ? await listarVacinas(db, id)
+                        : [];
 
                     if (ativo) {
                         setPetId(id);
@@ -105,20 +106,17 @@ export default function VacinasPet() {
             return () => {
                 ativo = false;
             };
-        }, [])
+        }, [db])
     );
 
     // salva a lista de vacinas no dispositivo
-    async function salvarLista(novaLista) {
+    async function salvarLista(novaLista, acao) {
         if (!petId || salvando) return false;
 
         setSalvando(true);
 
         try {
-            await AsyncStorage.setItem(
-                `@tutus:vacinas:${petId}`,
-                JSON.stringify(novaLista)
-            );
+            await acao();
 
             setVacinas(novaLista);
             return true;
@@ -160,10 +158,10 @@ export default function VacinasPet() {
             aplicada: false
         };
 
-        const sucesso = await salvarLista([
-            novaVacina,
-            ...vacinas
-        ]);
+        const sucesso = await salvarLista(
+            [novaVacina, ...vacinas],
+            () => inserirVacina(db, petId, novaVacina)
+        );
 
         if (sucesso) {
             setNome('');
@@ -180,7 +178,10 @@ export default function VacinasPet() {
                 : item
         );
 
-        await salvarLista(lista);
+        await salvarLista(
+            lista,
+            () => alterarStatusVacina(db, vacina.id, !vacina.aplicada)
+        );
     }
 
     // exclui uma vacina
@@ -198,7 +199,10 @@ export default function VacinasPet() {
                             item => item.id !== id
                         );
 
-                        await salvarLista(lista);
+                        await salvarLista(
+                            lista,
+                            () => removerVacina(db, id)
+                        );
                     }
                 }
             ]

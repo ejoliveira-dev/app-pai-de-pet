@@ -1,8 +1,15 @@
-
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import {
+  obterPetSelecionadoId,
+  listarCuidados,
+  inserirCuidado,
+  atualizarCuidado,
+  alterarStatusCuidado,
+  removerCuidado
+} from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 // coloca as barras automaticamente na data
@@ -37,6 +44,7 @@ function dataValida(texto) {
 }
 
 export default function CuidadosPet({ tipo }) {
+  const db = useSQLiteContext();
   const consulta = tipo === 'consulta';
 
   const [petId, setPetId] = useState(null);
@@ -47,8 +55,6 @@ export default function CuidadosPet({ tipo }) {
   const [editando, setEditando] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-
-  const chave = (id) => `@tutus:cuidados:${tipo}:${id}`;
 
   function limparFormulario() {
     setNome('');
@@ -66,19 +72,11 @@ export default function CuidadosPet({ tipo }) {
         if (ativo) setCarregando(true);
 
         try {
-          const id = await AsyncStorage.getItem(
-            '@tutus:petSelecionadoId'
-          );
+          const id = await obterPetSelecionadoId(db);
 
-          const texto = id
-            ? await AsyncStorage.getItem(chave(id))
-            : null;
-
-          const lista = texto ? JSON.parse(texto) : [];
-
-          if (!Array.isArray(lista)) {
-            throw new Error('Dados inválidos');
-          }
+          const lista = id
+            ? await listarCuidados(db, id, tipo)
+            : [];
 
           if (ativo) {
             setPetId(id);
@@ -103,20 +101,17 @@ export default function CuidadosPet({ tipo }) {
       return () => {
         ativo = false;
       };
-    }, [tipo])
+    }, [db, tipo])
   );
 
-  // salva alterações no AsyncStorage
-  async function gravar(lista) {
+  // executa a alteração no banco e atualiza a lista na tela
+  async function gravar(lista, acao) {
     if (!petId || salvando) return false;
 
     setSalvando(true);
 
     try {
-      await AsyncStorage.setItem(
-        chave(petId),
-        JSON.stringify(lista)
-      );
+      await acao();
 
       setRegistros(lista);
       return true;
@@ -163,7 +158,12 @@ export default function CuidadosPet({ tipo }) {
         )
       : [registro, ...registros];
 
-    const sucesso = await gravar(lista);
+    const sucesso = await gravar(
+      lista,
+      () => editando
+        ? atualizarCuidado(db, registro)
+        : inserirCuidado(db, petId, tipo, registro)
+    );
 
     if (sucesso) {
       limparFormulario();
@@ -181,13 +181,20 @@ export default function CuidadosPet({ tipo }) {
 
   // marca o cuidado como concluído ou pendente
   async function alterarStatus(id) {
+    const atual = registros.find(item => item.id === id);
+
+    if (!atual) return;
+
     const lista = registros.map(item =>
       item.id === id
         ? { ...item, concluido: !item.concluido }
         : item
     );
 
-    await gravar(lista);
+    await gravar(
+      lista,
+      () => alterarStatusCuidado(db, id, !atual.concluido)
+    );
   }
 
   // exclui um cuidado após confirmação
@@ -205,7 +212,10 @@ export default function CuidadosPet({ tipo }) {
               item => item.id !== id
             );
 
-            const sucesso = await gravar(lista);
+            const sucesso = await gravar(
+              lista,
+              () => removerCuidado(db, id)
+            );
 
             if (sucesso && editando === id) {
               limparFormulario();

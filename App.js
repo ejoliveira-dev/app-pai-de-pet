@@ -2,6 +2,8 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { SQLiteProvider } from 'expo-sqlite';
+
 import Splash from './src/screens/Splash';
 import Welcome from './src/screens/Welcome';
 import Login from './src/screens/Login';
@@ -11,64 +13,72 @@ import CadastroPets from "./src/screens/CadastroPets";
 import CriarConta from "./src/screens/CriarConta";
 import EsqueceuSenha from "./src/screens/EsqueceuSenha";
 
+import { inicializarBanco } from './src/database/Database';
+
 const Stack = createNativeStackNavigator(); /* cria o navegador responsável pela sequencia das telas. */
 
 export default function App() {
   return (
 
-    <NavigationContainer>
-      {/* controla a navegação do app.*/}
+    <SQLiteProvider
+      databaseName="tutus.db"
+      onInit={inicializarBanco}
+    >
 
-      <Stack.Navigator
-        initialRouteName="Splash"
-        screenOptions={{ headerShown: false }}
-      >
-        {/* quando o app abrir, comece pela tela splash, basicamente.*/}
+      <NavigationContainer>
+        {/* controla a navegação do app.*/}
 
-        <Stack.Screen
-          name="Splash"
-          component={Splash}
-        />
+        <Stack.Navigator
+          initialRouteName="Splash"
+          screenOptions={{ headerShown: false }}
+        >
+          {/* quando o app abrir, comece pela tela splash, basicamente.*/}
 
-        {/* registra a segunda tela no sistema do  aplicativo. */}
-        <Stack.Screen
-          name="Welcome"
-          component={Welcome}
-        />
+          <Stack.Screen
+            name="Splash"
+            component={Splash}
+          />
 
-        <Stack.Screen
-          name="Login"
-          component={Login}
-        />
+          {/* registra a segunda tela no sistema do  aplicativo. */}
+          <Stack.Screen
+            name="Welcome"
+            component={Welcome}
+          />
 
-        <Stack.Screen
-          name="ListaPets"
-          component={ListaPets}
-        />
+          <Stack.Screen
+            name="Login"
+            component={Login}
+          />
 
-        <Stack.Screen
-          name="MainTabs"
-          component={MainTabs}
-        />
+          <Stack.Screen
+            name="ListaPets"
+            component={ListaPets}
+          />
 
-        <Stack.Screen
-          name="CadastroPets"
-          component={CadastroPets}
-        />
+          <Stack.Screen
+            name="MainTabs"
+            component={MainTabs}
+          />
 
-        <Stack.Screen
-          name="CriarConta"
-          component={CriarConta}
-        />
+          <Stack.Screen
+            name="CadastroPets"
+            component={CadastroPets}
+          />
 
-        <Stack.Screen
-          name="EsqueceuSenha"
-          component={EsqueceuSenha}
-        />
+          <Stack.Screen
+            name="CriarConta"
+            component={CriarConta}
+          />
 
-      </Stack.Navigator>
+          <Stack.Screen
+            name="EsqueceuSenha"
+            component={EsqueceuSenha}
+          />
 
-    </NavigationContainer>
+        </Stack.Navigator>
 
+      </NavigationContainer>
+
+    </SQLiteProvider >
   )
 }

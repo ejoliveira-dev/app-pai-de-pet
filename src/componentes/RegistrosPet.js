@@ -1,10 +1,17 @@
 
 import React, { useCallback, useState } from 'react';
 
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import {
+  obterPetSelecionadoId,
+  listarRegistros,
+  inserirRegistro,
+  removerRegistro,
+} from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 // est inicial dos registros do pet
@@ -24,6 +31,7 @@ function SecaoRegistro({
   aoExcluir,
   desabilitado,
 }) {
+
   return (
     <View style={styles.card}>
 
@@ -45,9 +53,8 @@ function SecaoRegistro({
           placeholder={unidade === 'g' ? 'Ex.: 150' : 'Ex.: 4,5'}
           placeholderTextColor="#8C8177"
           keyboardType="decimal-pad"
-          accessibilityLabel={`${titulo} em ${
-            unidade === 'g' ? 'gramas' : 'quilogramas'
-          }`}
+          accessibilityLabel={`${titulo} em ${unidade === 'g' ? 'gramas' : 'quilogramas'
+            }`}
         />
 
         <TouchableOpacity
@@ -116,6 +123,7 @@ function SecaoRegistro({
 
 // componente principal
 export default function RegistrosPet() {
+  const db = useSQLiteContext();
 
   const [petId, setPetId] = useState(null);
 
@@ -139,23 +147,11 @@ export default function RegistrosPet() {
 
         try {
 
-          const id = await AsyncStorage.getItem(
-            '@tutus:petSelecionadoId'
-          );
+          const id = await obterPetSelecionadoId(db);
 
-          const texto = id
-            ? await AsyncStorage.getItem(`@tutus:registros:${id}`)
-            : null;
-
-          const dados = texto ? JSON.parse(texto) : {};
-
-          if (
-            !dados ||
-            typeof dados !== 'object' ||
-            Array.isArray(dados)
-          ) {
-            throw new Error('Registros salvos inválidos');
-          }
+          const dados = id
+            ? await listarRegistros(db, id)
+            : REGISTROS_VAZIOS;
 
           if (ativo) {
 
@@ -202,7 +198,7 @@ export default function RegistrosPet() {
         ativo = false;
       };
 
-    }, [])
+    }, [db])
   );
 
   // salva um novo registro no AsyncStorage
@@ -242,10 +238,7 @@ export default function RegistrosPet() {
 
     try {
 
-      await AsyncStorage.setItem(
-        `@tutus:registros:${petId}`,
-        JSON.stringify(atualizados)
-      );
+      await inserirRegistro(db, petId, tipo, novo);
 
       setRegistros(atualizados);
 
@@ -304,10 +297,7 @@ export default function RegistrosPet() {
 
             try {
 
-              await AsyncStorage.setItem(
-                `@tutus:registros:${petId}`,
-                JSON.stringify(atualizados)
-              );
+              await removerRegistro(db, idRegistro);
 
               setRegistros(atualizados);
 

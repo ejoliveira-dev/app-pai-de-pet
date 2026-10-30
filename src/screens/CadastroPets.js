@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSQLiteContext } from "expo-sqlite";
+import { inserirPet, atualizarPet } from "../database/Database";
+
 import { View, Image, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Modal, KeyboardAvoidingView, Platform } from "react-native";
- 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
- 
+
 import { style } from "../styles/CadastroPetStyles";
- 
+
 const cores = {
     fundo: "#FFFDF8",
     laranja: "#FA9F2A",
@@ -15,7 +17,7 @@ const cores = {
     marromMedio: "#75571F",
     placeholder: "#9A8A75",
 };
- 
+
 const ESPECIES = [
     "Gato",
     "Cachorro",
@@ -32,7 +34,7 @@ const ESPECIES = [
     "Outro tipo de pássaro",
     "A espécie do meu pet não está aqui :(",
 ];
- 
+
 const IDADES = [
     "Menos de 1 ano",
     "1 ano",
@@ -48,24 +50,28 @@ const IDADES = [
     "Mais de 1 ano (não sei ao certo)",
     "Não sei a idade",
 ];
- 
+
 const OUTRA_ESPECIE = ESPECIES[ESPECIES.length - 1];
- 
-export default function CadastroPet({ navigation }) {
+
+export default function CadastroPet({ navigation, route }) {
+    const db = useSQLiteContext();
+    const petParaEditar = route.params?.petParaEditar;
+    const modoEdicao = !!petParaEditar;
+
     const [nome, setNome] = useState("");
     const [especie, setEspecie] = useState("");
     const [erroEspecie, setErroEspecie] = useState(false);
     const [outraEspecie, setOutraEspecie] = useState("");
     const [raca, setRaca] = useState("");
     const [foto, setFoto] = useState(null);
- 
+
     // para o tutor informar a data ou uma estimativa
     const [modoIdade, setModoIdade] = useState("aproximada");
     const [dataNascimento, setDataNascimento] = useState("");
- 
+
     function formatarData(texto) {
         const numeros = texto.replace(/\D/g, "").slice(0, 8);
- 
+
         if (numeros.length > 4) {
             return (
                 numeros.slice(0, 2) + "/" +
@@ -73,34 +79,62 @@ export default function CadastroPet({ navigation }) {
                 numeros.slice(4)
             );
         }
- 
+
         if (numeros.length > 2) {
             return numeros.slice(0, 2) + "/" + numeros.slice(2);
         }
- 
+
         return numeros;
     }
- 
+
     const [idadeAproximada, setIdadeAproximada] = useState("Não sei a idade");
- 
+
     const [observacoes, setObservacoes] = useState("");
     const [salvando, setSalvando] = useState(false);
- 
+
     // controla a lista de seleção aberta
     const [modalTipo, setModalTipo] = useState(null);
- 
+
+    useEffect(() => {
+        if (!petParaEditar) return;
+
+        setNome(petParaEditar.nome || "");
+        setRaca(petParaEditar.raca || "");
+        setFoto(petParaEditar.foto_perfil || null);
+        setObservacoes(petParaEditar.observacoes || "");
+
+        const especieCadastrada = petParaEditar.especie || "";
+
+        if (ESPECIES.includes(especieCadastrada)) {
+            setEspecie(especieCadastrada);
+        } else {
+            setEspecie(OUTRA_ESPECIE);
+            setOutraEspecie(especieCadastrada);
+        }
+
+        setModoIdade(
+            petParaEditar.tipo_informacao_idade || "aproximada"
+        );
+
+        setDataNascimento(petParaEditar.data_nascimento || "");
+
+        setIdadeAproximada(
+            petParaEditar.idade_Aproximada || "Não sei a idade"
+        );
+    }, [petParaEditar]);
+
     // verifica se uma data é válida.
     function dataValida(valor) {
         const partes = valor.split("/");
- 
+
         if (partes.length !== 3) {
             return false;
         }
- 
+
         const dia = Number(partes[0]);
         const mes = Number(partes[1]);
         const ano = Number(partes[2]);
- 
+
         if (
             partes[0].length !== 2 ||
             partes[1].length !== 2 ||
@@ -108,13 +142,13 @@ export default function CadastroPet({ navigation }) {
         ) {
             return false;
         }
- 
+
         if (ano < 1900 || mes < 1 || mes > 12 || dia < 1) {
             return false;
         }
- 
+
         const data = new Date(ano, mes - 1, dia);
- 
+
         return (
             data.getFullYear() === ano &&
             data.getMonth() === mes - 1 &&
@@ -122,14 +156,15 @@ export default function CadastroPet({ navigation }) {
             data <= new Date()
         );
     }
- 
+
     // pra verificar os campos e salvar os pets no dispositivo.
+
     async function salvarPet() {
         const especieFinal =
             especie === OUTRA_ESPECIE
                 ? outraEspecie.trim()
                 : especie;
- 
+
         if (!nome.trim()) {
             Alert.alert(
                 "Atenção, humano!",
@@ -137,14 +172,14 @@ export default function CadastroPet({ navigation }) {
             );
             return;
         }
- 
+
         if (!especieFinal) {
             setErroEspecie(true);
             return;
         }
- 
+
         setErroEspecie(false);
- 
+
         if (
             modoIdade === "data" &&
             !dataValida(dataNascimento.trim())
@@ -155,70 +190,68 @@ export default function CadastroPet({ navigation }) {
             );
             return;
         }
- 
+
         if (salvando) return;
- 
+
         setSalvando(true);
- 
+
         try {
-            // pra recuperar os pets já cadastrados no dispositivo do usuário; trecho principal do código.
-            const dadosSalvos = await AsyncStorage.getItem("@tutus:pets");
- 
-            const pets = dadosSalvos
-                ? JSON.parse(dadosSalvos)
-                : [];
- 
- 
-            // cria um identificador para o novo pet.
-            const idPet = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
- 
-            // guarda o endereço permanente da foto.
-            let fotoSalva = null;
- 
-            if (foto) {
-                const extensaoOriginal = foto.split("?")[0].split(".").pop()?.toLowerCase();
- 
-                const extensao = ["jpg", "jpeg", "png", "heic", "webp"].includes(extensaoOriginal)
+            // Cria um identificador único para o pet.
+            const idPet = modoEdicao
+                ? petParaEditar.id_pet
+                : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+            // guarda a foto em um local permanente no dispositivo.
+            let fotoSalva = foto; // mantém a foto atual se não foi trocada
+
+            if (foto && foto !== petParaEditar?.foto_perfil) {
+                const extensaoOriginal = foto
+                    .split("?")[0]
+                    .split(".")
+                    .pop()
+                    ?.toLowerCase();
+
+                const extensao = ["jpg", "jpeg", "png", "heic", "webp"]
+                    .includes(extensaoOriginal)
                     ? extensaoOriginal
                     : "jpg";
- 
+
                 const origem = new File(foto);
+
                 const destino = new File(
                     Paths.document,
                     `pet-${idPet}.${extensao}`
                 );
- 
+
                 await origem.copy(destino);
                 fotoSalva = destino.uri;
             }
- 
-            // criar um novo pet com identificador único.
+
+            // organiza os dados do novo pet.
             const novoPet = {
                 id_pet: idPet,
                 id_usuario: "usuario_demo",
                 nome: nome.trim(),
                 especie: especieFinal,
                 raca: raca.trim(),
- 
-                data_nascimento: modoIdade === "data" ? dataNascimento.trim() : null,
- 
-                idade_Aproximada: modoIdade === "aproximada" ? idadeAproximada : null,
- 
+                data_nascimento: modoIdade === "data"
+                    ? dataNascimento.trim()
+                    : null,
+                idade_Aproximada: modoIdade === "aproximada"
+                    ? idadeAproximada
+                    : null,
                 tipo_informacao_idade: modoIdade,
- 
                 foto_perfil: fotoSalva,
                 observacoes: observacoes.trim(),
             };
- 
-            // adicionar o novo pet à lista existente; lista atualizada.
-            const listaAtualizada = [...pets, novoPet];
- 
-            // armazenar a lista no dispositivo.
-            await AsyncStorage.setItem(
-                "@tutus:pets",
-                JSON.stringify(listaAtualizada)
-            );
- 
+
+            // salva o pet diretamente no SQLite.
+            if (modoEdicao) {
+                await atualizarPet(db, novoPet);
+            } else {
+                await inserirPet(db, novoPet);
+            }
+
             Alert.alert(
                 "Cadastro realizado!",
                 `${novoPet.nome} foi cadastrado com sucesso.`,
@@ -229,7 +262,10 @@ export default function CadastroPet({ navigation }) {
                     },
                 ]
             );
+
         } catch (erro) {
+            console.error("Erro ao salvar pet:", erro);
+
             Alert.alert(
                 "Erro ao salvar",
                 "Não foi possível cadastrar o pet. Tente novamente."
@@ -238,7 +274,8 @@ export default function CadastroPet({ navigation }) {
             setSalvando(false);
         }
     }
- 
+
+
     async function escolherFoto() {
         try {
             const resultado = await ImagePicker.launchImageLibraryAsync({
@@ -247,11 +284,11 @@ export default function CadastroPet({ navigation }) {
                 aspect: [1, 1],
                 quality: 0.7,
             });
- 
+
             if (!resultado.canceled && resultado.assets?.length > 0) {
                 setFoto(resultado.assets[0].uri);
             }
- 
+
         } catch (erro) {
             Alert.alert(
                 "Erro",
@@ -259,14 +296,14 @@ export default function CadastroPet({ navigation }) {
             );
         }
     }
- 
+
     const opcoesModal =
         modalTipo === "especie" ? ESPECIES : IDADES;
- 
+
     // opção atualmente escolhida na janela aberta
     const opcaoAtual =
         modalTipo === "especie" ? especie : idadeAproximada;
- 
+
     function selecionarOpcao(opcao) {
         if (modalTipo === "especie") {
             setEspecie(opcao);
@@ -274,22 +311,22 @@ export default function CadastroPet({ navigation }) {
         } else {
             setIdadeAproximada(opcao);
         }
- 
+
         setModalTipo(null);
     }
- 
+
     return (
         <View style={style.container}>
- 
+
             {/* topo laranja */}
             <View style={style.topoLaranja}>
                 <View style={style.topoCirculo} />
- 
+
                 <Text style={style.titulo}>
-                    Cadastrar Pet
+                    {modoEdicao ? "Editar Pet" : "Cadastrar Pet"}
                 </Text>
             </View>
- 
+
             {/* painel branco */}
             <KeyboardAvoidingView
                 style={style.painelBranco}
@@ -300,10 +337,10 @@ export default function CadastroPet({ navigation }) {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
- 
+
                     {/* foto */}
                     <View style={style.fotoContainer}>
- 
+
                         <TouchableOpacity
                             style={style.fotoBotao}
                             onPress={escolherFoto}
@@ -323,7 +360,7 @@ export default function CadastroPet({ navigation }) {
                                     color={cores.laranja}
                                 />
                             )}
- 
+
                             <View style={style.fotoBadge}>
                                 <Ionicons
                                     name="camera"
@@ -332,15 +369,15 @@ export default function CadastroPet({ navigation }) {
                                 />
                             </View>
                         </TouchableOpacity>
- 
+
                     </View>
- 
+
                     {/* seção: sobre o pet */}
                     <View style={style.secao}>
                         <View style={style.barraSecao} />
                         <Text style={style.tituloSecao}>Sobre o pet</Text>
                     </View>
- 
+
                     <Text style={style.label}>Nome do pet *</Text>
                     <TextInput
                         style={style.input}
@@ -349,10 +386,10 @@ export default function CadastroPet({ navigation }) {
                         value={nome}
                         onChangeText={setNome}
                     />
- 
+
                     {/* para selecionar/colocar a espécie */}
                     <Text style={style.label}>Espécie *</Text>
- 
+
                     <TouchableOpacity
                         style={style.seletor}
                         onPress={() => setModalTipo("especie")}
@@ -372,7 +409,7 @@ export default function CadastroPet({ navigation }) {
                             color={cores.laranja}
                         />
                     </TouchableOpacity>
- 
+
                     {especie === OUTRA_ESPECIE && (
                         <TextInput
                             style={[style.input, { marginTop: 10 }]}
@@ -385,13 +422,13 @@ export default function CadastroPet({ navigation }) {
                             }}
                         />
                     )}
- 
+
                     {erroEspecie && (
                         <Text style={style.mensagemErro}>
                             Por favor, selecione ou informe a espécie do seu pet.
                         </Text>
                     )}
- 
+
                     <Text style={style.label}>Raça</Text>
                     <TextInput
                         style={style.input}
@@ -400,17 +437,17 @@ export default function CadastroPet({ navigation }) {
                         value={raca}
                         onChangeText={setRaca}
                     />
- 
+
                     {/* seção: idade */}
                     <View style={style.secao}>
                         <View style={style.barraSecao} />
                         <Text style={style.tituloSecao}>Idade</Text>
                     </View>
- 
+
                     <Text style={style.label}>
                         Você sabe quando seu pet nasceu?
                     </Text>
- 
+
                     <TouchableOpacity
                         style={[
                             style.opcaoModo,
@@ -429,7 +466,7 @@ export default function CadastroPet({ navigation }) {
                             Sim, sei a data de nascimento!
                         </Text>
                     </TouchableOpacity>
- 
+
                     <TouchableOpacity
                         style={[
                             style.opcaoModo,
@@ -448,14 +485,14 @@ export default function CadastroPet({ navigation }) {
                             Não sei a data exata
                         </Text>
                     </TouchableOpacity>
- 
+
                     {/* data exata */}
                     {modoIdade === "data" && (
                         <>
                             <Text style={style.label}>
                                 Data de nascimento *
                             </Text>
- 
+
                             <TextInput
                                 style={style.input}
                                 placeholder="DD/MM/AAAA"
@@ -467,14 +504,14 @@ export default function CadastroPet({ navigation }) {
                             />
                         </>
                     )}
- 
+
                     {/* Idade aproximada */}
                     {modoIdade === "aproximada" && (
                         <>
                             <Text style={style.label}>
                                 Idade aproximada
                             </Text>
- 
+
                             <TouchableOpacity
                                 style={style.seletor}
                                 onPress={() => setModalTipo("idade")}
@@ -491,18 +528,18 @@ export default function CadastroPet({ navigation }) {
                             </TouchableOpacity>
                         </>
                     )}
- 
+
                     <Text style={style.textoAjuda}>
                         Não tem problema se você não souber a idade
                         exata do seu companheiro!
                     </Text>
- 
+
                     {/* seção: mais detalhes */}
                     <View style={style.secao}>
                         <View style={style.barraSecao} />
                         <Text style={style.tituloSecao}>Mais detalhes</Text>
                     </View>
- 
+
                     <Text style={style.label}>Observações</Text>
                     <TextInput
                         style={[style.input, style.inputGrande]}
@@ -513,7 +550,7 @@ export default function CadastroPet({ navigation }) {
                         multiline
                         textAlignVertical="top"
                     />
- 
+
                     <TouchableOpacity
                         style={style.botaoSalvar}
                         onPress={salvarPet}
@@ -521,11 +558,15 @@ export default function CadastroPet({ navigation }) {
                         activeOpacity={0.85}
                     >
                         <Text style={style.textoBotao}>
-                            {salvando ? "Salvando..." : "Salvar Pet"}
+                            {salvando
+                                ? "Salvando..."
+                                : modoEdicao
+                                    ? "Salvar alterações"
+                                    : "Salvar Pet"}
                         </Text>
                     </TouchableOpacity>
                 </ScrollView>
- 
+
                 {/* rodapé */}
                 <View style={style.rodape}>
                     <Pressable
@@ -542,7 +583,7 @@ export default function CadastroPet({ navigation }) {
                     </Pressable>
                 </View>
             </KeyboardAvoidingView>
- 
+
             {/* JANELA DE SELEÇÃO */}
             <Modal
                 visible={modalTipo !== null}
@@ -553,17 +594,17 @@ export default function CadastroPet({ navigation }) {
                 <View style={style.fundoModal}>
                     <View style={style.caixaModal}>
                         <View style={style.puxadorModal} />
- 
+
                         <Text style={style.tituloModal}>
                             {modalTipo === "especie"
                                 ? "Escolha a espécie"
                                 : "Escolha a idade aproximada"}
                         </Text>
- 
+
                         <ScrollView showsVerticalScrollIndicator={false}>
                             {opcoesModal.map((opcao) => {
                                 const escolhida = opcao === opcaoAtual;
- 
+
                                 return (
                                     <TouchableOpacity
                                         key={opcao}
@@ -577,7 +618,7 @@ export default function CadastroPet({ navigation }) {
                                         <Text style={style.textoItemModal}>
                                             {opcao}
                                         </Text>
- 
+
                                         {escolhida && (
                                             <Ionicons
                                                 name="checkmark-circle"
@@ -589,7 +630,7 @@ export default function CadastroPet({ navigation }) {
                                 );
                             })}
                         </ScrollView>
- 
+
                         <TouchableOpacity
                             style={style.fecharModal}
                             onPress={() => setModalTipo(null)}

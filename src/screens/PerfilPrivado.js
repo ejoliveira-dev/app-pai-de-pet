@@ -5,10 +5,12 @@ import RegistrosPet from '../componentes/RegistrosPet';
 import VacinasPet from '../componentes/VacinasPet';
 import CuidadosPet from '../componentes/CuidadosPet';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
+import { buscarPet, obterPetSelecionadoId } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function PerfilPrivado({ navigation }) {
+    const db = useSQLiteContext();
 
     const [pet, setPet] = useState(null);
     const [carregando, setCarregando] = useState(true);
@@ -21,27 +23,11 @@ export default function PerfilPrivado({ navigation }) {
                 if (ativo) setCarregando(true);
 
                 try {
-                    const idSelecionado = await AsyncStorage.getItem(
-                        "@tutus:petSelecionadoId"
-                    );
+                    const idSelecionado = await obterPetSelecionadoId(db);
 
-                    const dadosSalvos = await AsyncStorage.getItem(
-                        "@tutus:pets"
-                    );
-
-                    const lista = dadosSalvos
-                        ? JSON.parse(dadosSalvos)
-                        : [];
-
-                    if (!Array.isArray(lista)) {
-                        throw new Error("Lista de pets inválida");
-                    }
-
-                    const petEncontrado = lista.find(
-                        (item) =>
-                            idSelecionado !== null &&
-                            String(item.id_pet) === idSelecionado
-                    );
+                    const petEncontrado = idSelecionado
+                        ? await buscarPet(db, idSelecionado)
+                        : null;
 
                     if (ativo) {
                         setPet(petEncontrado || null);
@@ -68,7 +54,7 @@ export default function PerfilPrivado({ navigation }) {
                 ativo = false;
             };
 
-        }, [])
+        }, [db])
     );
 
     return (
@@ -148,9 +134,9 @@ export default function PerfilPrivado({ navigation }) {
                 </>
             )}
 
-           <RegistrosPet />
+            <RegistrosPet />
 
-           <VacinasPet />
+            <VacinasPet />
 
             <CuidadosPet tipo="consulta" />
 

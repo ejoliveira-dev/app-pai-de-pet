@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, Pressable, ScrollView, FlatList, Alert } from "react-native";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSQLiteContext } from "expo-sqlite";
+import { listarPets } from "../database/Database";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ const cores = {
 };
 
 export default function ListaPets({ navigation }) {
+    const db = useSQLiteContext();
 
     const [pets, setPets] = useState([]);
     const [petSelecionado, setPetSelecionado] = useState(null);
@@ -23,7 +25,7 @@ export default function ListaPets({ navigation }) {
     const [carregando, setCarregando] = useState(true);
     // controla o carregamento dos dados
 
-    // busca os pets salvos
+    // busca os pets salvos no SQLite sempre que a tela recebe foco.
     useFocusEffect(
         useCallback(() => {
             let ativo = true;
@@ -32,9 +34,7 @@ export default function ListaPets({ navigation }) {
                 setCarregando(true);
 
                 try {
-                    const dadosSalvos = await AsyncStorage.getItem("@tutus:pets");
-
-                    const lista = dadosSalvos ? JSON.parse(dadosSalvos) : [];
+                    const lista = await listarPets(db);
 
                     if (ativo) {
                         const listaValida = Array.isArray(lista) ? lista : [];
@@ -46,7 +46,7 @@ export default function ListaPets({ navigation }) {
                                 return null;
                             }
 
-                            // mantém a seleção atual, se o pet ainda existir.
+                            // Mantém a seleção atual, se o pet ainda existir.
                             const petAtual = listaValida.find(
                                 (pet) => pet.id_pet === atual?.id_pet
                             );
@@ -55,6 +55,8 @@ export default function ListaPets({ navigation }) {
                         });
                     }
                 } catch (erro) {
+                    console.error("Erro ao carregar pets:", erro);
+
                     if (ativo) {
                         Alert.alert(
                             "Ops!",
@@ -73,9 +75,9 @@ export default function ListaPets({ navigation }) {
             return () => {
                 ativo = false;
             };
-
-        }, [])
+        }, [db])
     );
+
 
     // abre a área principal com o pet escolhido.
     function abrirPet(pet) {
