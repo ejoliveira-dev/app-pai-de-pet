@@ -4,13 +4,20 @@ import { Text, View, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 
 import { Ionicons } from "@expo/vector-icons";
 
+import { useSQLiteContext } from "expo-sqlite";
+import { cadastrarUsuario } from "../database/Database";
+
 export default function CriarConta({ navigation }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
-  function criarConta() {
+  const db = useSQLiteContext();
+
+  async function criarConta() {
     if (!nome.trim()) {
       Alert.alert("Atenção!", "Informe seu nome.");
       return;
@@ -39,10 +46,32 @@ export default function CriarConta({ navigation }) {
       return;
     }
 
-    Alert.alert(
-      "Formulário validado!",
-      "Os dados estão corretos. O cadastro de contas ainda é demonstrativo e não salva usuários."
-    );
+      try {
+      await cadastrarUsuario(db, {
+        nome,
+        email,
+        senha
+      });
+
+      Alert.alert(
+        "Conta criada!",
+        "Seu cadastro foi realizado com sucesso!",
+        [
+          {
+            text: "Entrar",
+            onPress: () => navigation.navigate("Login")
+          }
+        ]
+      );
+
+    } catch (erro) {
+      console.error("Erro ao cadastrar usuário:", erro);
+
+      Alert.alert(
+        "Erro no cadastro",
+        "Não foi possível criar sua conta. Esse e-mail pode já estar cadastrado."
+      );
+    }
   }
 
   return (
@@ -89,26 +118,43 @@ export default function CriarConta({ navigation }) {
           keyboardType="email-address"
           autoCorrect={false}
         />
-
-        <Text style={styles.label}>Senha *</Text>
+      <Text style={styles.label}>Senha *</Text>
+      <View style={styles.campoSenha}>
         <TextInput
-          style={styles.input}
+          style={styles.inputSenha}
           placeholder="Crie uma senha"
           value={senha}
           onChangeText={setSenha}
-          secureTextEntry
+          secureTextEntry={!mostrarSenha}
         />
 
-        <Text style={styles.label}>
-          Confirmar senha *
-        </Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Digite sua senha novamente"
-          value={confirmarSenha}
-          onChangeText={setConfirmarSenha}
-          secureTextEntry
+      <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+        <Ionicons
+            name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+            size={23}
+            color="#75571F"
+          />
+        </TouchableOpacity>
+      </View>
+    
+      <Text style={styles.label}>Confirmar Senha *</Text>
+      <View style={styles.campoSenha}>
+          <TextInput
+            style={styles.inputSenha}
+            placeholder="Digite sua senha novamente"
+            value={confirmarSenha}
+            onChangeText={setConfirmarSenha}
+            secureTextEntry={!mostrarConfirmarSenha}
+          />
+
+  <TouchableOpacity onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}>
+        <Ionicons
+          name={mostrarConfirmarSenha ? "eye-off-outline" : "eye-outline"}
+          size={23}
+          color="#75571F"
         />
+      </TouchableOpacity>
+       </View>
 
         <TouchableOpacity
           style={styles.botao}
@@ -204,4 +250,22 @@ const styles = StyleSheet.create({
     color: "#75571F",
     textDecorationLine: "underline",
   },
+
+  campoSenha: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "#FFFFFF",
+  borderWidth: 1,
+  borderColor: "#FFEAC8",
+  borderRadius: 15,
+  paddingHorizontal: 15,
+  marginBottom: 20,
+},
+
+inputSenha: {
+  flex: 1,
+  paddingVertical: 15,
+  fontSize: 16,
+  color: "#332716",
+},
 });

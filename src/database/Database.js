@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
 
 // ---------------------------------------------------------------
 // banco de dados do Tutus (SQLite)
@@ -8,6 +9,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const ESQUEMA = `
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id_usuario TEXT PRIMARY KEY NOT NULL,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    senha_hash TEXT NOT NULL,
+    salt TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS pets (
     id_pet                TEXT PRIMARY KEY NOT NULL,
@@ -692,4 +701,63 @@ async function migrarCuidadosDoAsyncStorage(db) {
     } catch (erro) {
         console.error("Erro ao migrar cuidados do AsyncStorage:", erro);
     }
+}
+
+async function gerarSalt() {
+    const bytes = await Crypto.getRandomBytesAsync(16);
+
+    return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+async function gerarHash(senha, salt) {
+    return await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        senha + salt
+    );
+}
+
+export async function cadastrarUsuario(db, { nome, email, senha }) {
+    const salt = await gerarSalt();
+    const senhaHash = await gerarHash(senha, salt);
+    const id = Crypto.randomUUID();
+    const emailNormalizado = email.trim().toLowerCase();
+
+    await db.runAsync(
+        `INSERT INTO usuarios (id_usuario, nome, email, senha_hash, salt)
+         VALUES (?, ?, ?, ?, ?)`,
+        id,
+        nome.trim(),
+        emailNormalizado,
+        senhaHash,
+        salt
+    );
+
+    return { id_usuario: id, nome: nome.trim(), email: emailNormalizado };
+}
+
+export async function validarLogin(db, email, senha) {
+    const emailNormalizado = email.trim().toLowerCase();
+
+    const usuario = await db.getFirstAsync(
+        "SELECT * FROM usuarios WHERE email = ?",
+        emailNormalizado
+    );
+
+    if (!usuario) {
+        return null;
+    }
+
+    const senhaHash = await gerarHash(senha, usuario.salt);
+
+    if (senhaHash !== usuario.senha_hash) {
+        return null;
+    }
+
+    return {
+        id_usuario: usuario.id_usuario,
+        nome: usuario.nome,
+        email: usuario.email
+    };
 }

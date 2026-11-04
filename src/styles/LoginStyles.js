@@ -183,4 +183,26 @@ export const style = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-})
+       
+     campoSenha: {
+        width: '90%',
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#FA9F2A",
+        borderRadius: 15,
+        paddingLeft: 12,
+        paddingRight: 12,
+        backgroundColor: "white",
+        marginBottom: 25,
+    },  
+
+     inputSenha: {
+        flex: 1,
+        minWidth: 0,
+        paddingVertical: 15,
+        fontSize: 16,
+        color: "#332716",
+    },
+
+});

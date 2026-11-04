@@ -9,13 +9,17 @@ import { FontAwesome } from '@expo/vector-icons';
 
 import logo from "../../assets/images/logo-ofc-png-empty2.png";
 
+import { useSQLiteContext } from "expo-sqlite";
+import { validarLogin } from "../database/Database";
 
 export default function Login({ navigation }) {
 
+    const db = useSQLiteContext();
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
+    const [mostrarSenha, setMostrarSenha] = useState(false);
 
-    function entrar() {
+    async function entrar() {
         // pra verificar se o e-mail foi preenchido.
         if (!email.trim()) {
             Alert.alert("Atenção!", "Informe seu e-mail.");
@@ -45,7 +49,29 @@ export default function Login({ navigation }) {
             return;
         }
 
-        navigation.navigate("ListaPets");
+       try {
+    const usuario = await validarLogin(db, email, senha);
+
+    if (!usuario) {
+        Alert.alert(
+            "Login inválido",
+            "E-mail ou senha incorretos."
+        );
+        return;
+    }
+
+    Alert.alert("Bem-vindo!", `Olá, ${usuario.nome}!`);
+
+    navigation.navigate("ListaPets");
+
+} catch (erro) {
+    console.error("Erro ao entrar:", erro);
+
+    Alert.alert(
+        "Erro",
+        "Não foi possível realizar o login."
+    );
+}
     }
 
     return (
@@ -81,13 +107,24 @@ export default function Login({ navigation }) {
                     autoCorrect={false}
                 />
 
+                <View style={style.campoSenha}>
+
                 <TextInput
                     placeholder="Senha"
-                    style={style.input}
+                    style={style.inputSenha}
                     value={senha}
                     onChangeText={setSenha}
-                    secureTextEntry={true}
+                    secureTextEntry={!mostrarSenha}
                 />
+
+                <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+                    <Ionicons
+                        name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+                        size={23}
+                        color="#75571F"
+                    />
+                </TouchableOpacity>
+                 </View>
 
                 <TouchableOpacity
                     onPress={() => navigation.navigate("EsqueceuSenha")}
