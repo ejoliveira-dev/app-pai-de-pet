@@ -316,6 +316,10 @@ export default function CadastroPet({ navigation, route }) {
     }
 
     return (
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
         <View style={style.container}>
 
             {/* topo laranja */}
@@ -328,10 +332,9 @@ export default function CadastroPet({ navigation, route }) {
             </View>
 
             {/* painel branco */}
-            <KeyboardAvoidingView
-                style={style.painelBranco}
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-            >
+
+            <View style={style.painelBranco}>
+
                 <ScrollView
                     contentContainerStyle={style.conteudo}
                     keyboardShouldPersistTaps="handled"
@@ -582,7 +585,7 @@ export default function CadastroPet({ navigation, route }) {
                         />
                     </Pressable>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
 
             {/* JANELA DE SELEÇÃO */}
             <Modal
@@ -641,7 +644,8 @@ export default function CadastroPet({ navigation, route }) {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
+             </Modal>
         </View>
-    );
+    </KeyboardAvoidingView>
+);
 }

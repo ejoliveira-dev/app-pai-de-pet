@@ -1,12 +1,16 @@
 import React, { useState } from "react";
-import { Text, View, TextInput, TouchableOpacity,  StyleSheet, Alert,KeyboardAvoidingView, Platform } from 'react-native';
+
+import { Text, View, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
 import { Ionicons } from "@expo/vector-icons";
 
+const API_URL = "http://192.168.1.10:3000";
+
 export default function EsqueciSenha({ navigation }) {
   const [email, setEmail] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
-  function recuperarSenha() {
+  async function recuperarSenha() {
     const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailValido.test(email.trim())) {
@@ -17,65 +21,105 @@ export default function EsqueciSenha({ navigation }) {
       return;
     }
 
-    Alert.alert(
-      "Demonstração",
-      "O e-mail foi validado, mas a recuperação de senha ainda não está conectada a um serviço. Nenhum e-mail foi enviado."
-    );
+    try {
+      setCarregando(true);
+
+      const resposta = await fetch(
+        `${API_URL}/solicitar-codigo`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: email.trim().toLowerCase()
+          })
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        Alert.alert("Atenção", dados.mensagem);
+        return;
+      }
+
+      Alert.alert(
+        "Código enviado!",
+        "Confira sua caixa de entrada para continuar."
+      );
+
+      navigation.navigate("VerificarCodigo", {
+        email: email.trim().toLowerCase()
+      });
+
+    } catch (erro) {
+      Alert.alert(
+        "Erro de conexão",
+        "Não foi possível conectar ao servidor."
+      );
+    } finally {
+      setCarregando(false);
+    }
   }
+
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.voltar}
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Ionicons
-          name="arrow-back"
-          size={26}
-          color="#332716"
-        />
-      </TouchableOpacity>
-
-      <View style={styles.conteudo}>
-        <Ionicons
-          name="lock-closed-outline"
-          size={75}
-          color="#FA9F2A"
-        />
-
-        <Text style={styles.titulo}>
-          Esqueceu sua senha?
-        </Text>
-
-        <Text style={styles.subtitulo}>
-          Informe seu e-mail para solicitar
-          a recuperação da sua conta.
-        </Text>
-
-        <Text style={styles.label}>E-mail *</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Digite seu e-mail"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoCorrect={false}
-        />
-
         <TouchableOpacity
-          style={styles.botao}
-          onPress={recuperarSenha}
+          onPress={() => navigation.goBack()}
+          style={styles.voltar}
         >
-          <Text style={styles.textoBotao}>
-            Recuperar Senha
-          </Text>
+          <Ionicons name="arrow-back" size={26} color="#332716" />
         </TouchableOpacity>
-      </View>
+
+        <View style={styles.conteudo}>
+          <Ionicons
+            name="lock-closed-outline"
+            size={75}
+            color="#FA9F2A"
+          />
+
+          <Text style={styles.titulo}>
+            Esqueceu sua senha?
+          </Text>
+
+          <Text style={styles.subtitulo}>
+            Informe seu e-mail para solicitar
+            a recuperação da sua conta.
+          </Text>
+
+          <Text style={styles.label}>E-mail *</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Digite seu e-mail"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoCorrect={false}
+          />
+
+          <TouchableOpacity
+            style={styles.botao}
+            onPress={recuperarSenha}
+            disabled={carregando}
+          >
+            <Text style={styles.textoBotao}>
+              {carregando ? "Enviando..." : "Recuperar Senha"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

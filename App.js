@@ -12,6 +12,8 @@ import MainTabs from "./src/navigation/MainTabs";
 import CadastroPets from "./src/screens/CadastroPets";
 import CriarConta from "./src/screens/CriarConta";
 import EsqueceuSenha from "./src/screens/EsqueceuSenha";
+import VerificarCodigo from "./src/screens/VerificarCodigo";
+import NovaSenha from "./src/screens/NovaSenha";
 
 import { inicializarBanco } from './src/database/Database';
 
@@ -73,6 +75,16 @@ export default function App() {
           <Stack.Screen
             name="EsqueceuSenha"
             component={EsqueceuSenha}
+          />
+
+          <Stack.Screen
+            name="VerificarCodigo"
+            component={VerificarCodigo}
+          />
+
+          <Stack.Screen
+            name="NovaSenha"
+            component={NovaSenha}
           />
 
         </Stack.Navigator>

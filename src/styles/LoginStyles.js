@@ -136,6 +136,7 @@ export const style = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 0,
+        top: 15,
     },
 
     socialContainer: {

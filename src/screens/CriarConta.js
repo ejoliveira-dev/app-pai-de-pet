@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Text, View, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import {Text, View, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 
 import { Ionicons } from "@expo/vector-icons";
 
@@ -74,8 +74,13 @@ export default function CriarConta({ navigation }) {
     }
   }
 
-  return (
-    <View style={styles.container}>
+      return (
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+        <View style={styles.container}>
+
       <ScrollView
         contentContainerStyle={styles.conteudo}
         keyboardShouldPersistTaps="handled"
@@ -175,8 +180,9 @@ export default function CriarConta({ navigation }) {
         </TouchableOpacity>
       </ScrollView>
     </View>
-  );
-}
+  </KeyboardAvoidingView>
+);
+}    
 
 const styles = StyleSheet.create({
   container: {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { Text, View, Image, TextInput, TouchableOpacity, Pressable, Alert } from 'react-native';
+import {Text, View, Image, TextInput, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 
 import { style } from "../../src/styles/LoginStyles";
 
@@ -75,15 +75,25 @@ export default function Login({ navigation }) {
     }
 
     return (
+       
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+>
+        <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+    >
         <View style={style.container}>
 
-            <View style={style.boxTop}>
-                <Image
-                    source={logo}
-                    style={style.logo}
-                    resizeMode="contain"
+        <View style={style.boxTop}>
+            <Image
+            source={logo}
+            style={style.logo}
+            resizeMode="contain"
                 />
-            </View>
+        </View>
 
             <View style={style.boxTitulo}>
 
@@ -212,12 +222,14 @@ export default function Login({ navigation }) {
                 >
                     <Ionicons
                         name="arrow-back"
-                        size={28}
+                        size={26}
                         color="#FFFDF8"
                     />
                 </Pressable>
             </View>
 
-        </View >
+        </View>
+    </ScrollView>
+</KeyboardAvoidingView>
     );
 }

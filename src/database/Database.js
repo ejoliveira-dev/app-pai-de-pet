@@ -761,3 +761,27 @@ export async function validarLogin(db, email, senha) {
         email: usuario.email
     };
 }
+export async function atualizarSenha(db, email, novaSenha) {
+    const emailNormalizado = email.trim().toLowerCase();
+
+    const usuario = await db.getFirstAsync(
+        "SELECT * FROM usuarios WHERE email = ?",
+        [emailNormalizado]
+    );
+
+    if (!usuario) {
+        return false;
+    }
+
+    const novoSalt = await gerarSalt();
+    const novaSenhaHash = await gerarHash(novaSenha, novoSalt);
+
+    await db.runAsync(
+        `UPDATE usuarios
+         SET senha_hash = ?, salt = ?
+         WHERE email = ?`,
+        [novaSenhaHash, novoSalt, emailNormalizado]
+    );
+
+    return true;
+}
