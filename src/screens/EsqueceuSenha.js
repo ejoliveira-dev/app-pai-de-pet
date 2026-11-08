@@ -4,7 +4,7 @@ import { Text, View, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvo
 
 import { Ionicons } from "@expo/vector-icons";
 
-const API_URL = "http://192.168.1.10:3000";
+const API_URL = "https://app-pai-de-pet.onrender.com";
 
 export default function EsqueciSenha({ navigation }) {
   const [email, setEmail] = useState("");
