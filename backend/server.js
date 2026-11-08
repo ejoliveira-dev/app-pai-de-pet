@@ -169,7 +169,7 @@ app.post("/verificar-codigo", (req, res) => {
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, async () => {
   console.log(`Servidor iniciado na porta ${PORT}`);
