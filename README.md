@@ -26,7 +26,7 @@ A proposta também busca minimizar problemas como a desorganização das informa
 - Perfil privado do pet com registro e gerenciamento de alimentação, peso, vacinas, consultas e medicamentos;
 - Cadastro de um ou mais pets;
 - Lista de seleção dos pets;
-- Cadastro, listagem e seleção de pets, com validação de campos e armazenamento local via AsyncStorage;
+- Cadastro, listagem e seleção de pets, com validação de campos e armazenamento  via SQLite (expo-sqlite);
 - Persistência dos dados individuais de cada pet, permitindo recuperá-los após reiniciar o aplicativo;
 - Home com resumo dos cuidados, gráficos de acompanhamento, previsão de refeições e lembretes (Ainda em fase de experimentação).
 
