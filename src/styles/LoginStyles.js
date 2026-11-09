@@ -9,8 +9,7 @@ export const style = StyleSheet.create({
         backgroundColor: '#FFFDF8',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 25,
-        paddingVertical: 30,
+        paddingVertical: 20,
     },
 
     boxTop: {
@@ -87,7 +86,7 @@ export const style = StyleSheet.create({
 
     boxTitulo: {
         marginBottom: 25,
-        width: '100%',
+        width: '90%',
         alignItems: 'center',
         backgroundColor: '#FA9F2A',
         borderRadius: 25,
@@ -136,7 +135,6 @@ export const style = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 0,
-        top: 15,
     },
 
     socialContainer: {

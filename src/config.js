@@ -1,0 +1,1 @@
+export const API_URL = "https://app-pai-de-pet.onrender.com";

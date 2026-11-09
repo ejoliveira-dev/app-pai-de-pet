@@ -7,6 +7,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSQLiteContext } from "expo-sqlite";
 import { atualizarSenha } from "../database/Database";
 
+import BotaoVoltar from "../componentes/BotaoVoltar";
+
 export default function NovaSenha({ navigation, route }) {
   const db = useSQLiteContext();
   const { email } = route.params;
@@ -76,105 +78,96 @@ export default function NovaSenha({ navigation, route }) {
     }
   }
 
-  
-return (
 
-<KeyboardAvoidingView
-  style={styles.container}
-  behavior={Platform.OS === "ios" ? "padding" : "height"}
+  return (
+
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-<ScrollView
-  contentContainerStyle={{ flexGrow: 1 }}
-  keyboardShouldPersistTaps="handled"
-  showsVerticalScrollIndicator={false}
-    >
-<TouchableOpacity
-  onPress={() => navigation.goBack()}
-  style={styles.voltar}
-   >
-<Ionicons
-  name="arrow-back"
-  size={26}
-  color="#332716"
-   />
-</TouchableOpacity>
-
-     <View style={styles.conteudo}>
-       <Ionicons
-         name="lock-closed-outline"
-         size={75}
-         color="#FA9F2A"
-           />
-
-     <Text style={styles.titulo}>
-       Crie uma nova senha
-         </Text>
-
-     <Text style={styles.subtitulo}>
-       Escolha uma nova senha para acessar sua conta com o tutus!
-         </Text>
-
-      <Text style={styles.label}>Nova senha *</Text>
-
-     <View style={styles.campoSenha}>
-
-  <TextInput
-    style={[styles.input, styles.inputSenha]}
-    placeholder="Digite sua nova senha"
-    value={senha}
-    onChangeText={setSenha}
-    secureTextEntry={!mostrarSenha}
-    autoCapitalize="none"
-/>
-
-   <TouchableOpacity
-     style={styles.olho}
-     onPress={() => setMostrarSenha(!mostrarSenha)}
-       >
-   <Ionicons
-     name={mostrarSenha ? "eye-off" : "eye"}
-     size={22}
-     color="#75571F"
-       />
-         </TouchableOpacity>
-</View>
-
-    <Text style={styles.label}>Confirmar senha *</Text>
-
-    <View style={styles.campoSenha}>
-
-        <TextInput
-          style={[styles.input, styles.inputSenha]}
-          placeholder="Digite novamente sua senha"
-          value={confirmarSenha}
-          onChangeText={setConfirmarSenha}
-          secureTextEntry={!mostrarConfirmarSenha}
-          autoCapitalize="none"
-        />
-
-        <TouchableOpacity
-          style={styles.olho}
-          onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
-        >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        
+        <View style={styles.conteudo}>
           <Ionicons
-            name={mostrarConfirmarSenha ? "eye-off" : "eye"}
-            size={22}
-            color="#75571F"
+            name="lock-closed-outline"
+            size={75}
+            color="#FA9F2A"
           />
-        </TouchableOpacity>
-             </View>
 
-       <TouchableOpacity
-          style={styles.botao}
-          onPress={salvarNovaSenha}
-          disabled={carregando}
-        >
-       <Text style={styles.textoBotao}>
-          {carregando ? "Salvando..." : "Salvar nova senha"}
+          <Text style={styles.titulo}>
+            Crie uma nova senha
+          </Text>
+
+          <Text style={styles.subtitulo}>
+            Escolha uma nova senha para acessar sua conta com o tutus!
+          </Text>
+
+          <Text style={styles.label}>Nova senha *</Text>
+
+          <View style={styles.campoSenha}>
+
+            <TextInput
+              style={[styles.input, styles.inputSenha]}
+              placeholder="Digite sua nova senha"
+              value={senha}
+              onChangeText={setSenha}
+              secureTextEntry={!mostrarSenha}
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity
+              style={styles.olho}
+              onPress={() => setMostrarSenha(!mostrarSenha)}
+            >
+              <Ionicons
+                name={mostrarSenha ? "eye-off" : "eye"}
+                size={22}
+                color="#75571F"
+              />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.label}>Confirmar senha *</Text>
+
+          <View style={styles.campoSenha}>
+
+            <TextInput
+              style={[styles.input, styles.inputSenha]}
+              placeholder="Digite novamente sua senha"
+              value={confirmarSenha}
+              onChangeText={setConfirmarSenha}
+              secureTextEntry={!mostrarConfirmarSenha}
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity
+              style={styles.olho}
+              onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+            >
+              <Ionicons
+                name={mostrarConfirmarSenha ? "eye-off" : "eye"}
+                size={22}
+                color="#75571F"
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.botao}
+            onPress={salvarNovaSenha}
+            disabled={carregando}
+          >
+            <Text style={styles.textoBotao}>
+              {carregando ? "Salvando..." : "Salvar nova senha"}
             </Text>
-</TouchableOpacity>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+      <BotaoVoltar />
     </KeyboardAvoidingView>
   );
 }
@@ -193,7 +186,7 @@ const styles = StyleSheet.create({
   conteudo: {
     flex: 1,
     justifyContent: "center",
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
 
   titulo: {
@@ -244,20 +237,20 @@ const styles = StyleSheet.create({
   },
 
   campoSenha: {
-  position: "relative",
-  justifyContent: "center",
-},
+    position: "relative",
+    justifyContent: "center",
+  },
 
-inputSenha: {
-  paddingRight: 50,
-},
+  inputSenha: {
+    paddingRight: 50,
+  },
 
-olho: {
-  position: "absolute",
-  right: 15,
-  top: 0,
-  bottom: 0,
-  justifyContent: "center",
-  opacity: 0.5,
-},
+  olho: {
+    position: "absolute",
+    right: 15,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    opacity: 0.5,
+  },
 });

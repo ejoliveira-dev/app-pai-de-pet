@@ -2,11 +2,17 @@ import React, { useState } from "react";
 
 import { Text, View, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
+import BotaoVoltar from "../componentes/BotaoVoltar";
+
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { Ionicons } from "@expo/vector-icons";
 
-const API_URL = "https://app-pai-de-pet.onrender.com";
+import { API_URL } from "../config";
 
 export default function EsqueciSenha({ navigation }) {
+  const insets = useSafeAreaInsets();
+
   const [email, setEmail] = useState("");
   const [carregando, setCarregando] = useState(false);
 
@@ -55,7 +61,7 @@ export default function EsqueciSenha({ navigation }) {
 
     } catch (erro) {
       Alert.alert(
-        "Erro de conexão",
+        "Servidor indisponível",
         "Não foi possível conectar ao servidor."
       );
     } finally {
@@ -74,12 +80,6 @@ export default function EsqueciSenha({ navigation }) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.voltar}
-        >
-          <Ionicons name="arrow-back" size={26} color="#332716" />
-        </TouchableOpacity>
 
         <View style={styles.conteudo}>
           <Ionicons
@@ -120,6 +120,7 @@ export default function EsqueciSenha({ navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <BotaoVoltar />
     </KeyboardAvoidingView>
   );
 }
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
   conteudo: {
     flex: 1,
     justifyContent: "center",
-    paddingBottom: 70,
+    paddingBottom: 110,
   },
 
   titulo: {

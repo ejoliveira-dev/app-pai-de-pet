@@ -2,12 +2,17 @@ import React, { useState } from "react";
 
 import { Text, View, ScrollView, TextInput,TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform} from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import BotaoVoltar from "../componentes/BotaoVoltar";
+
 import { Ionicons } from "@expo/vector-icons";
 
-const API_URL = "http://192.168.1.10:3000"; 
-//trocar pelo endereço IPv4 do computador que estiver rodando o projeto
+import { API_URL } from "../config";
 
 export default function VerificarCodigo({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+
   const { email } = route.params;
 
   const [codigo, setCodigo] = useState("");
@@ -52,7 +57,7 @@ export default function VerificarCodigo({ navigation, route }) {
 
     } catch (erro) {
       Alert.alert(
-        "Erro de conexão",
+        "Servidor indisponível",
         "Não foi possível verificar o código."
       );
     } finally {
@@ -70,16 +75,6 @@ export default function VerificarCodigo({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.voltar}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={26}
-            color="#332716"
-          />
-        </TouchableOpacity>
 
         <View style={styles.conteudo}>
           <Ionicons
@@ -126,6 +121,7 @@ export default function VerificarCodigo({ navigation, route }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <BotaoVoltar />
     </KeyboardAvoidingView>
   );
 }
@@ -145,7 +141,7 @@ const styles = StyleSheet.create({
   conteudo: {
     flex: 1,
     justifyContent: "center",
-    paddingBottom: 70,
+    paddingBottom: 110,
   },
 
   titulo: {

@@ -2,10 +2,11 @@ import React, { useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, Pressable, ScrollView, FlatList, Alert } from "react-native";
 
 import { useSQLiteContext } from "expo-sqlite";
-import { listarPets } from "../database/Database";
+import { listarPets, definirPetSelecionadoId } from "../database/Database";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { Ionicons } from '@expo/vector-icons';
+
 import { style } from "../../src/styles/ListaPetsStyles";
 
 import logo from "../../assets/images/logo-ofc-png-empty2.png";
@@ -80,12 +81,24 @@ export default function ListaPets({ navigation }) {
 
 
     // abre a área principal com o pet escolhido.
-    function abrirPet(pet) {
-        navigation.navigate("MainTabs", {
-            screen: "Inicio",
-            params: {
-                petSelecionado: pet,
-            },
+    async function abrirPet(pet) {
+        try {
+            await definirPetSelecionadoId(db, pet.id_pet);
+        } catch (erro) {
+            console.error("Erro ao salvar pet selecionado:", erro);
+        }
+
+        navigation.reset({
+            index: 0,
+            routes: [
+                {
+                    name: "MainTabs",
+                    params: {
+                        screen: "Inicio",
+                        params: { petSelecionado: pet },
+                    },
+                },
+            ],
         });
     }
 
@@ -312,21 +325,23 @@ export default function ListaPets({ navigation }) {
                 </ScrollView>
 
                 {/* rodapé */}
-                <View style={style.rodape}>
-                    <Pressable
-                        style={style.botaoVoltar}
-                        onPress={() => navigation.goBack()}
-                        accessibilityRole="button"
-                        accessibilityLabel="Voltar"
-                    >
-                        <Ionicons
-                            name="arrow-back"
-                            size={25}
-                            color={cores.fundo}
-                        />
-                    </Pressable>
-                </View>
-            </View>
+                {navigation.canGoBack() && (
+                    <View style={style.rodape}>
+                        <Pressable
+                            style={style.botaoVoltar}
+                            onPress={() => navigation.goBack()}
+                            accessibilityRole="button"
+                            accessibilityLabel="Voltar"
+                        >
+                            <Ionicons
+                                name="arrow-back"
+                                size={25}
+                                color={cores.fundo}
+                            />
+                        </Pressable>
+                    </View>
+                )}
+             </View>   
         </View >
     )
 };

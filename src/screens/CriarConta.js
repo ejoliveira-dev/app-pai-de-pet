@@ -2,12 +2,18 @@
 import React, { useState } from "react";
 import {Text, View, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { Ionicons } from "@expo/vector-icons";
+
+import BotaoVoltar from "../componentes/BotaoVoltar";
 
 import { useSQLiteContext } from "expo-sqlite";
 import { cadastrarUsuario } from "../database/Database";
 
 export default function CriarConta({ navigation }) {
+  const insets = useSafeAreaInsets();
+
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -82,19 +88,9 @@ export default function CriarConta({ navigation }) {
         <View style={styles.container}>
 
       <ScrollView
-        contentContainerStyle={styles.conteudo}
+        contentContainerStyle={[styles.conteudo, { paddingTop: insets.top + 15 }]}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.voltar}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={26}
-            color="#332716"
-          />
-        </TouchableOpacity>
 
         <Text style={styles.titulo}>
           Crie sua conta!
@@ -180,6 +176,7 @@ export default function CriarConta({ navigation }) {
         </TouchableOpacity>
       </ScrollView>
     </View>
+    <BotaoVoltar />
   </KeyboardAvoidingView>
 );
 }    
@@ -192,7 +189,7 @@ const styles = StyleSheet.create({
 
   conteudo: {
     padding: 25,
-    paddingBottom: 50,
+    paddingBottom: 110,
   },
 
   voltar: {
