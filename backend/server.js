@@ -10,6 +10,15 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.send("Servidor do Tutus funcionando!");
+});
+
 // Testar conexão com o PostgreSQL
 app.get("/teste-banco", async (req, res) => {
   try {
@@ -27,14 +36,6 @@ app.get("/teste-banco", async (req, res) => {
   }
 });
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.send("Servidor do Tutus funcionando!");
-});
 
 async function enviarEmailBrevo({ to, subject, text, html }) {
   const resposta = await fetch("https://api.brevo.com/v3/smtp/email", {
