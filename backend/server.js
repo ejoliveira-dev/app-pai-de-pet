@@ -2,8 +2,30 @@
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
+const { Pool } = require("pg");
 
 require("dotenv").config();
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// Testar conexão com o PostgreSQL
+app.get("/teste-banco", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+
+    res.json({
+      mensagem: "Banco de dados conectado com sucesso!",
+    });
+  } catch (erro) {
+    console.error("Erro na conexão com o banco:", erro.message);
+
+    res.status(500).json({
+      mensagem: "Erro ao conectar ao banco de dados.",
+    });
+  }
+});
 
 const app = express();
 
