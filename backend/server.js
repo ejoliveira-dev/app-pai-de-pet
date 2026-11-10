@@ -36,6 +36,63 @@ app.get("/teste-banco", async (req, res) => {
   }
 });
 
+// Buscar publicações de todos os usuários
+app.get("/publicacoes", async (req, res) => {
+  try {
+    const resultado = await pool.query(`
+      SELECT *
+      FROM publicacoes
+      ORDER BY criado_em DESC, id DESC
+      LIMIT 100
+    `);
+
+    res.json(resultado.rows);
+  } catch (erro) {
+    console.error("Erro ao buscar publicações:", erro.message);
+
+    res.status(500).json({
+      mensagem: "Erro ao carregar o feed."
+    });
+  }
+});
+
+// Criar publicação
+app.post("/publicacoes", async (req, res) => {
+  try {
+    const { id_pet, nome_pet, legenda } = req.body;
+
+    if (
+      typeof id_pet !== "string" ||
+      !id_pet.trim() ||
+      typeof nome_pet !== "string" ||
+      !nome_pet.trim() ||
+      typeof legenda !== "string" ||
+      !legenda.trim() ||
+      legenda.length > 500
+    ) {
+      return res.status(400).json({
+        mensagem: "Dados da publicação inválidos."
+      });
+    }
+
+    const resultado = await pool.query(
+      `INSERT INTO publicacoes
+       (id_pet, nome_pet, legenda)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [id_pet.trim(), nome_pet.trim(), legenda.trim()]
+    );
+
+    res.status(201).json(resultado.rows[0]);
+  } catch (erro) {
+    console.error("Erro ao publicar:", erro.message);
+
+    res.status(500).json({
+      mensagem: "Erro ao salvar publicação."
+    });
+  }
+});
+
 // Criar tabela de publicações do feed
 async function criarTabelaPublicacoes() {
   try {
@@ -45,10 +102,15 @@ async function criarTabelaPublicacoes() {
         id_pet TEXT NOT NULL,
         nome_pet TEXT NOT NULL,
         foto_pet TEXT,
-        foto_uri TEXT NOT NULL,
+        foto_uri TEXT,
         legenda TEXT,
         criado_em TIMESTAMPTZ DEFAULT NOW()
       )
+    `);
+    
+    await pool.query(`
+      ALTER TABLE publicacoes
+      ALTER COLUMN foto_uri DROP NOT NULL
     `);
 
     console.log("Tabela de publicações pronta!");
