@@ -36,6 +36,27 @@ app.get("/teste-banco", async (req, res) => {
   }
 });
 
+// Criar tabela de publicações do feed
+async function criarTabelaPublicacoes() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS publicacoes (
+        id SERIAL PRIMARY KEY,
+        id_pet TEXT NOT NULL,
+        nome_pet TEXT NOT NULL,
+        foto_pet TEXT,
+        foto_uri TEXT NOT NULL,
+        legenda TEXT,
+        criado_em TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    console.log("Tabela de publicações pronta!");
+  } catch (erro) {
+    console.error("Erro ao criar tabela de publicações:", erro.message);
+    throw erro;
+  }
+}
 
 async function enviarEmailBrevo({ to, subject, text, html }) {
   const resposta = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -208,6 +229,17 @@ app.post("/verificar-codigo", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Servidor iniciado na porta ${PORT}`);
-});
+async function iniciarServidor() {
+  try {
+    await criarTabelaPublicacoes();
+
+    app.listen(PORT, () => {
+      console.log(`Servidor iniciado na porta ${PORT}`);
+    });
+  } catch (erro) {
+    console.error("Erro ao iniciar servidor:", erro.message);
+    process.exit(1);
+  }
+}
+
+iniciarServidor();
