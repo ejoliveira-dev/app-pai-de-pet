@@ -1,9 +1,16 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 
 import RegistrosPet from '../componentes/RegistrosPet';
 import VacinasPet from '../componentes/VacinasPet';
 import CuidadosPet from '../componentes/CuidadosPet';
+
+import TelaComTopo from '../componentes/TelaComTopo';
+import Cartao from '../componentes/Cartao';
+import Botao from '../componentes/Botao';
+import Chip from '../componentes/Chip';
+import AvatarPet from '../componentes/AvatarPet';
+import { cores, fontes } from '../styles/tema';
 
 import { useSQLiteContext } from 'expo-sqlite';
 import { buscarPet, obterPetSelecionadoId } from '../database/Database';
@@ -58,48 +65,42 @@ export default function PerfilPrivado({ navigation }) {
     );
 
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.conteudo}
-            showsVerticalScrollIndicator={false}
+        <TelaComTopo
+            titulo="Meu Pet"
+            subtitulo="Saúde e rotina do seu companheiro."
         >
 
-            <Text style={styles.titulo}>
-                Meu Pet
-            </Text>
-
-            <Text style={styles.subtitulo}>
-                Saúde e rotina do seu companheiro.
-            </Text>
-
             {carregando ? (
-                <Text style={styles.detalhe}>
-                    Carregando informações...
-                </Text>
+                <View style={styles.carregando}>
+                    <ActivityIndicator color={cores.laranja} size="large" />
+                    <Text style={styles.detalhe}>
+                        Carregando informações...
+                    </Text>
+                </View>
             ) : (
                 <>
-                    <View style={styles.card}>
+                    <Cartao style={styles.card}>
 
                         {pet ? (
                             <>
-                                {pet.foto_perfil && (
-                                    <Image
-                                        source={{ uri: pet.foto_perfil }}
-                                        style={styles.fotoPet}
+                                <View style={styles.linhaPet}>
+                                    <AvatarPet
+                                        foto={pet.foto_perfil}
+                                        tamanho={84}
+                                        selecionado
                                     />
-                                )}
 
-                                <Text style={styles.textoCard}>
-                                    {pet.nome}
-                                </Text>
+                                    <View style={styles.infoPet}>
+                                        <Text style={styles.textoCard} numberOfLines={1}>
+                                            {pet.nome}
+                                        </Text>
 
-                                <Text style={styles.detalhe}>
-                                    Espécie: {pet.especie}
-                                </Text>
-
-                                <Text style={styles.detalhe}>
-                                    Raça: {pet.raca || "Não informada"}
-                                </Text>
+                                        <View style={styles.chips}>
+                                            <Chip texto={pet.especie} icone="paw" />
+                                            {!!pet.raca && <Chip texto={pet.raca} />}
+                                        </View>
+                                    </View>
+                                </View>
 
                                 <Text style={styles.detalhe}>
                                     {pet.data_nascimento
@@ -119,18 +120,17 @@ export default function PerfilPrivado({ navigation }) {
                             </Text>
                         )}
 
-                    </View>
+                    </Cartao>
 
-                    <TouchableOpacity
+                    <Botao
+                        titulo={pet ? "Trocar pet" : "Selecionar pet"}
+                        icone="swap-horizontal"
+                        larga
                         style={styles.botaoSelecionar}
                         onPress={() =>
                             navigation.getParent()?.navigate("ListaPets")
                         }
-                    >
-                        <Text style={styles.textoBotao}>
-                            {pet ? "Trocar Pet" : "Selecionar Pet"}
-                        </Text>
-                    </TouchableOpacity>
+                    />
                 </>
             )}
 
@@ -142,75 +142,53 @@ export default function PerfilPrivado({ navigation }) {
 
             <CuidadosPet tipo="medicamento" />
 
-        </ScrollView>
+        </TelaComTopo>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFDF8',
-    },
-
-    conteudo: {
-        padding: 25,
-        paddingTop: 45,
-        paddingBottom: 35,
-    },
-
-    titulo: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 32,
-        color: '#332716',
-    },
-
-    subtitulo: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 18,
-        color: '#75571F',
-        marginBottom: 25,
-    },
-
     card: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#FA9F2A',
-        borderRadius: 20,
-        padding: 20,
-        marginBottom: 15,
+        marginBottom: 4,
+    },
+
+    carregando: {
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 30,
+    },
+
+    linhaPet: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+    },
+
+    infoPet: {
+        flex: 1,
+        gap: 8,
+    },
+
+    chips: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
     },
 
     textoCard: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 20,
-        color: '#332716',
-    },
-
-    fotoPet: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        marginBottom: 12,
+        fontFamily: fontes.negrito,
+        fontSize: 26,
+        color: cores.marrom,
     },
 
     detalhe: {
-        fontFamily: 'Ruwudu-Regular',
+        fontFamily: fontes.regular,
         fontSize: 16,
-        color: '#75571F',
-        marginTop: 8,
+        color: cores.marromClaro,
+        marginTop: 10,
     },
 
     botaoSelecionar: {
-        backgroundColor: '#FA9F2A',
-        padding: 15,
-        borderRadius: 15,
-        alignItems: 'center',
-        marginBottom: 25,
-    },
-
-    textoBotao: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 18,
-        color: '#332716',
+        marginTop: 14,
+        marginBottom: 20,
     },
 });

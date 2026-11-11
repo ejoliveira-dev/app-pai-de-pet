@@ -9,10 +9,16 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";
 
-import AbaPerfilPublico from "../componentes/AbaPerfilPublico";
+import AbaPerfilPublico, { ALTURA_FECHADA, MARGEM_TOPO } from "../componentes/AbaPerfilPublico";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Cartao from "../componentes/Cartao";
+import Botao from "../componentes/Botao";
+import AvatarPet from "../componentes/AvatarPet";
+import { cores, fontes } from "../styles/tema";
 
 export default function Comunidade() {
     const db = useSQLiteContext();
+    const insets = useSafeAreaInsets();
 
     const [pet, setPet] = useState(null);
     const [publicacoes, setPublicacoes] = useState([]);
@@ -145,7 +151,7 @@ export default function Comunidade() {
                 ...publicacoes
             ];
 
-           await inserirPublicacao(db, novaPublicacao);
+            await inserirPublicacao(db, novaPublicacao);
 
             setPublicacoes(listaAtualizada);
             setLegenda("");
@@ -173,7 +179,10 @@ export default function Comunidade() {
 
             <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={styles.conteudo}
+                contentContainerStyle={[
+                    styles.conteudo,
+                    { paddingTop: insets.top + MARGEM_TOPO + ALTURA_FECHADA + 18 }
+                ]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* feed */}
@@ -181,58 +190,32 @@ export default function Comunidade() {
                     <Text style={styles.tituloFeed}>
                         Feed
                     </Text>
-
-                    <TouchableOpacity
-                        style={styles.botaoPublicar}
-                        onPress={abrirPublicacao}
-                    >
-                        <Ionicons
-                            name="add"
-                            size={21}
-                            color="#FFFDF8"
-                        />
-
-                        <Text style={styles.textoPublicar}>
-                            Publicar
-                        </Text>
-                    </TouchableOpacity>
                 </View>
 
                 {/* publicações cadastradas */}
                 {publicacoes.length === 0 ? (
-                    <Text style={styles.legendaPost}>
-                        Nenhuma publicação ainda. Que tal criar a primeira? 🐾
-                    </Text>
+                    <Cartao style={styles.vazio}>
+                        <View style={styles.bolinhaVazio}>
+                            <Ionicons name="images-outline" size={26} color={cores.marrom} />
+                        </View>
+                        <Text style={styles.textoVazio}>
+                            Nenhuma publicação ainda. Que tal criar a primeira? 🐾
+                        </Text>
+                    </Cartao>
                 ) : (
                     publicacoes.map((post) => (
-                        <View
+                        <Cartao
                             key={String(post.id)}
                             style={styles.cardPublicacao}
                         >
 
                             <View style={styles.cabecalhoPost}>
 
-                                {post.foto_pet ? (
-                                    <Image
-                                        source={{ uri: post.foto_pet }}
-                                        style={styles.fotoPost}
-                                    />
-                                ) : (
-                                    <View style={[
-                                        styles.fotoPost,
-                                        {
-                                            backgroundColor: "#FFEAC8",
-                                            alignItems: "center",
-                                            justifyContent: "center"
-                                        }
-                                    ]}>
-                                        <Ionicons
-                                            name="paw"
-                                            size={22}
-                                            color="#FA9F2A"
-                                        />
-                                    </View>
-                                )}
+                                <AvatarPet
+                                    foto={post.foto_pet}
+                                    tamanho={50}
+                                    style={styles.fotoPost}
+                                />
 
                                 <View style={styles.infoPost}>
                                     <Text style={styles.autorPost}>
@@ -261,11 +244,23 @@ export default function Comunidade() {
                                 </Text>
                             )}
 
-                        </View>
+                        </Cartao>
                     ))
                 )}
 
             </ScrollView>
+
+            {/* botão flutuante de publicar */}
+            <TouchableOpacity
+                style={styles.botaoFlutuante}
+                onPress={abrirPublicacao}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Nova publicação"
+            >
+                <Ionicons name="add" size={32} color="#332716" />
+
+            </TouchableOpacity>
 
             <AbaPerfilPublico
                 pet={pet}
@@ -300,15 +295,15 @@ export default function Comunidade() {
                             maxLength={500}
                         />
 
-                        <TouchableOpacity
-                            style={styles.botaoModal}
+                        <Botao
+                            titulo={foto ? "Trocar foto" : "Escolher foto"}
+                            icone="image-outline"
+                            variante="contorno"
+                            larga
                             onPress={selecionarFoto}
-                            disabled={salvando}
-                        >
-                            <Text style={styles.textoPublicar}>
-                                Escolher foto
-                            </Text>
-                        </TouchableOpacity>
+                            desabilitado={salvando}
+                            style={styles.botaoModal}
+                        />
 
                         {foto && (
                             <Image
@@ -318,15 +313,13 @@ export default function Comunidade() {
                             />
                         )}
 
-                        <TouchableOpacity
-                            style={styles.botaoModal}
+                        <Botao
+                            titulo="Publicar"
+                            larga
+                            carregando={salvando}
                             onPress={publicar}
-                            disabled={salvando}
-                        >
-                            <Text style={styles.textoPublicar}>
-                                {salvando ? "Salvando..." : "Publicar"}
-                            </Text>
-                        </TouchableOpacity>
+                            style={styles.botaoModal}
+                        />
 
                         <TouchableOpacity
                             onPress={fecharPublicacao}
@@ -434,14 +427,58 @@ const styles = StyleSheet.create({
     },
 
     botaoPublicar: {
-        backgroundColor: "#80502D",
-        borderRadius: 14,
-        paddingHorizontal: 16,
-        height: 42,
-        flexDirection: "row",
+        minWidth: 0,
+        height: 44,
+        marginTop: 0,
+        paddingHorizontal: 20,
+    },
+
+    botaoFlutuante: {
+        position: "absolute",
+        right: 20,
+        bottom: 20,
+        width: 62,
+        height: 62,
+        borderRadius: 31,
+        backgroundColor: "#FA9F2A",
         alignItems: "center",
         justifyContent: "center",
-        gap: 5,
+        elevation: 6,
+        shadowColor: "#332716",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+    },
+
+    vazio: {
+        alignItems: "center",
+        paddingVertical: 28,
+    },
+
+    bolinhaVazio: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: "#FFF1DC",
+        borderWidth: 1,
+        borderColor: "#F2DFC4",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    textoVazio: {
+        fontFamily: "Ruwudu-Regular",
+        fontSize: 17,
+        lineHeight: 24,
+        color: "#75571F",
+        textAlign: "center",
+        marginTop: 12,
+    },
+
+    botaoVazio: {
+        minWidth: 0,
+        height: 44,
+        paddingHorizontal: 26,
     },
 
     textoPublicar: {
@@ -453,11 +490,7 @@ const styles = StyleSheet.create({
     // publicações
 
     cardPublicacao: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#EADFCB',
-        borderRadius: 22,
-        padding: 15,
+        borderRadius: 25,
         marginBottom: 20,
     },
 
@@ -468,10 +501,7 @@ const styles = StyleSheet.create({
     },
 
     fotoPost: {
-        width: 45,
-        height: 45,
-        borderRadius: 23,
-        marginRight: 10,
+        marginRight: 12,
     },
 
     infoPost: {
@@ -493,7 +523,7 @@ const styles = StyleSheet.create({
     imagemPost: {
         width: '100%',
         height: 230,
-        borderRadius: 15,
+        borderRadius: 18,
     },
 
     legendaPost: {
@@ -586,15 +616,16 @@ const styles = StyleSheet.create({
 
     modalConteudo: {
         backgroundColor: "#FFFDF8",
-        borderRadius: 22,
+        borderRadius: 30,
         padding: 20,
         gap: 12,
     },
 
     campoLegenda: {
         borderWidth: 1,
-        borderColor: "#EADFCB",
-        borderRadius: 12,
+        borderColor: "#FA9F2A",
+        backgroundColor: "#FFFFFF",
+        borderRadius: 15,
         padding: 12,
         minHeight: 100,
         textAlignVertical: "top",
@@ -602,13 +633,12 @@ const styles = StyleSheet.create({
     },
 
     botaoModal: {
-        backgroundColor: "#332716",
-        padding: 14,
-        borderRadius: 12,
-        alignItems: "center",
+        marginTop: 0,
     },
 
     cancelar: {
+        fontFamily: "Ruwudu-Bold",
+        fontSize: 16,
         textAlign: "center",
         padding: 12,
         color: "#A52C2C",

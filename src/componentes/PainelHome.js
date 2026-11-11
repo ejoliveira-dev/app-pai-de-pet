@@ -1,28 +1,18 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
-} from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
-import {
-  carregarResumoPet,
-  salvarIntervaloAlimentacao
-} from '../database/Database';
+
+import { carregarResumoPet, salvarIntervaloAlimentacao } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Estrutura inicial do painel
+import Cartao from './Cartao';
+import Botao from './Botao';
+import { cores, fontes, raio, textos } from '../styles/tema';
+
+// Estrutura inicial do painel.
 const VAZIO = {
   alimentacao: [],
   peso: [],
@@ -31,7 +21,7 @@ const VAZIO = {
   medicamentos: []
 };
 
-// Converte datas DD/MM/AAAA
+// Converte datas DD/MM/AAAA.
 function dataBR(texto) {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(texto || '');
 
@@ -52,26 +42,117 @@ function dataBR(texto) {
     : null;
 }
 
-// Converte a data de cada registro
 function dataRegistro(texto) {
   const data = new Date(texto);
 
   return Number.isNaN(data.getTime()) ? null : data;
 }
 
-// Identifica um dia específico
 function chaveDia(data) {
   return `${data.getFullYear()}-${data.getMonth()}-${data.getDate()}`;
 }
 
-// Formata números para o padrão brasileiro
 function numeroBR(valor) {
   return Number(valor).toLocaleString('pt-BR', {
     maximumFractionDigits: 2
   });
 }
 
-// Componente reutilizável para os gráficos
+// Nomes para escrever a data por extenso
+const DIAS_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+// Opções de intervalo entre refeições, em horas
+const OPCOES_INTERVALO = [4, 6, 8, 12, 24];
+
+// Ex.: "terça, 10 de novembro"
+function dataPorExtenso(data) {
+  return `${DIAS_SEMANA[data.getDay()]}, ${data.getDate()} de ${MESES[data.getMonth()]}`;
+}
+
+// Ex.: "14:10"
+function horaCurta(data) {
+  const horas = String(data.getHours()).padStart(2, '0');
+  const minutos = String(data.getMinutes()).padStart(2, '0');
+
+  return `${horas}:${minutos}`;
+}
+
+// Ex.: "às 14:10", "ontem às 20:00", "amanhã às 06:00" ou "em 08/11"
+function quando(data, agora) {
+  const hoje = new Date(agora);
+  hoje.setHours(0, 0, 0, 0);
+
+  const dia = new Date(data);
+  dia.setHours(0, 0, 0, 0);
+
+  const diferenca = Math.round((dia - hoje) / 86400000);
+
+  if (diferenca === 0) return `às ${horaCurta(data)}`;
+  if (diferenca === -1) return `ontem às ${horaCurta(data)}`;
+  if (diferenca === 1) return `amanhã às ${horaCurta(data)}`;
+
+  const dd = String(data.getDate()).padStart(2, '0');
+  const mm = String(data.getMonth() + 1).padStart(2, '0');
+
+  return `em ${dd}/${mm}`;
+}
+
+function TituloSecao({ children, style }) {
+  return <Text style={[styles.tituloSecao, style]}>{children}</Text>;
+}
+
+function Bolinha({ nome, tamanho = 40 }) {
+  return (
+    <View
+      style={[
+        styles.bolinha,
+        { width: tamanho, height: tamanho, borderRadius: tamanho / 2 }
+      ]}
+    >
+      <Ionicons name={nome} size={tamanho * 0.5} color={cores.marrom} />
+    </View>
+  );
+}
+
+function Vazio({ icone, texto, acao, onAcao }) {
+  return (
+    <View style={styles.vazio}>
+      <Bolinha nome={icone} tamanho={48} />
+      <Text style={styles.textoVazio}>{texto}</Text>
+      {acao && onAcao ? (
+        <Botao
+          titulo={acao}
+          onPress={onAcao}
+          variante="contorno"
+          style={styles.botaoPequeno}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+// linha de lista (vacina, consulta, medicamento, lembrete).
+function ItemLista({ icone, titulo, detalhe, atrasado, ultimo }) {
+  return (
+    <View style={[styles.itemLista, !ultimo && styles.itemDivisor]}>
+      <Bolinha nome={icone} />
+      <View style={styles.textoItem}>
+        <Text style={styles.itemTitulo} numberOfLines={1}>
+          {titulo}
+        </Text>
+        <Text style={styles.textoSecundario}>{detalhe}</Text>
+      </View>
+      {atrasado ? (
+        <View style={styles.selo}>
+          <Text style={styles.textoSelo}>Atrasado</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// componente reutilizável para os gráficos.
 function Grafico({ titulo, pontos, unidade }) {
 
   const maximo = Math.max(
@@ -82,16 +163,17 @@ function Grafico({ titulo, pontos, unidade }) {
   const temDados = pontos.some(item => item.valor > 0);
 
   return (
-    <View style={styles.cartao}>
+    <Cartao style={styles.cartao}>
 
       <Text style={styles.tituloCartao}>
         {titulo}
       </Text>
 
       {!temDados ? (
-        <Text style={styles.textoSecundario}>
-          Ainda não há registros para mostrar.
-        </Text>
+        <Vazio
+          icone="bar-chart-outline"
+          texto="Ainda não há registros para mostrar."
+        />
       ) : (
 
         <View style={styles.grafico}>
@@ -138,11 +220,11 @@ function Grafico({ titulo, pontos, unidade }) {
 
       )}
 
-    </View>
+    </Cartao>
   );
 }
 
-// Componente principal da Home
+// componente principal da Home.
 export default function PainelHome({
   pet,
   onAbrirCuidados
@@ -162,7 +244,7 @@ export default function PainelHome({
 
   const [agora, setAgora] = useState(Date.now());
 
-  // Atualiza o relógio a cada minuto
+  // atualiza o relógio a cada minuto.
   useEffect(() => {
 
     const relogio = setInterval(
@@ -174,7 +256,7 @@ export default function PainelHome({
 
   }, []);
 
-  // Recupera os dados do pet selecionado
+  // recupera os dados do pet selecionado.
   useFocusEffect(
     useCallback(() => {
 
@@ -272,7 +354,7 @@ export default function PainelHome({
     }, [db, id])
   );
 
-  // Salva o intervalo entre refeições
+  // Salva o intervalo entre refeições.
   async function salvarIntervalo() {
 
     if (id == null) return;
@@ -310,7 +392,7 @@ export default function PainelHome({
     }
   }
 
-  // Calcula as informações apresentadas na Home
+  // Calcula as informações apresentadas na Home.
   const calculos = useMemo(() => {
 
     const hoje = new Date(agora);
@@ -318,7 +400,7 @@ export default function PainelHome({
 
     const chaveHoje = chaveDia(hoje);
 
-    // Alimentação
+    // Alimentação.
     const alimentacoes = dados.alimentacao
       .filter(
         item =>
@@ -357,7 +439,7 @@ export default function PainelHome({
 
     const ultimoPeso = pesos[pesos.length - 1];
 
-    // Gráfico de alimentação dos últimos 7 dias
+    // Gráfico de alimentação dos últimos 7 dias.
     const alimentacaoSemana = Array.from(
       { length: 7 },
       (_, indice) => {
@@ -391,7 +473,7 @@ export default function PainelHome({
       }
     );
 
-    // Gráfico dos últimos 5 pesos registrados
+    // Gráfico dos últimos 5 pesos registrados.
     const pesoHistorico = pesos.slice(-5).map(
       item => ({
 
@@ -406,7 +488,7 @@ export default function PainelHome({
       })
     );
 
-    // Consultas e vacinas pendentes
+    // Consultas e vacinas pendentes.
     const eventos = [
 
       ...dados.vacinas
@@ -433,7 +515,7 @@ export default function PainelHome({
         (a, b) => a.data - b.data
       );
 
-    // Filtro de 7 ou 30 dias
+    // Filtro de 7 ou 30 dias.
     const fim = new Date(hoje);
 
     fim.setDate(
@@ -450,12 +532,12 @@ export default function PainelHome({
       item => item.data < hoje
     );
 
-    // Medicamentos em uso
+    // Medicamentos em uso.
     const medicamentosAtivos = dados.medicamentos.filter(
       item => !item.concluido
     );
 
-    // Lembretes dos próximos 3 dias
+    // Lembretes dos próximos 3 dias.
     const limiteLembrete = new Date(hoje);
 
     limiteLembrete.setDate(
@@ -507,38 +589,94 @@ export default function PainelHome({
     return {
 
       totalHoje,
-
       quantidadeHoje: hojeRegistros.length,
-
       ultimoPeso,
-
       proximaRefeicao,
-
       alimentacaoSemana,
-
       pesoHistorico,
-
       proximos,
-
       atrasados,
-
       medicamentosAtivos,
-
       lembretes
-
     };
 
   }, [dados, agora, periodo, intervalo]);
+
+  //Cartão "Próxima refeição"
+
+  // true enquanto os botões de intervalo (4h, 6h...) estão abertos
+  const [escolhendoIntervalo, setEscolhendoIntervalo] = useState(false);
+
+  // Salva o intervalo escolhido nos botões
+  async function escolherIntervalo(horas) {
+
+    if (id == null) return;
+
+    try {
+
+      await salvarIntervaloAlimentacao(db, id, String(horas));
+
+      setIntervalo(horas);
+      setHorasTexto(String(horas));
+      setEscolhendoIntervalo(false);
+
+    } catch (e) {
+
+      Alert.alert(
+        'Erro',
+        'Não foi possível salvar o intervalo.'
+      );
+
+    }
+  }
+
+  // Contagem até a próxima refeição
+  const refeicao = useMemo(() => {
+
+    if (!intervalo) return { estado: 'semIntervalo' };
+
+    const ultimaRefeicao = dados.alimentacao
+      .filter(item => dataRegistro(item.data) && Number(item.valor) > 0)
+      .sort((a, b) => new Date(b.data) - new Date(a.data))[0];
+
+    if (!ultimaRefeicao) return { estado: 'semRegistro' };
+
+    const inicio = new Date(ultimaRefeicao.data).getTime();
+    const duracao = intervalo * 3600000;
+    const falta = inicio + duracao - agora;
+
+    const totalMinutos = Math.max(0, Math.ceil(falta / 60000));
+    const h = Math.floor(totalMinutos / 60);
+    const m = totalMinutos % 60;
+
+    const tempo = h && m
+      ? `${h}h ${m}min`
+      : h
+        ? `${h}h`
+        : `${m}min`;
+
+    return {
+      estado: falta <= 0 ? 'passou' : 'contando',
+      texto: falta <= 0 ? 'Hora de comer!' : `em ${tempo}`,
+      fracao: Math.min(1, Math.max(0, (agora - inicio) / duracao)),
+      ultima: quando(new Date(inicio), agora),
+      prevista: quando(new Date(inicio + duracao), agora),
+    };
+
+  }, [dados, agora, intervalo]);
 
   // Mensagem se não houver pet selecionado
   if (!pet) {
 
     return (
-      <Text style={styles.textoSecundario}>
-        Selecione um pet para visualizar seu resumo.
-      </Text>
+      <Vazio
+        icone="paw-outline"
+        texto="Selecione um pet para visualizar seu resumo."
+      />
     );
   }
+
+  const inicioHoje = new Date(agora).setHours(0, 0, 0, 0);
 
   return (
 
@@ -551,26 +689,141 @@ export default function PainelHome({
       )}
 
       {!!erro && (
-        <Text style={styles.erro}>
-          {erro}
-        </Text>
+        <View style={styles.faixaErro}>
+          <Ionicons name="alert-circle-outline" size={20} color={cores.erro} />
+          <Text style={styles.textoErro}>{erro}</Text>
+        </View>
       )}
 
-      {/* RESUMO DO DIA */}
-      <Text style={styles.tituloSecao}>
-        Resumo de hoje
-      </Text>
+      {/* HOJE */}
+      <View style={styles.linhaTitulo}>
+        <TituloSecao>Hoje</TituloSecao>
+
+        <Text style={styles.dataHoje}>
+          {dataPorExtenso(new Date(agora))}
+        </Text>
+      </View>
+
+      {/* HOJE: PRÓXIMA REFEIÇÃO */}
+      <View style={styles.heroi}>
+
+        <View style={styles.heroiTopo}>
+
+          <View style={styles.heroiIcone}>
+            <Ionicons name="restaurant-outline" size={20} color={cores.marrom} />
+          </View>
+
+          <View style={styles.heroiRotuloLinha}>
+            <Text style={styles.heroiRotulo} numberOfLines={1}>
+              Próxima refeição
+            </Text>
+
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Como a previsão funciona"
+              onPress={() => Alert.alert(
+                'Como funciona',
+                'A previsão soma o intervalo que você escolheu ao horário da última refeição registrada. Não é uma recomendação veterinária.'
+              )}
+            >
+              <Ionicons name="information-circle-outline" size={18} color={cores.marromClaro} />
+            </Pressable>
+          </View>
+
+          {intervalo && !escolhendoIntervalo ? (
+            <Pressable
+              style={styles.chipIntervalo}
+              onPress={() => setEscolhendoIntervalo(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Mudar o intervalo entre refeições"
+            >
+              <Text style={styles.textoChipIntervalo}>
+                a cada {intervalo}h
+              </Text>
+              <Ionicons name="pencil" size={13} color={cores.marrom} />
+            </Pressable>
+          ) : null}
+
+        </View>
+
+        {!intervalo || escolhendoIntervalo ? (
+          <>
+            <Text style={styles.heroiPergunta}>
+              De quanto em quanto tempo?
+            </Text>
+
+            <View style={styles.opcoesIntervalo}>
+              {OPCOES_INTERVALO.map(horas => (
+                <Pressable
+                  key={horas}
+                  onPress={() => escolherIntervalo(horas)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`A cada ${horas} horas`}
+                  style={({ pressed }) => [
+                    styles.opcaoIntervalo,
+                    intervalo === horas && styles.opcaoIntervaloAtiva,
+                    pressed && styles.pressionado
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.textoOpcaoIntervalo,
+                      intervalo === horas && styles.textoOpcaoIntervaloAtiva
+                    ]}
+                  >
+                    {horas}h
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : refeicao.estado === 'semRegistro' ? (
+          <Pressable
+            style={styles.heroiLink}
+            onPress={onAbrirCuidados}
+            accessibilityRole="button"
+          >
+            <Text style={styles.heroiPergunta}>
+              Registre a primeira refeição
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color={cores.marrom} />
+          </Pressable>
+        ) : (
+          <>
+            <Text style={styles.heroiGrande}>
+              {refeicao.texto}
+            </Text>
+
+            <View style={styles.barraFundo}>
+              <View
+                style={[
+                  styles.barraCheia,
+                  { width: `${Math.round(refeicao.fracao * 100)}%` }
+                ]}
+              />
+            </View>
+
+            <View style={styles.barraPontas}>
+              <Text style={styles.heroiLegenda}>
+                comeu {refeicao.ultima}
+              </Text>
+              <Text style={styles.heroiLegenda}>
+                prevista {refeicao.prevista}
+              </Text>
+            </View>
+          </>
+        )}
+
+      </View>
 
       <View style={styles.duasColunas}>
 
         {/* Alimentação */}
-        <View style={styles.cartaoMenor}>
+        <Cartao style={styles.cartaoMenor}>
 
-          <Ionicons
-            name="restaurant-outline"
-            size={22}
-            color="#80502D"
-          />
+          <Bolinha nome="restaurant-outline" />
 
           <Text style={styles.numero}>
             {calculos.quantidadeHoje
@@ -586,16 +839,12 @@ export default function PainelHome({
             {numeroBR(calculos.totalHoje)} g • {calculos.quantidadeHoje} registro(s)
           </Text>
 
-        </View>
+        </Cartao>
 
         {/* Peso */}
-        <View style={styles.cartaoMenor}>
+        <Cartao style={styles.cartaoMenor}>
 
-          <Ionicons
-            name="scale-outline"
-            size={22}
-            color="#80502D"
-          />
+          <Bolinha nome="scale-outline" />
 
           <Text style={styles.numero}>
             {calculos.ultimoPeso
@@ -607,63 +856,12 @@ export default function PainelHome({
             Último peso registrado
           </Text>
 
-        </View>
-
-      </View>
-
-      {/* PRÓXIMA REFEIÇÃO */}
-      <View style={styles.cartao}>
-
-        <Text style={styles.tituloCartao}>
-          Próxima refeição
-        </Text>
-
-        <Text style={styles.destaque}>
-          {calculos.proximaRefeicao}
-        </Text>
-
-        <Text style={styles.textoSecundario}>
-          Previsão calculada pelo intervalo que você escolher após o último registro. Não é uma recomendação veterinária.
-        </Text>
-
-        <View style={styles.linhaIntervalo}>
-
-          <TextInput
-            style={styles.campo}
-            value={horasTexto}
-            onChangeText={setHorasTexto}
-            placeholder="Intervalo em horas"
-            placeholderTextColor="#8B7D6E"
-            keyboardType="number-pad"
-            maxLength={2}
-          />
-
-          <Pressable
-            style={styles.botao}
-            onPress={salvarIntervalo}
-          >
-            <Text style={styles.textoBotao}>
-              Definir
-            </Text>
-          </Pressable>
-
-        </View>
-
-        <Pressable
-          onPress={onAbrirCuidados}
-          style={styles.link}
-        >
-          <Text style={styles.textoLink}>
-            Registrar alimentação ou peso →
-          </Text>
-        </Pressable>
+        </Cartao>
 
       </View>
 
       {/* GRÁFICOS */}
-      <Text style={styles.tituloSecao}>
-        Acompanhamento
-      </Text>
+      <TituloSecao>Acompanhamento</TituloSecao>
 
       <Grafico
         titulo="Alimentação • últimos 7 dias"
@@ -680,9 +878,9 @@ export default function PainelHome({
       {/* CONSULTAS E VACINAS */}
       <View style={styles.linhaTitulo}>
 
-        <Text style={styles.tituloSecao}>
+        <TituloSecao style={styles.semMargemTopo}>
           Consultas e vacinas
-        </Text>
+        </TituloSecao>
 
         <View style={styles.filtros}>
 
@@ -712,148 +910,91 @@ export default function PainelHome({
 
       </View>
 
-      <View style={styles.cartao}>
+      <Cartao style={styles.cartao}>
 
         {calculos.proximos.length === 0 ? (
 
-          <Text style={styles.textoSecundario}>
-            Nenhuma consulta ou vacina pendente nos próximos {periodo} dias.
-          </Text>
+          <Vazio
+            icone="calendar-outline"
+            texto={`Nenhuma consulta ou vacina pendente nos próximos ${periodo} dias.`}
+            acao="Ir para Cuidados"
+            onAcao={onAbrirCuidados}
+          />
 
         ) : (
 
-          calculos.proximos.map(item => (
+          calculos.proximos.map((item, i) => (
 
-            <View
+            <ItemLista
               key={item.id}
-              style={styles.itemLista}
-            >
-
-              <Ionicons
-                name={
-                  item.tipo === 'Vacina'
-                    ? 'medkit-outline'
-                    : 'calendar-outline'
-                }
-                size={20}
-                color="#80502D"
-              />
-
-              <View style={styles.textoItem}>
-
-                <Text style={styles.itemTitulo}>
-                  {item.nome}
-                </Text>
-
-                <Text style={styles.textoSecundario}>
-                  {item.tipo} • {item.data.toLocaleDateString('pt-BR')}
-                </Text>
-
-              </View>
-
-            </View>
+              icone={item.tipo === 'Vacina' ? 'medkit-outline' : 'calendar-outline'}
+              titulo={item.nome}
+              detalhe={`${item.tipo} • ${item.data.toLocaleDateString('pt-BR')}`}
+              ultimo={i === calculos.proximos.length - 1}
+            />
 
           ))
 
         )}
 
-      </View>
+      </Cartao>
 
       {/* MEDICAMENTOS */}
-      <Text style={styles.tituloSecao}>
-        Medicamentos
-      </Text>
+      <TituloSecao>Medicamentos</TituloSecao>
 
-      <View style={styles.cartao}>
+      <Cartao style={styles.cartao}>
 
         {calculos.medicamentosAtivos.length === 0 ? (
 
-          <Text style={styles.textoSecundario}>
-            Nenhum medicamento marcado como em uso.
-          </Text>
+          <Vazio
+            icone="medical-outline"
+            texto="Nenhum medicamento marcado como em uso."
+            acao="Adicionar medicamento"
+            onAcao={onAbrirCuidados}
+          />
 
         ) : (
 
-          calculos.medicamentosAtivos.map(item => (
+          calculos.medicamentosAtivos.map((item, i) => (
 
-            <View
+            <ItemLista
               key={String(item.id)}
-              style={styles.itemLista}
-            >
-
-              <Ionicons
-                name="medical-outline"
-                size={20}
-                color="#80502D"
-              />
-
-              <View style={styles.textoItem}>
-
-                <Text style={styles.itemTitulo}>
-                  {item.nome}
-                </Text>
-
-                <Text style={styles.textoSecundario}>
-                  {item.detalhes || 'Sem dosagem informada'}
-                </Text>
-
-              </View>
-
-            </View>
+              icone="medical-outline"
+              titulo={item.nome}
+              detalhe={item.detalhes || 'Sem dosagem informada'}
+              ultimo={i === calculos.medicamentosAtivos.length - 1}
+            />
 
           ))
 
         )}
 
-      </View>
+      </Cartao>
 
       {/* LEMBRETES */}
-      <Text style={styles.tituloSecao}>
-        Lembretes
-      </Text>
+      <TituloSecao>Lembretes</TituloSecao>
 
-      <View style={styles.cartao}>
+      <Cartao style={styles.cartao}>
 
         {calculos.lembretes.length === 0 ? (
 
-          <Text style={styles.textoSecundario}>
-            Nenhum lembrete urgente nos registros.
-          </Text>
+          <Vazio
+            icone="notifications-outline"
+            texto="Nenhum lembrete urgente nos registros."
+          />
 
         ) : (
 
-          calculos.lembretes.map(item => (
+          calculos.lembretes.map((item, i) => (
 
-            <View
+            <ItemLista
               key={item.id}
-              style={styles.itemLista}
-            >
-
-              <Ionicons
-                name="notifications-outline"
-                size={20}
-                color="#80502D"
-              />
-
-              <View style={styles.textoItem}>
-
-                <Text style={styles.itemTitulo}>
-                  {item.nome}
-                </Text>
-
-                <Text style={styles.textoSecundario}>
-                  {item.tipo} • {item.data.toLocaleDateString('pt-BR')}
-
-                  {item.data < new Date(
-                    new Date(agora).setHours(0, 0, 0, 0)
-                  )
-                    ? ' • Atrasado'
-                    : ''}
-                </Text>
-
-              </View>
-
-            </View>
+              icone="notifications-outline"
+              titulo={item.nome}
+              detalhe={`${item.tipo} • ${item.data.toLocaleDateString('pt-BR')}`}
+              atrasado={item.data < inicioHoje}
+              ultimo={i === calculos.lembretes.length - 1}
+            />
 
           ))
 
@@ -863,25 +1004,173 @@ export default function PainelHome({
           {calculos.atrasados.length} cuidado(s) pendente(s) com data passada. Lembretes apenas dentro do aplicativo; sem notificações automáticas.
         </Text>
 
-      </View>
+      </Cartao>
 
     </View>
   );
 }
 
-// ESTILOS DO PAINEL
 const styles = StyleSheet.create({
 
   painel: {
     marginTop: 5,
   },
 
-  tituloSecao: {
-    fontFamily: 'Ruwudu-Bold',
-    fontSize: 22,
-    color: '#332716',
-    marginTop: 19,
+  // "Hoje" = cartão da próxima refeição.
+  dataHoje: {
+    fontFamily: fontes.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: cores.marromClaro,
+    marginTop: 12,
+  },
+
+  heroi: {
+    backgroundColor: cores.laranjaClaro,
+    borderRadius: 26,
+    padding: 16,
     marginBottom: 12,
+  },
+
+  heroiTopo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  heroiIcone: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: cores.fundo,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  heroiRotuloLinha: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+
+  heroiRotulo: {
+    flexShrink: 1,
+    fontFamily: fontes.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: cores.marromClaro,
+  },
+
+  chipIntervalo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 30,
+    paddingHorizontal: 11,
+    borderRadius: 15,
+    backgroundColor: cores.fundo,
+  },
+
+  textoChipIntervalo: {
+    fontFamily: fontes.negrito,
+    fontSize: 13,
+    lineHeight: 18,
+    color: cores.marrom,
+  },
+
+  heroiGrande: {
+    fontFamily: fontes.negrito,
+    fontSize: 30,
+    lineHeight: 40,
+    color: cores.marrom,
+    marginTop: 10,
+  },
+
+  heroiPergunta: {
+    fontFamily: fontes.negrito,
+    fontSize: 20,
+    lineHeight: 28,
+    color: cores.marrom,
+    marginTop: 12,
+  },
+
+  heroiLink: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+
+  barraFundo: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: cores.fundo,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+
+  barraCheia: {
+    height: '100%',
+    borderRadius: 5,
+    backgroundColor: cores.laranja,
+  },
+
+  barraPontas: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+
+  heroiLegenda: {
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: cores.marromClaro,
+  },
+
+  opcoesIntervalo: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+
+  opcaoIntervalo: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: cores.fundo,
+  },
+
+  opcaoIntervaloAtiva: {
+    backgroundColor: cores.marrom,
+  },
+
+  textoOpcaoIntervalo: {
+    fontFamily: fontes.negrito,
+    fontSize: 15,
+    lineHeight: 20,
+    color: cores.marrom,
+  },
+
+  textoOpcaoIntervaloAtiva: {
+    color: cores.fundo,
+  },
+
+  pressionado: {
+    opacity: 0.6,
+    transform: [{ scale: 0.96 }],
+  },
+
+  tituloSecao: {
+    ...textos.tituloSecao,
+    fontSize: 24,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+
+  semMargemTopo: {
+    marginTop: 24,
   },
 
   linhaTitulo: {
@@ -895,101 +1184,99 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
+    marginBottom: 12,
   },
 
   cartaoMenor: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#EADFCB',
-    borderRadius: 18,
     padding: 14,
-    minHeight: 128,
+    minHeight: 150,
+    borderRadius: raio.bloco,
   },
 
   cartao: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#EADFCB',
-    borderRadius: 18,
-    padding: 16,
     marginBottom: 12,
+    borderRadius: raio.bloco,
+  },
+
+  bolinha: {
+    backgroundColor: cores.creme,
+    borderWidth: 1,
+    borderColor: cores.bordaCreme,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   tituloCartao: {
-    fontFamily: 'Ruwudu-Bold',
-    color: '#332716',
-    fontSize: 18,
+    fontFamily: fontes.negrito,
+    color: cores.marrom,
+    fontSize: 20,
     marginBottom: 8,
   },
 
   numero: {
-    fontSize: 18,
-    color: '#332716',
-    fontWeight: '700',
-    marginTop: 8,
+    fontFamily: fontes.negrito,
+    fontSize: 20,
+    color: cores.marrom,
+    marginTop: 10,
   },
 
   destaque: {
-    fontSize: 19,
-    color: '#80502D',
-    fontWeight: '700',
+    fontFamily: fontes.negrito,
+    fontSize: 22,
+    color: cores.laranja,
     marginVertical: 5,
   },
 
   textoSecundario: {
-    color: '#75571F',
-    fontSize: 13,
-    lineHeight: 19,
+    fontFamily: fontes.regular,
+    color: cores.marromClaro,
+    fontSize: 15,
+    lineHeight: 21,
   },
 
   detalhe: {
-    fontSize: 12,
-    color: '#75571F',
+    fontFamily: fontes.regular,
+    fontSize: 14,
+    color: cores.marromClaro,
     marginTop: 5,
   },
 
   linhaIntervalo: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
   },
 
   campo: {
-    borderWidth: 1,
-    borderColor: '#D7C9B7',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    minHeight: 43,
-    color: '#332716',
     flex: 1,
+    height: 50,
+    borderWidth: 1.5,
+    borderColor: cores.laranja,
+    borderRadius: raio.campo,
+    paddingHorizontal: 14,
+    fontFamily: fontes.regular,
+    fontSize: 16,
+    color: cores.marrom,
+    backgroundColor: cores.branco,
   },
 
-  botao: {
-    backgroundColor: '#80502D',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    justifyContent: 'center',
+  botaoDefinir: {
+    minWidth: 0,
+    marginTop: 0,
+    paddingHorizontal: 22,
   },
 
-  textoBotao: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-
-  link: {
-    paddingTop: 15,
-    paddingBottom: 3,
-  },
-
-  textoLink: {
-    color: '#80502D',
-    fontWeight: '700',
-    fontSize: 14,
+  botaoPequeno: {
+    minWidth: 0,
+    height: 42,
+    marginTop: 12,
+    paddingHorizontal: 22,
   },
 
   grafico: {
-    height: 145,
+    height: 150,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-around',
@@ -1004,8 +1291,9 @@ const styles = StyleSheet.create({
   },
 
   numeroGrafico: {
-    color: '#75571F',
-    fontSize: 10,
+    fontFamily: fontes.regular,
+    color: cores.marromClaro,
+    fontSize: 11,
     textAlign: 'center',
   },
 
@@ -1018,52 +1306,59 @@ const styles = StyleSheet.create({
 
   barra: {
     width: '100%',
-    borderTopLeftRadius: 7,
-    borderTopRightRadius: 7,
-    backgroundColor: '#DCA360',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    backgroundColor: cores.laranja,
   },
 
   rotuloGrafico: {
-    color: '#75571F',
-    fontSize: 10,
+    fontFamily: fontes.regular,
+    color: cores.marromClaro,
+    fontSize: 11,
     marginTop: 5,
     textAlign: 'center',
   },
 
   filtros: {
     flexDirection: 'row',
-    gap: 5,
+    gap: 6,
+    marginTop: 24,
   },
 
   filtro: {
+    backgroundColor: cores.creme,
     borderWidth: 1,
-    borderColor: '#EADFCB',
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    borderRadius: 10,
+    borderColor: cores.bordaCreme,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: raio.chip,
   },
 
   filtroAtivo: {
-    backgroundColor: '#80502D',
-    borderColor: '#80502D',
+    backgroundColor: cores.marrom,
+    borderColor: cores.marrom,
   },
 
   textoFiltro: {
-    fontSize: 12,
-    color: '#80502D',
+    fontFamily: fontes.regular,
+    fontSize: 14,
+    color: cores.marromClaro,
   },
 
   textoFiltroAtivo: {
-    color: '#FFFFFF',
+    color: cores.fundo,
   },
 
   itemLista: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 11,
-    gap: 11,
+    gap: 12,
+  },
+
+  itemDivisor: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F2EAE0',
+    borderBottomColor: cores.bordaCreme,
   },
 
   textoItem: {
@@ -1071,21 +1366,61 @@ const styles = StyleSheet.create({
   },
 
   itemTitulo: {
+    fontFamily: fontes.negrito,
+    fontSize: 17,
+    color: cores.marrom,
+  },
+
+  selo: {
+    backgroundColor: '#FBE4E4',
+    borderRadius: raio.chip,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+  },
+
+  textoSelo: {
+    fontFamily: fontes.negrito,
+    fontSize: 12,
+    color: cores.erro,
+  },
+
+  vazio: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 8,
+  },
+
+  textoVazio: {
+    fontFamily: fontes.regular,
     fontSize: 15,
-    color: '#332716',
-    fontWeight: '600',
+    lineHeight: 21,
+    color: cores.marromClaro,
+    textAlign: 'center',
   },
 
   nota: {
-    color: '#75571F',
-    fontSize: 12,
-    marginTop: 13,
-    lineHeight: 18,
+    fontFamily: fontes.regular,
+    color: cores.marromClaro,
+    fontSize: 13,
+    marginTop: 12,
+    lineHeight: 19,
   },
 
-  erro: {
-    color: '#AD3A32',
+  faixaErro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FBE4E4',
+    borderRadius: raio.campo,
+    padding: 12,
     marginBottom: 8,
+  },
+
+  textoErro: {
+    flex: 1,
+    fontFamily: fontes.regular,
+    fontSize: 14,
+    color: cores.erro,
   },
 
 });
