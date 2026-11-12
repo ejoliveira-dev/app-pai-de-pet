@@ -668,6 +668,7 @@ const styles = StyleSheet.create({
         fontSize: 26,
         lineHeight: 34,
         color: cores.laranjaClaro,
+        paddingTop: 5,
     },
 
     heroiDetalhe: {

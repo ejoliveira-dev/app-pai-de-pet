@@ -13,7 +13,7 @@ import logo from "../../assets/images/logo-ofc-png-empty2.png";
 
 import { useSQLiteContext } from "expo-sqlite";
 
-import { validarLogin } from "../database/Database";
+import { validarLogin, obterPerfilTutor, salvarPerfilTutor } from "../database/Database";
 
 export default function Login({ navigation }) {
 
@@ -64,7 +64,21 @@ export default function Login({ navigation }) {
                 return;
             }
 
-            Alert.alert("Bem-vindo!", `Olá, ${usuario.nome}!`);
+            // guarda o nome e o e-mail da conta no perfil do tutor
+            const emailConta = email.trim().toLowerCase();
+            const perfilSalvo = await obterPerfilTutor(db);
+
+            if (perfilSalvo?.email !== emailConta) {
+                await salvarPerfilTutor(db, {
+                    telefone: '',
+                    tema: 'padrao',
+                    exibirNoPerfilPublico: false,
+                    notificacoes: false,
+                    ...perfilSalvo,
+                    nome: usuario.nome,
+                    email: emailConta,
+                });
+            }
 
             navigation.reset({
                 index: 0,
