@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
 const { Pool } = require("pg");
+const multer = require("multer");
+const sharp = require("sharp");
 
 require("dotenv").config();
 
@@ -14,6 +16,22 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Configuração para receber imagens na memória
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // Máximo de 5 MB
+    files: 1,
+  },
+  fileFilter: (req, file, callback) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) {
+      return callback(new Error("Formato de imagem não permitido."));
+    }
+
+    callback(null, true);
+  },
+});
 
 app.get("/", (req, res) => {
   res.send("Servidor do Tutus funcionando!");
@@ -56,47 +74,153 @@ app.get("/publicacoes", async (req, res) => {
   }
 });
 
-// Criar publicação
+// Criar publicação com legenda e imagem
 app.post("/publicacoes", async (req, res) => {
   try {
-    const { id_pet, nome_pet, legenda } = req.body;
+    const { id_pet, nome_pet, legenda, imagem_id } = req.body;
+
+    const texto = typeof legenda === "string" ? legenda.trim() : "";
+    const idImagem = imagem_id == null ? null : Number(imagem_id);
 
     if (
       typeof id_pet !== "string" ||
       !id_pet.trim() ||
       typeof nome_pet !== "string" ||
       !nome_pet.trim() ||
-      typeof legenda !== "string" ||
-      !legenda.trim() ||
-      legenda.length > 500
+      texto.length > 500 ||
+      (!texto && idImagem === null) ||
+      (idImagem !== null &&
+        (!Number.isSafeInteger(idImagem) || idImagem <= 0))
     ) {
       return res.status(400).json({
         mensagem: "Dados da publicação inválidos."
       });
     }
 
+    if (idImagem !== null) {
+      const imagem = await pool.query(
+        "SELECT id FROM imagens_feed WHERE id = $1",
+        [idImagem]
+      );
+
+      if (imagem.rows.length === 0) {
+        return res.status(400).json({
+          mensagem: "Imagem não encontrada."
+        });
+      }
+    }
+
     const resultado = await pool.query(
       `INSERT INTO publicacoes
-       (id_pet, nome_pet, legenda)
-       VALUES ($1, $2, $3)
+       (id_pet, nome_pet, legenda, imagem_id)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [id_pet.trim(), nome_pet.trim(), legenda.trim()]
+      [id_pet.trim(), nome_pet.trim(), texto, idImagem]
     );
 
-    res.status(201).json(resultado.rows[0]);
+    return res.status(201).json(resultado.rows[0]);
+
   } catch (erro) {
     console.error("Erro ao publicar:", erro.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       mensagem: "Erro ao salvar publicação."
     });
   }
 });
 
+app.post("/upload-foto", upload.single("foto"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        mensagem: "Nenhuma foto enviada."
+      });
+    }
+
+    const imagemComprimida = await sharp(req.file.buffer)
+      .rotate()
+      .resize({
+        width: 800,
+        height: 800,
+        fit: "inside",
+        withoutEnlargement: true
+      })
+      .jpeg({ quality: 70 })
+      .toBuffer();
+
+    const resultado = await pool.query(
+      `INSERT INTO imagens_feed (dados, tipo)
+       VALUES ($1, $2)
+       RETURNING id`,
+      [imagemComprimida, "image/jpeg"]
+    );
+
+    return res.status(201).json({
+      mensagem: "Imagem enviada com sucesso!",
+      imagem_id: resultado.rows[0].id
+    });
+
+  } catch (erro) {
+    console.error("Erro ao enviar imagem:", erro.message);
+
+    return res.status(500).json({
+      mensagem: "Erro ao enviar imagem."
+    });
+  }
+});
+
+app.get("/imagens/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      return res.status(400).json({
+        mensagem: "ID de imagem inválido."
+      });
+    }
+
+    const resultado = await pool.query(
+      "SELECT dados, tipo FROM imagens_feed WHERE id = $1",
+      [id]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({
+        mensagem: "Imagem não encontrada."
+      });
+    }
+
+    const imagem = resultado.rows[0];
+
+    res.setHeader("Content-Type", imagem.tipo);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+
+    return res.send(imagem.dados);
+
+  } catch (erro) {
+    console.error("Erro ao buscar imagem:", erro.message);
+
+    return res.status(500).json({
+      mensagem: "Erro ao carregar imagem."
+    });
+  }
+});
+
+
+
 // Criar tabela de publicações do feed
 async function criarTabelaPublicacoes() {
   try {
-    await pool.query(`
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS imagens_feed (
+          id SERIAL PRIMARY KEY,
+          dados BYTEA NOT NULL,
+          tipo TEXT NOT NULL,
+          criado_em TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+     await pool.query(`
       CREATE TABLE IF NOT EXISTS publicacoes (
         id SERIAL PRIMARY KEY,
         id_pet TEXT NOT NULL,
@@ -104,13 +228,19 @@ async function criarTabelaPublicacoes() {
         foto_pet TEXT,
         foto_uri TEXT,
         legenda TEXT,
+        imagem_id INTEGER REFERENCES imagens_feed(id),
         criado_em TIMESTAMPTZ DEFAULT NOW()
       )
     `);
     
-    await pool.query(`
+     await pool.query(`
       ALTER TABLE publicacoes
       ALTER COLUMN foto_uri DROP NOT NULL
+    `);
+
+     await pool.query(`
+      ALTER TABLE publicacoes
+      ADD COLUMN IF NOT EXISTS imagem_id INTEGER REFERENCES imagens_feed(id)
     `);
 
     console.log("Tabela de publicações pronta!");
