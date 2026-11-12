@@ -1,10 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, TextInput, Switch, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert, Modal } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
 import { listarPets, obterPerfilTutor, salvarPerfilTutor, definirPetSelecionadoId } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
+
+import TelaComTopo from '../componentes/TelaComTopo';
+import Cartao from '../componentes/Cartao';
+import Botao from '../componentes/Botao';
+import AvatarPet from '../componentes/AvatarPet';
+import CampoTexto from '../componentes/CampoTexto';
+import { cores, fontes, raio, sombra } from '../styles/tema';
+import logo from '../../assets/images/logo-ofc-png-empty1.0.png';
 
 
 const PERFIL_INICIAL = {
@@ -15,6 +23,21 @@ const PERFIL_INICIAL = {
     exibirNoPerfilPublico: false,
     notificacoes: false
 };
+
+// Uma linha de configuração (ícone + texto + seta). "perigo" deixa em vermelho.
+function LinhaConfig({ icone, texto, onPress, perigo }) {
+    const cor = perigo ? cores.erro : cores.marrom;
+    return (
+        <Pressable style={styles.linhaConfig} onPress={onPress}>
+            <View style={styles.bolinha}>
+                <Ionicons name={icone} size={20} color={cor} />
+            </View>
+            <Text style={[styles.textoConfig, { color: cor }]}>{texto}</Text>
+            <Ionicons name="chevron-forward" size={20} color={cor} />
+        </Pressable>
+    );
+}
+
 
 export default function Tutor({ navigation }) {
     const db = useSQLiteContext();
@@ -162,6 +185,11 @@ export default function Tutor({ navigation }) {
         }
     }
 
+    // abre o cadastro em modo edição (segurar o dedo no pet)
+    function editarPet(pet) {
+        navigation.getParent()?.navigate('CadastroPets', { petParaEditar: pet });
+    }
+
     function sairDaConta() {
         Alert.alert(
             'Sair da conta',
@@ -180,68 +208,97 @@ export default function Tutor({ navigation }) {
     }
 
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.conteudo}
-            showsVerticalScrollIndicator={false}
+        <TelaComTopo
+            centro={
+                <Pressable
+                    onPress={abrirConfiguracoes}
+                    accessibilityRole="button"
+                    accessibilityLabel="Editar perfil"
+                    style={({ pressed }) => [styles.avatarTopo, pressed && styles.pressionado]}
+                >
+                    <Ionicons name="person" size={40} color={cores.laranja} />
+                </Pressable>
+            }
         >
 
-            <Text style={styles.titulo}>
-                Perfil do Tutor
-            </Text>
+            <Text style={styles.tituloTela}>Perfil do Tutor</Text>
 
-            {/* cabeçalho do tutor */}
-            <View
-                style={[
-                    styles.cabecalhoPerfil,
-                    perfil.tema === 'suave' && {
-                        backgroundColor: '#F2E6DC'
-                    }
+            {/* cartão do tutor (marrom), com os dois números dentro */}
+            <Pressable
+                onPress={abrirConfiguracoes}
+                accessibilityRole="button"
+                accessibilityLabel="Editar perfil"
+                style={({ pressed }) => [
+                    styles.heroi,
+                    perfil.tema === 'suave' && styles.heroiSuave,
+                    pressed && styles.pressionado
                 ]}
             >
+                <View style={styles.heroiAnel} />
 
-                <View style={styles.linhaFotoConfiguracoes}>
+                <View style={styles.heroiLinha}>
 
-                    {/* foto do tutor */}
-                    <View style={[styles.avatarTutor, { marginBottom: 0 }]}>
-                        <Ionicons
-                            name="person"
-                            size={45}
-                            color="#80502D"
-                        />
+                    <View style={styles.heroiTextos}>
+                        <Text style={styles.heroiRotulo}>TUTOR</Text>
+
+                        <Text style={styles.nomeTutor} numberOfLines={1}>
+                            {perfil.nome || 'Seu perfil'}
+                        </Text>
+
+                        <Text style={styles.heroiDetalhe} numberOfLines={1}>
+                            {perfil.nome
+                                ? perfil.email || 'Toque para editar'
+                                : 'Toque para completar seu perfil'}
+                        </Text>
                     </View>
-
-                    {/* engrenagem ao lado da foto */}
-                    <Pressable
-                        style={styles.engrenagemPerfil}
-                        onPress={abrirConfiguracoes}
-                        accessibilityRole="button"
-                        accessibilityLabel="Configurações do perfil"
-                    >
-                        <Ionicons
-                            name="settings-outline"
-                            size={25}
-                            color="#80502D"
-                        />
-                    </Pressable>
-
                 </View>
 
+                <View style={styles.numeros}>
+                    <View style={styles.numeroBloco}>
+                        <View style={styles.numeroBola}>
+                            <Ionicons name="paw" size={18} color={cores.marrom} />
+                        </View>
+                        <View>
+                            <Text style={styles.numeroValor}>{pets.length}</Text>
+                            <Text style={styles.numeroLegenda}>
+                                {pets.length === 1 ? 'pet' : 'pets'}
+                            </Text>
+                        </View>
+                    </View>
 
-                <Text style={styles.nomeTutor}>
-                    {perfil.nome || 'Seu perfil'}
-                </Text>
+                    <View style={styles.numeroBloco}>
+                        <View style={[styles.numeroBola, styles.numeroBolaEscura]}>
+                            <Ionicons
+                                name={perfil.exibirNoPerfilPublico ? 'eye-outline' : 'eye-off-outline'}
+                                size={18}
+                                color={cores.laranjaClaro}
+                            />
+                        </View>
+                        <View>
+                            <Text style={styles.numeroValor}>
+                                {perfil.exibirNoPerfilPublico ? 'Visível' : 'Oculto'}
+                            </Text>
+                            <Text style={styles.numeroLegenda}>no perfil público</Text>
+                        </View>
+                    </View>
+                </View>
+            </Pressable>
 
-                <Text style={styles.contagem}>
-                    {pets.length} {pets.length === 1 ? 'pet cadastrado' : 'pets cadastrados'}
-                </Text>
+            {/* MEUS PETS */}
+            <View style={styles.linhaTitulo}>
+                <Text style={styles.tituloSecao}>Meus pets</Text>
 
+                <Pressable
+                    onPress={() => navigation.getParent()?.navigate('ListaPets')}
+                    hitSlop={10}
+                    style={styles.link}
+                >
+                    <Text style={styles.textoLink}>Gerenciar</Text>
+                    <Ionicons name="chevron-forward" size={16} color={cores.laranja} />
+                </Pressable>
             </View>
 
-            {/* lista de pets */}
-            <View style={styles.card}>
-                <Text style={styles.textoCard}>Meus Pets 🐾</Text>
-
+            <View style={styles.cartao}>
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -250,19 +307,12 @@ export default function Tutor({ navigation }) {
                     {pets.map(pet => (
                         <Pressable
                             key={String(pet.id_pet)}
-                            style={styles.itemPet}
+                            style={({ pressed }) => [styles.itemPet, pressed && styles.pressionado]}
                             onPress={() => selecionarPet(pet)}
+                            onLongPress={() => editarPet(pet)}
+                            delayLongPress={350}
                         >
-                            {pet.foto_perfil ? (
-                                <Image
-                                    source={{ uri: pet.foto_perfil }}
-                                    style={styles.avatarPet}
-                                />
-                            ) : (
-                                <View style={[styles.avatarPet, styles.semFoto]}>
-                                    <Ionicons name="paw" size={24} color="#80502D" />
-                                </View>
-                            )}
+                            <AvatarPet foto={pet.foto_perfil} tamanho={64} />
 
                             <Text style={styles.nomePet} numberOfLines={1}>
                                 {pet.nome}
@@ -271,28 +321,35 @@ export default function Tutor({ navigation }) {
                     ))}
 
                     <Pressable
-                        style={styles.itemPet}
+                        style={({ pressed }) => [styles.itemPet, pressed && styles.pressionado]}
                         onPress={() => navigation.getParent()?.navigate('CadastroPets')}
                     >
-                        <View style={[styles.avatarPet, styles.semFoto]}>
-                            <Ionicons name="add" size={28} color="#80502D" />
+                        <View style={styles.botaoAdicionar}>
+                            <Ionicons name="add" size={28} color={cores.marrom} />
                         </View>
                         <Text style={styles.nomePet}>Adicionar</Text>
                     </Pressable>
                 </ScrollView>
+
+                <Text style={styles.dica}>
+                    Toque para escolher • segure para editar
+                </Text>
             </View>
 
-            {/* configurações */}
-            <View style={styles.card}>
+            {/* PREFERÊNCIAS */}
+            <Text style={styles.tituloSecao}>Preferências</Text>
 
-                <Text style={styles.textoCard}>Configurações</Text>
+            <View style={styles.cartao}>
 
-                <View style={styles.linhaConfig}>
-                    <Ionicons name="eye-outline" size={23} color="#80502D" />
+                <View style={styles.linhaSwitch}>
+                    <View style={styles.bolinha}>
+                        <Ionicons name="eye-outline" size={20} color={cores.marrom} />
+                    </View>
 
-                    <Text style={styles.textoConfig}>
-                        Mostrar tutor no perfil público
-                    </Text>
+                    <View style={styles.textosSwitch}>
+                        <Text style={styles.textoConfig}>Mostrar no perfil público</Text>
+                        <Text style={styles.aviso}>Só seu nome aparece para outros tutores</Text>
+                    </View>
 
                     <Switch
                         value={perfil.exibirNoPerfilPublico}
@@ -309,171 +366,83 @@ export default function Tutor({ navigation }) {
                                 exibirNoPerfilPublico: valor
                             });
                         }}
-                        trackColor={{ false: '#C9C5BE', true: '#D9A567' }}
+                        trackColor={{ false: '#C9C5BE', true: cores.laranja }}
                         thumbColor="#FFFFFF"
                     />
                 </View>
 
-                <Text style={styles.aviso}>
-                    Desativado por padrão. Quando ativado, apenas seu nome
-                    e um ícone serão exibidos no perfil público dos pets.
-                </Text>
-
                 <View style={styles.divisor} />
 
-                <View style={styles.linhaConfig}>
-                    <Ionicons name="notifications-outline" size={23} color="#80502D" />
+                <View style={styles.linhaSwitch}>
+                    <View style={[styles.bolinha, styles.bolinhaEscura]}>
+                        <Ionicons name="notifications-outline" size={20} color={cores.laranjaClaro} />
+                    </View>
 
-                    <Text style={styles.textoConfig}>
-                        Preferência de notificações
-                    </Text>
+                    <View style={styles.textosSwitch}>
+                        <Text style={styles.textoConfig}>Notificações</Text>
+                        <Text style={styles.aviso}>Em breve: lembretes no celular</Text>
+                    </View>
 
                     <Switch
                         value={perfil.notificacoes}
                         onValueChange={(valor) =>
                             atualizarPerfil({ notificacoes: valor })
                         }
-                        trackColor={{ false: '#C9C5BE', true: '#D9A567' }}
+                        trackColor={{ false: '#C9C5BE', true: cores.laranja }}
                         thumbColor="#FFFFFF"
                     />
                 </View>
 
-                <Text style={styles.aviso}>
-                    Preferência local. Notificações automáticas ainda
-                    não estão implementadas.
-                </Text>
+            </View>
 
-                <View style={styles.divisor} />
+            {/* CONTA */}
+            <Text style={styles.tituloSecao}>Conta</Text>
 
-                <View style={styles.divisor} />
+            <View style={styles.cartao}>
 
-                <Pressable
-                    style={styles.linhaConfig}
-                    onPress={() => navigation.getParent()?.navigate('ListaPets')}
-                >
-                    <Ionicons name="paw-outline" size={23} color="#80502D" />
-                    <Text style={styles.textoConfig}>Gerenciar meus pets</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#80502D" />
-                </Pressable>
-
-
-                <View style={styles.divisor} />
-
-                {/* ajuda e suporte */}
-                <Pressable
-                    style={styles.linhaConfig}
+                <LinhaConfig
+                    icone="help-circle-outline"
+                    texto="Ajuda e suporte"
                     onPress={() => Alert.alert(
                         'Ajuda e suporte',
                         'Para cadastrar um pet, utilize Meus Pets. Para acompanhar alimentação, peso, vacinas e outros cuidados, acesse a aba Meu Pet.'
                     )}
-                >
-                    <Ionicons
-                        name="help-circle-outline"
-                        size={23}
-                        color="#80502D"
-                    />
-
-                    <Text style={styles.textoConfig}>
-                        Ajuda e suporte
-                    </Text>
-
-                    <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color="#80502D"
-                    />
-                </Pressable>
+                />
 
                 <View style={styles.divisor} />
 
-                {/* sobre o aplicativo */}
-                <Pressable
-                    style={styles.linhaConfig}
+                <LinhaConfig
+                    icone="information-circle-outline"
+                    texto="Sobre o Tutus"
                     onPress={() => Alert.alert(
                         'Sobre o Tutus',
                         'O Tutus é um aplicativo acadêmico desenvolvido em React Native para auxiliar tutores na organização e no acompanhamento dos cuidados de seus animais de estimação.\n\nVersão demonstrativa 1.0.'
                     )}
-                >
-                    <Ionicons
-                        name="information-circle-outline"
-                        size={23}
-                        color="#80502D"
-                    />
-
-                    <Text style={styles.textoConfig}>
-                        Sobre o Tutus
-                    </Text>
-
-                    <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color="#80502D"
-                    />
-                </Pressable>
+                />
 
                 <View style={styles.divisor} />
 
-                {/* excluir conta */}
-                <Pressable
-                    style={styles.linhaConfig}
+                <LinhaConfig
+                    icone="trash-outline"
+                    texto="Excluir conta"
+                    perigo
                     onPress={() => Alert.alert(
                         'Excluir conta',
                         'A exclusão de conta ainda não está disponível nesta versão demonstrativa. Nenhum dado será apagado.'
                     )}
-                >
-                    <Ionicons
-                        name="trash-outline"
-                        size={23}
-                        color="#A52C2C"
-                    />
-
-                    <Text
-                        style={[
-                            styles.textoConfig,
-                            { color: '#A52C2C' }
-                        ]}
-                    >
-                        Excluir conta
-                    </Text>
-
-                    <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color="#A52C2C"
-                    />
-                </Pressable>
-
-                <View style={styles.divisor} />
-
-                {/* sair da conta */}
-                <Pressable
-                    style={styles.linhaConfig}
-                    onPress={sairDaConta}
-                >
-                    <Ionicons
-                        name="log-out-outline"
-                        size={23}
-                        color="#A52C2C"
-                    />
-
-                    <Text
-                        style={[
-                            styles.textoConfig,
-                            { color: '#A52C2C' }
-                        ]}
-                    >
-                        Sair da conta
-                    </Text>
-
-                    <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color="#A52C2C"
-                    />
-                </Pressable>
+                />
 
             </View>
 
+            {/* sair da conta: botão separado, como nos apps grandes */}
+            <Pressable
+                onPress={sairDaConta}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.botaoSair, pressed && styles.pressionado]}
+            >
+                <Ionicons name="log-out-outline" size={22} color={cores.erro} />
+                <Text style={styles.textoSair}>Sair da conta</Text>
+            </Pressable>
 
             {/* JANELA DA ENGRENAGEM */}
             <Modal
@@ -481,60 +450,39 @@ export default function Tutor({ navigation }) {
                 animationType="slide"
                 onRequestClose={() => setConfigVisivel(false)}
             >
-                <ScrollView
-                    style={styles.container}
-                    contentContainerStyle={styles.conteudoConfig}
-                    keyboardShouldPersistTaps="handled"
-                >
-
-                    {/* cabeçalho da janela */}
-                    <View style={styles.topoConfig}>
-
+                <TelaComTopo
+                    titulo="Meu perfil"
+                    subtitulo="Informações e personalização"
+                    direita={
                         <Pressable
+                            style={styles.engrenagemPerfil}
                             onPress={() => setConfigVisivel(false)}
+                            accessibilityRole="button"
                             accessibilityLabel="Voltar ao perfil"
                         >
-                            <Ionicons
-                                name="arrow-back"
-                                size={26}
-                                color="#332716"
-                            />
+                            <Ionicons name="close" size={26} color={cores.marrom} />
                         </Pressable>
-
-                        <Text style={styles.tituloConfig}>
-                            Informações e Personalização
-                        </Text>
-
-                    </View>
+                    }
+                >
 
                     {/* INFORMAÇÕES DO TUTOR */}
-                    <View style={styles.card}>
+                    <Cartao style={styles.card}>
 
-                        <Text style={styles.textoCard}>
+                        <Text style={[styles.textoCard, styles.espacoTitulo]}>
                             Informações do tutor
                         </Text>
 
-                        <Text style={styles.labelCampo}>
-                            Nome
-                        </Text>
-
-                        <TextInput
-                            style={styles.campo}
+                        <CampoTexto
+                            label="Nome"
                             placeholder="Seu nome"
-                            placeholderTextColor="#8C8177"
                             value={nomeEdicao}
                             onChangeText={setNomeEdicao}
                             maxLength={60}
                         />
 
-                        <Text style={styles.labelCampo}>
-                            E-mail
-                        </Text>
-
-                        <TextInput
-                            style={styles.campo}
+                        <CampoTexto
+                            label="E-mail"
                             placeholder="exemplo@email.com"
-                            placeholderTextColor="#8C8177"
                             value={emailEdicao}
                             onChangeText={setEmailEdicao}
                             keyboardType="email-address"
@@ -542,43 +490,33 @@ export default function Tutor({ navigation }) {
                             autoCorrect={false}
                         />
 
-                        <Text style={styles.labelCampo}>
-                            Telefone
-                        </Text>
-
-                        <TextInput
-                            style={styles.campo}
+                        <CampoTexto
+                            label="Telefone"
                             placeholder="(00) 00000-0000"
-                            placeholderTextColor="#8C8177"
                             value={telefoneEdicao}
                             onChangeText={setTelefoneEdicao}
                             keyboardType="phone-pad"
                             maxLength={16}
                         />
 
-                        <Pressable
-                            style={[
-                                styles.botaoEditar,
-                                { marginTop: 18 }
-                            ]}
+                        <Botao
+                            titulo="Salvar informações"
+                            larga
                             onPress={salvarDadosConta}
-                        >
-                            <Text style={styles.textoBotao}>
-                                Salvar informações
-                            </Text>
-                        </Pressable>
+                            style={styles.botaoSalvar}
+                        />
 
                         <Text style={styles.aviso}>
                             Seu e-mail e telefone não serão
                             exibidos no perfil público do pet.
                         </Text>
 
-                    </View>
+                    </Cartao>
 
                     {/* PERSONALIZAÇÃO */}
-                    <View style={styles.card}>
+                    <Cartao style={styles.card}>
 
-                        <Text style={styles.textoCard}>
+                        <Text style={[styles.textoCard, styles.espacoTitulo]}>
                             Personalização
                         </Text>
 
@@ -600,7 +538,7 @@ export default function Tutor({ navigation }) {
                             <Ionicons
                                 name="color-palette-outline"
                                 size={22}
-                                color="#80502D"
+                                color={cores.marrom}
                             />
 
                             <Text style={styles.textoConfig}>
@@ -610,8 +548,8 @@ export default function Tutor({ navigation }) {
                             {perfil.tema === 'padrao' && (
                                 <Ionicons
                                     name="checkmark-circle"
-                                    size={21}
-                                    color="#80502D"
+                                    size={22}
+                                    color={cores.laranja}
                                 />
                             )}
                         </Pressable>
@@ -630,7 +568,7 @@ export default function Tutor({ navigation }) {
                             <Ionicons
                                 name="color-fill-outline"
                                 size={22}
-                                color="#80502D"
+                                color={cores.marrom}
                             />
 
                             <Text style={styles.textoConfig}>
@@ -640,274 +578,359 @@ export default function Tutor({ navigation }) {
                             {perfil.tema === 'suave' && (
                                 <Ionicons
                                     name="checkmark-circle"
-                                    size={21}
-                                    color="#80502D"
+                                    size={22}
+                                    color={cores.laranja}
                                 />
                             )}
                         </Pressable>
 
-                        <Text style={styles.aviso}>
+                        <Text style={[styles.aviso, { marginTop: 12 }]}>
                             Por enquanto, a personalização altera
                             apenas a cor do cabeçalho do Perfil
                             do Tutor. A personalização completa
                             do aplicativo será desenvolvida depois.
                         </Text>
 
-                    </View>
+                    </Cartao>
 
-                </ScrollView>
+                </TelaComTopo>
             </Modal>
 
-        </ScrollView>
+        </TelaComTopo>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFDF8',
-    },
-
-    conteudo: {
-        padding: 25,
-        paddingTop: 45,
-        paddingBottom: 35,
-    },
-
-    titulo: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 32,
-        color: '#332716',
-    },
-
-    subtitulo: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 18,
-        color: '#75571F',
-        marginBottom: 25,
-    },
-
-    card: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#EADFCB',
-        borderRadius: 20,
-        padding: 18,
-        marginBottom: 16,
-    },
-
-    textoCard: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 20,
-        color: '#332716',
+    tituloTela: {
+        fontFamily: fontes.negrito,
+        fontSize: 34,
+        lineHeight: 44,
+        color: cores.marrom,
+        textAlign: 'center',
+        marginBottom: 14,
     },
 
 
-    cabecalhoPerfil: {
-        backgroundColor: '#FFEAC8',
-        borderRadius: 24,
-        padding: 22,
+    heroi: {
+        backgroundColor: cores.marrom,
+        borderRadius: 30,
+        padding: 16,
+        overflow: 'hidden',
+    },
+
+    heroiSuave: {
+        backgroundColor: cores.terracota,
+    },
+
+    heroiAnel: {
+        position: 'absolute',
+        top: -60,
+        right: -50,
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: 'rgba(250, 159, 42, 0.13)',
+    },
+
+    heroiLinha: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
+        gap: 14,
     },
 
-    avatarTutor: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        backgroundColor: '#FFFDF8',
+    avatarTopo: {
+        width: 95,
+        height: 95,
+        borderRadius: 44,
+        backgroundColor: cores.marrom,
+        borderWidth: 4,
+        borderColor: cores.fundo,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        ...sombra,
+    },
+
+    heroiTextos: {
+        flex: 1,
+        minWidth: 0,
+    },
+
+    heroiRotulo: {
+        fontFamily: fontes.negrito,
+        fontSize: 12,
+        lineHeight: 22,
+        letterSpacing: 1.6,
+        color: cores.terracota,
     },
 
     nomeTutor: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 25,
-        color: '#332716',
-        textAlign: 'center',
+        fontFamily: fontes.negrito,
+        fontSize: 26,
+        lineHeight: 34,
+        color: cores.laranjaClaro,
     },
 
-    bioTutor: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 15,
-        color: '#75571F',
-        textAlign: 'center',
-        marginTop: 5,
-    },
-
-    contagem: {
+    heroiDetalhe: {
+        fontFamily: fontes.regular,
         fontSize: 14,
-        color: '#80502D',
-        marginTop: 10,
-        marginBottom: 15,
+        lineHeight: 20,
+        color: 'rgba(255, 234, 200, 0.72)',
     },
 
-    botaoEditar: {
-        backgroundColor: '#80502D',
-        paddingHorizontal: 20,
-        paddingVertical: 11,
-        borderRadius: 14,
+    numeros: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 16,
+    },
+
+    numeroBloco: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 10,
+        backgroundColor: cores.branco,
+        borderRadius: 20,
+        paddingVertical: 9,
+        paddingHorizontal: 11,
+    },
+
+    numeroBola: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: cores.laranja,
+        alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
     },
 
-    textoBotao: {
-        color: '#FFFFFF',
-        fontSize: 15,
-        fontWeight: 'bold',
+    numeroBolaEscura: {
+        backgroundColor: cores.marrom,
     },
 
-    campo: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#EADFCB',
-        borderRadius: 12,
-        padding: 12,
+    numeroValor: {
+        fontFamily: fontes.negrito,
+        fontSize: 18,
+        lineHeight: 24,
+        color: cores.marrom,
+    },
+
+    numeroLegenda: {
+        fontFamily: fontes.regular,
+        fontSize: 12,
+        lineHeight: 16,
+        color: cores.marromClaro,
+    },
+
+    linhaTitulo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+
+    tituloSecao: {
+        fontFamily: fontes.negrito,
+        fontSize: 24,
+        lineHeight: 32,
+        color: cores.marrom,
+        marginTop: 22,
+        marginBottom: 10,
+    },
+
+    link: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
         marginTop: 12,
-        color: '#332716',
-        textAlignVertical: 'top',
+    },
+
+    textoLink: {
+        fontFamily: fontes.negrito,
+        fontSize: 15,
+        color: cores.laranja,
+    },
+
+    cartao: {
+        backgroundColor: cores.branco,
+        borderRadius: 25,
+        padding: 14,
+        ...sombra,
     },
 
     listaPets: {
-        gap: 16,
-        paddingTop: 15,
+        gap: 14,
+        paddingBottom: 4,
     },
 
     itemPet: {
         alignItems: 'center',
-        width: 73,
+        width: 74,
     },
 
-    avatarPet: {
-        width: 58,
-        height: 58,
-        borderRadius: 29,
-    },
-
-    semFoto: {
-        backgroundColor: '#FFFDF8',
-        justifyContent: 'center',
+    botaoAdicionar: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        borderWidth: 2,
+        borderStyle: 'dashed',
+        borderColor: cores.laranja,
+        backgroundColor: cores.branco,
         alignItems: 'center',
+        justifyContent: 'center',
     },
 
     nomePet: {
-        fontSize: 13,
-        color: '#332716',
+        fontFamily: fontes.regular,
+        fontSize: 15,
+        color: cores.marrom,
         marginTop: 6,
         textAlign: 'center',
-        width: 73,
+        width: 74,
+    },
+
+    dica: {
+        fontFamily: fontes.regular,
+        fontSize: 13,
+        color: cores.marromClaro,
+        textAlign: 'center',
+        marginTop: 8,
+    },
+
+    bolinha: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: cores.laranja,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    bolinhaEscura: {
+        backgroundColor: cores.marrom,
+    },
+
+    bolinhaPerigo: {
+        backgroundColor: cores.erro,
     },
 
     linhaConfig: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        paddingVertical: 13,
+        paddingVertical: 4,
+    },
+
+    linhaSwitch: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+
+    textosSwitch: {
+        flex: 1,
+        minWidth: 0,
     },
 
     textoConfig: {
         flex: 1,
-        fontSize: 15,
-        color: '#332716',
+        fontFamily: fontes.regular,
+        fontSize: 17,
+        color: cores.marrom,
+    },
+
+    textoPerigo: {
+        color: cores.erro,
     },
 
     aviso: {
-        fontSize: 12,
-        color: '#75571F',
-        marginBottom: 10,
+        fontFamily: fontes.regular,
+        fontSize: 13,
+        lineHeight: 18,
+        color: cores.marromClaro,
     },
 
     divisor: {
         height: 1,
-        backgroundColor: '#EADFCB',
-        marginVertical: 8,
+        backgroundColor: 'rgba(51, 39, 22, 0.08)',
+        marginVertical: 10,
     },
 
     botaoSair: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 10,
-        padding: 16,
+        gap: 8,
+        backgroundColor: cores.branco,
+        borderRadius: 25,
+        height: 54,
+        marginTop: 16,
+        marginBottom: 10,
+        ...sombra,
     },
 
     textoSair: {
-        color: '#A52C2C',
-        fontWeight: 'bold',
-        fontSize: 16,
+        fontFamily: fontes.negrito,
+        fontSize: 18,
+        color: cores.erro,
     },
 
-    cancelar: {
-        color: '#80502D',
-        textAlign: 'center',
-        marginTop: 12,
+    pressionado: {
+        opacity: 0.7,
+        transform: [{ scale: 0.97 }],
     },
 
-    linhaFotoConfiguracoes: {
-        flexDirection: 'row',
+    // ----- janela da engrenagem -----
+    engrenagemPerfil: {
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: cores.fundo,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 15,
+    },
+
+    card: {
+        backgroundColor: cores.branco,
+        borderRadius: 25,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 0,
+        ...sombra,
+    },
+
+    textoCard: {
+        fontFamily: fontes.negrito,
+        fontSize: 22,
+        color: cores.marrom,
+    },
+
+    espacoTitulo: {
+        marginBottom: 14,
+    },
+
+    botaoSalvar: {
+        marginTop: 4,
         marginBottom: 12,
     },
 
-    engrenagemPerfil: {
-        width: 45,
-        height: 45,
-        borderRadius: 23,
-        backgroundColor: '#FFFDF8',
-        borderWidth: 1,
-        borderColor: '#EADFCB',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-
-    conteudoConfig: {
-        paddingHorizontal: 20,
-        paddingTop: 55,
-        paddingBottom: 45,
-    },
-
-    topoConfig: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 15,
-        marginBottom: 25,
-    },
-
-    tituloConfig: {
-        flex: 1,
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 23,
-        color: '#332716',
-    },
-
     labelCampo: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 15,
-        color: '#75571F',
-        marginTop: 14,
+        fontFamily: fontes.negrito,
+        fontSize: 17,
+        color: cores.marrom,
     },
 
     opcaoTema: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: '#FFFDF8',
-        borderWidth: 1,
-        borderColor: '#EADFCB',
+        backgroundColor: cores.branco,
+        borderWidth: 1.5,
+        borderColor: 'rgba(51, 39, 22, 0.1)',
         padding: 14,
-        borderRadius: 13,
+        borderRadius: raio.campo,
         marginTop: 10,
     },
 
     opcaoSelecionada: {
-        backgroundColor: '#FFEAC8',
-        borderColor: '#80502D',
+        borderColor: cores.laranja,
     },
-
 });

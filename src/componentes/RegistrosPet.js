@@ -1,9 +1,7 @@
 
 import React, { useCallback, useState } from 'react';
 
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, StyleSheet, Alert, } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 import {
@@ -13,12 +11,25 @@ import {
   removerRegistro,
 } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { cores, fontes, sombra } from '../styles/tema';
 
 // est inicial dos registros do pet
 const REGISTROS_VAZIOS = {
   alimentacao: [],
   peso: [],
 };
+
+// Ex.: "12/11 • 14:10"
+function quandoRegistro(texto) {
+  const d = new Date(texto);
+  const dia = String(d.getDate()).padStart(2, '0');
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const hora = String(d.getHours()).padStart(2, '0');
+  const minuto = String(d.getMinutes()).padStart(2, '0');
+
+  return `${dia}/${mes} • ${hora}:${minuto}`;
+}
 
 // componente reutilizável para alimentação e peso
 function SecaoRegistro({
@@ -32,84 +43,125 @@ function SecaoRegistro({
   desabilitado,
 }) {
 
+  const ehAlimentacao = unidade === 'g';
+
+  const atalhos = ehAlimentacao ? ['50', '100', '150', '200'] : [];
+
+  const ultimos = registros.slice(0, 5);
+  const restantes = registros.length - ultimos.length;
+
   return (
-    <View style={styles.card}>
+    <>
+      <Text style={styles.tituloSecao}>{titulo}</Text>
 
-      <Text style={styles.titulo}>{titulo}</Text>
+      {/* formulário */}
+      <View style={styles.card}>
 
-      <Text style={styles.legenda}>
-        Informe {titulo === 'Alimentação'
-          ? 'a quantidade de alimento em gramas'
-          : 'o peso atual em quilogramas'}.
-      </Text>
+        <View style={styles.linhaFormulario}>
 
-      {/* campo e botão de salvar */}
-      <View style={styles.linhaFormulario}>
+          <View style={[styles.bola, !ehAlimentacao && styles.bolaEscura]}>
+            <Ionicons
+              name={ehAlimentacao ? 'restaurant-outline' : 'scale-outline'}
+              size={20}
+              color={ehAlimentacao ? cores.marrom : cores.laranjaClaro}
+            />
+          </View>
 
-        <TextInput
-          style={styles.campo}
-          value={valor}
-          onChangeText={aoDigitar}
-          placeholder={unidade === 'g' ? 'Ex.: 150' : 'Ex.: 4,5'}
-          placeholderTextColor="#8C8177"
-          keyboardType="decimal-pad"
-          accessibilityLabel={`${titulo} em ${unidade === 'g' ? 'gramas' : 'quilogramas'
-            }`}
-        />
+          <View style={styles.campoCaixa}>
+            <TextInput
+              style={styles.campoNumero}
+              value={valor}
+              onChangeText={aoDigitar}
+              placeholder={ehAlimentacao ? 'Quanto comeu?' : 'Peso de hoje'}
+              placeholderTextColor="#A89A82"
+              keyboardType="decimal-pad"
+              accessibilityLabel={`${titulo} em ${ehAlimentacao ? 'gramas' : 'quilogramas'}`}
+            />
+            <Text style={styles.unidade}>{unidade}</Text>
+          </View>
 
-        <TouchableOpacity
-          style={[
-            styles.botao,
-            desabilitado && styles.botaoDesabilitado,
-          ]}
-          onPress={aoSalvar}
-          disabled={desabilitado}
-          accessibilityRole="button"
-        >
-          <Text style={styles.botaoTexto}>Salvar</Text>
-        </TouchableOpacity>
+          <Pressable
+            onPress={aoSalvar}
+            disabled={desabilitado}
+            accessibilityRole="button"
+            accessibilityLabel={`Salvar ${titulo.toLowerCase()}`}
+            style={({ pressed }) => [
+              styles.botaoRedondo,
+              !ehAlimentacao && styles.bolaEscura,
+              (pressed || desabilitado) && styles.pressionado,
+            ]}
+          >
+            <Ionicons
+              name="checkmark"
+              size={24}
+              color={ehAlimentacao ? cores.marrom : cores.laranjaClaro}
+            />
+          </Pressable>
+
+        </View>
+
+        {atalhos.length > 0 ? (
+          <View style={styles.atalhos}>
+            {atalhos.map(quantidade => (
+              <Pressable
+                key={quantidade}
+                onPress={() => aoDigitar(quantidade)}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.atalho,
+                  valor === quantidade && styles.atalhoAtivo,
+                  pressed && styles.pressionado,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.atalhoTexto,
+                    valor === quantidade && styles.atalhoTextoAtivo,
+                  ]}
+                >
+                  {quantidade} g
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
       </View>
 
-      {/* histórico de registros */}
-      <Text style={styles.subtitulo}>
-        Últimos registros
-      </Text>
-
+      {/* histórico */}
       {registros.length === 0 ? (
 
         <Text style={styles.vazio}>
-          Nenhum registro ainda.
+          {ehAlimentacao
+            ? 'Sem refeições registradas no momento'
+            : 'Sem pesagens registradas no momento'}
         </Text>
 
       ) : (
 
-        registros.slice(0, 5).map((registro) => (
+        ultimos.map((registro) => (
 
-          <View key={registro.id} style={styles.registro}>
+          <View key={registro.id} style={styles.item}>
 
-            <View style={styles.detalhes}>
-
-              <Text style={styles.valor}>
+            <View style={styles.textos}>
+              <Text style={styles.nome}>
                 {String(registro.valor).replace('.', ',')} {unidade}
               </Text>
-
-              <Text style={styles.data}>
-                {new Date(registro.data).toLocaleDateString('pt-BR')}
+              <Text style={styles.informacao}>
+                {quandoRegistro(registro.data)}
               </Text>
-
             </View>
 
-            <TouchableOpacity
+            <Pressable
               onPress={() => aoExcluir(registro.id)}
               disabled={desabilitado}
+              hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={`Excluir registro de ${titulo.toLowerCase()}`}
+              style={({ pressed }) => [styles.iconeAcao, pressed && styles.pressionado]}
             >
-              <Text style={styles.excluir}>
-                Excluir
-              </Text>
-            </TouchableOpacity>
+              <Ionicons name="trash-outline" size={19} color={cores.erro} />
+            </Pressable>
 
           </View>
 
@@ -117,7 +169,12 @@ function SecaoRegistro({
 
       )}
 
-    </View>
+      {restantes > 0 ? (
+        <Text style={styles.informacaoCentro}>
+          + {restantes} {restantes === 1 ? 'registro anterior' : 'registros anteriores'}
+        </Text>
+      ) : null}
+    </>
   );
 }
 
@@ -369,107 +426,244 @@ export default function RegistrosPet() {
   );
 }
 
-// estilos
 const styles = StyleSheet.create({
+    tituloSecao: {
+    fontFamily: fontes.negrito,
+    fontSize: 24,
+    lineHeight: 32,
+    color: cores.marrom,
+    marginTop: 22,
+    marginBottom: 10,
+  },
 
   card: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#FA9F2A',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 15,
-  },
-
-  titulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#332716',
-  },
-
-  legenda: {
-    fontSize: 14,
-    color: '#75571F',
-    marginTop: 6,
-    marginBottom: 12,
-  },
-
-  linhaFormulario: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
+    backgroundColor: cores.branco,
+    borderRadius: 25,
+    padding: 14,
+    marginBottom: 10,
+    ...sombra,
   },
 
   campo: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#CDBDA9',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    height: 50,
+    backgroundColor: cores.branco,
+    borderWidth: 1.5,
+    borderColor: cores.laranja,
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    fontFamily: fontes.regular,
     fontSize: 16,
-    color: '#332716',
+    color: cores.marrom,
+    marginBottom: 10,
+  },
+
+  campoGrande: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: 'top',
   },
 
   botao: {
-    backgroundColor: '#80502D',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-  },
-
-  botaoDesabilitado: {
-    opacity: 0.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: cores.laranja,
   },
 
   botaoTexto: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontFamily: fontes.negrito,
+    fontSize: 17,
+    color: cores.marrom,
   },
 
-  subtitulo: {
-    color: '#332716',
-    fontWeight: 'bold',
-    marginTop: 18,
-    marginBottom: 7,
+  link: {
+    fontFamily: fontes.negrito,
+    fontSize: 15,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: cores.branco,
+    borderRadius: 22,
+    paddingVertical: 11,
+    paddingLeft: 11,
+    paddingRight: 8,
+    marginBottom: 10,
+    ...sombra,
+  },
+
+  bola: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: cores.laranja,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  bolaEscura: {
+    backgroundColor: cores.marrom,
+  },
+
+  bolaFeita: {
+    backgroundColor: 'rgba(51, 39, 22, 0.08)',
+  },
+
+  textos: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  nome: {
+    fontFamily: fontes.negrito,
+    fontSize: 16,
+    lineHeight: 22,
+    color: cores.marrom,
+  },
+
+  nomeFeito: {
+    color: cores.marromClaro,
+    textDecorationLine: 'line-through',
+  },
+
+  informacao: {
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: cores.marromClaro,
+  },
+
+  selo: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+
+  seloTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+
+  iconeAcao: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   vazio: {
-    color: '#75571F',
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    paddingVertical: 10,
   },
 
-  registro: {
+  aviso: {
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    color: cores.marromClaro,
+    marginVertical: 10,
+  },
+
+  pressionado: {
+    opacity: 0.7,
+    transform: [{ scale: 0.97 }],
+  },
+
+  
+  linhaFormulario: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 9,
-    borderTopWidth: 1,
-    borderTopColor: '#EFE6DD',
+    gap: 10,
   },
 
-  detalhes: {
+  campoCaixa: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderWidth: 1.5,
+    borderColor: cores.laranja,
+    borderRadius: 15,
+    paddingHorizontal: 12,
   },
 
-  valor: {
+  campoNumero: {
+    flex: 1,
+    fontFamily: fontes.regular,
     fontSize: 16,
-    color: '#332716',
+    color: cores.marrom,
   },
 
-  data: {
-    fontSize: 12,
-    color: '#75571F',
+  unidade: {
+    fontFamily: fontes.negrito,
+    fontSize: 15,
+    color: cores.marromClaro,
   },
 
-  excluir: {
-    color: '#A52C2C',
-    padding: 10,
+  botaoRedondo: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: cores.laranja,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  atalhos: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+
+  atalho: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 16,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(51, 39, 22, 0.06)',
+  },
+
+  atalhoAtivo: {
+    backgroundColor: cores.laranja,
+  },
+
+  atalhoTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 14,
+    lineHeight: 26,
+    color: cores.marromClaro,
+  },
+
+  atalhoTextoAtivo: {
+    color: cores.marrom,
+  },
+
+  informacaoCentro: {
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    marginBottom: 6,
   },
 
   mensagem: {
-    color: '#75571F',
+    fontFamily: fontes.regular,
+    color: cores.marromClaro,
     fontSize: 15,
-    marginBottom: 15,
+    marginVertical: 15,
   },
 
 });

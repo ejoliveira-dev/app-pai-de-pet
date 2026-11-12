@@ -1,18 +1,26 @@
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { buscarPet, obterPetSelecionadoId, definirPetSelecionadoId } from '../database/Database';
+import { buscarPet, obterPetSelecionadoId, definirPetSelecionadoId, obterPerfilTutor } from '../database/Database';
 
 // usestate = guarda o pet que vai ser mostrado na home.
 // usecallback = auxilia na execução da função de carregamento.
 // usefocuseffect = atualiza os dados quando a home recebe o foco.
 // asyncstorage = recupera e guarda a seleção do pet.
 
-import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
 import PainelHome from '../componentes/PainelHome';
+
+import TelaComTopo from '../componentes/TelaComTopo';
+import AvatarPet from '../componentes/AvatarPet';
+import Cartao from '../componentes/Cartao';
+import Chip from '../componentes/Chip';
+import Botao from '../componentes/Botao';
+import { cores, fontes, textos } from '../styles/tema';
+import logo from "../../assets/images/logo-ofc-png-empty1.0.png";
 
 function calcularIdade(dataNascimento) {
   if (!dataNascimento) return "Idade não informada";
@@ -60,12 +68,14 @@ function calcularIdade(dataNascimento) {
   return `${anos} ${anos === 1 ? "ano" : "anos"} e ${meses} ${meses === 1 ? "mês" : "meses"}`;
 }
 
-
 export default function Home({ navigation, route }) {
   const db = useSQLiteContext();
 
   const petRecebido = route.params?.petSelecionado;
   const [pet, setPet] = useState(petRecebido || null);
+
+  const [nomeTutor, setNomeTutor] = useState("");
+  const [carregando, setCarregando] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -75,11 +85,24 @@ export default function Home({ navigation, route }) {
         try {
           const idRecebido = petRecebido?.id_pet;
           const idAnterior = await obterPetSelecionadoId(db);
-          const idProcurado = idRecebido || idAnterior;
 
-          const petAtualizado = idProcurado
-            ? await buscarPet(db, idProcurado)
+          let petAtualizado = idRecebido
+            ? await buscarPet(db, idRecebido)
             : null;
+
+          // se o pet recebido não existir mais, tenta recuperar o último selecionado.
+          if (!petAtualizado && idAnterior) {
+            petAtualizado = await buscarPet(db, idAnterior);
+          }
+
+          if (
+            petAtualizado &&
+            String(petAtualizado.id_pet) !== String(idAnterior)
+          ) {
+            await definirPetSelecionadoId(db, petAtualizado.id_pet);
+          }
+
+          const perfil = await obterPerfilTutor(db);
 
           if (idRecebido && petAtualizado) {
             await definirPetSelecionadoId(db, idRecebido);
@@ -87,6 +110,7 @@ export default function Home({ navigation, route }) {
 
           if (ativo) {
             setPet(petAtualizado);
+            setNomeTutor(perfil?.nome || "");
           }
 
         } catch (erro) {
@@ -94,6 +118,12 @@ export default function Home({ navigation, route }) {
 
           if (ativo) {
             setPet(petRecebido || null);
+          }
+        }
+
+        finally {
+          if (ativo) {
+            setCarregando(false);
           }
         }
       }
@@ -107,161 +137,120 @@ export default function Home({ navigation, route }) {
     }, [db, petRecebido?.id_pet])
   );
 
+  function editarPet() {
+    if (pet) {
+      navigation.navigate("CadastroPets", {
+        petParaEditar: pet
+      });
+    }
+  }
+
   const idade = pet?.data_nascimento
     ? calcularIdade(pet.data_nascimento)
     : pet?.idade_Aproximada || "Idade não informada";
 
+  const primeiroNome = nomeTutor.trim().split(" ")[0];
+
+  const titulo = primeiroNome
+    ? `Olá, ${primeiroNome}!`
+    : "Olá, humano!";
+
   return (
-    <View style={styles.container}>
+    <TelaComTopo logo={logo}>
+      <Text style={styles.saudacao}>{titulo}</Text>
 
-      <ScrollView
-        contentContainerStyle={styles.conteudo}
-        showsVerticalScrollIndicator={false}
-      >
-
-        {/* cabeçalho */}
-        <View style={styles.blocoPet}>
-
-          <Text style={styles.saudacao}>
-            Olá, humano!
-          </Text>
-
-          <Text style={styles.subtitulo}>
-            Veja como está seu pet hoje.
-          </Text>
-
-          {/* pet selecionado */}
-          <View style={styles.petCard}>
-
-            {pet?.foto_perfil ? (
-              <Image
-                source={{ uri: pet.foto_perfil }}
-                style={styles.fotoPet}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.fotoPet,
-                  {
-                    backgroundColor: "#FFEAC8",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="paw"
-                  size={30}
-                  color="#FA9F2A"
-                />
-              </View>
-            )}
-
-            <View style={styles.infoPet}>
-
-              <Text style={styles.nomePet}>
-                {pet?.nome || "Nenhum pet selecionado"}
-              </Text>
-
-              <Text style={styles.dadosPet}>
-                {pet
-                  ? `${pet.especie} • ${idade}`
-                  : "Escolha um pet na lista"}
-              </Text>
-
-            </View>
+      {pet ? (
+        <Cartao style={styles.petCard}>
+          <View style={styles.avatarBox}>
+            <AvatarPet foto={pet.foto_perfil} tamanho={76} selecionado />
 
             <Pressable
-              style={styles.botaoTrocar}
-              onPress={() => navigation.navigate("ListaPets")}
+              style={styles.badgeFoto}
+              onPress={editarPet}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Editar foto e dados do pet"
             >
-              <Ionicons
-                name="swap-horizontal"
-                size={24}
-                color="#332716"
-              />
+              <Ionicons name="camera" size={14} color={cores.fundo} />
             </Pressable>
-
           </View>
 
-        </View>
+          <View style={styles.infoPet}>
+            <Text style={textos.etiqueta}>SEU COMPANHEIRO</Text>
 
-        {/* painel de acompanhamento do pet */}
-        <PainelHome
-          pet={pet}
-          onAbrirCuidados={() =>
-            navigation.navigate('PetPrivado')
-          }
-        />
+            <Text style={styles.nomePet} numberOfLines={1}>
+              {pet.nome || "Meu pet"}
+            </Text>
 
-      </ScrollView >
+            <View style={styles.chips}>
+              <Chip pequeno texto={pet.especie || "Pet"} icone="paw" />
+              <Chip pequeno texto={idade} icone="calendar-outline" />
+            </View>
+          </View>
 
-    </View >
+          <Pressable
+            style={styles.botaoTrocar}
+            onPress={() => navigation.navigate("ListaPets")}
+            accessibilityRole="button"
+            accessibilityLabel="Trocar de pet"
+          >
+            <Ionicons name="swap-horizontal" size={24} color={cores.marrom} />
+          </Pressable>
+        </Cartao>
+      ) : (
+        !carregando && (
+          <Cartao style={styles.vazio}>
+            <AvatarPet tamanho={96} />
 
+            <Text style={styles.textoVazio}>
+              Nenhum pet selecionado. Escolha um pet na lista para ver o resumo dos cuidados.
+            </Text>
+
+            <Botao
+              titulo="Escolher pet"
+              larga
+              onPress={() => navigation.navigate("ListaPets")}
+            />
+          </Cartao>
+        )
+      )}
+
+      <PainelHome
+        pet={pet}
+        onAbrirCuidados={() => navigation.navigate("PetPrivado")}
+      />
+    </TelaComTopo>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFDF8',
-  },
-
-  conteudo: {
-    paddingHorizontal: 20,
-    paddingTop: 35,
-    paddingBottom: 35,
-  },
-
-  blocoPet: {
-    backgroundColor: '#FA9F2A',
-    borderRadius: 28,
-    padding: 22,
-    marginBottom: 28,
-  },
-
-  saudacao: {
-    fontFamily: 'Ruwudu-Bold',
-    fontSize: 30,
-    color: '#332716',
-  },
-
-  subtitulo: {
-    fontFamily: 'Ruwudu-Regular',
-    fontSize: 17,
-    color: '#75571F',
-    marginBottom: 15,
-  },
-
   petCard: {
-    backgroundColor: '#FFFDF8',
-    borderRadius: 20,
-    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-
-  fotoPet: {
-    width: 65,
-    height: 65,
-    borderRadius: 33,
-    marginRight: 12,
+    gap: 14,
+    marginBottom: 8,
+    borderWidth: 0,
+    borderRadius: 28,
   },
 
   infoPet: {
     flex: 1,
+    minWidth: 0,
   },
 
   nomePet: {
-    fontFamily: 'Ruwudu-Bold',
-    fontSize: 23,
-    color: '#332716',
+    fontFamily: fontes.negrito,
+    fontSize: 26,
+    color: cores.marrom,
+    lineHeight: 34,
+    marginTop: 2,
   },
 
   dadosPet: {
-    fontFamily: 'Ruwudu-Regular',
-    fontSize: 15,
-    color: '#75571F',
+    fontFamily: fontes.regular,
+    fontSize: 18,
+    lineHeight: 22,
+    color: cores.marromClaro,
   },
 
   botaoTrocar: {
@@ -273,4 +262,57 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-});
+  avatarBox: {
+    width: 76,
+    height: 76,
+  },
+
+  badgeFoto: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: cores.laranja,
+    borderWidth: 2,
+    borderColor: cores.fundo,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+
+  vazio: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 28,
+  },
+
+  textoVazio: {
+    fontFamily: fontes.regular,
+    fontSize: 19,
+    lineHeight: 26,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+
+  saudacao: {
+    fontFamily: fontes.negrito,
+    fontSize: 40,
+    color: cores.marrom,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+
+  chipBranco: {
+    backgroundColor: cores.branco,
+  },
+
+})

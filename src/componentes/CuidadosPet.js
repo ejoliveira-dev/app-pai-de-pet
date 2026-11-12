@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, Alert, StyleSheet } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 import {
@@ -11,6 +11,8 @@ import {
   removerCuidado
 } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { cores, fontes, sombra } from '../styles/tema';
 
 // coloca as barras automaticamente na data
 function formatarData(texto) {
@@ -238,185 +240,328 @@ export default function CuidadosPet({ tipo }) {
     );
   }
 
-  return (
-    <View style={styles.container}>
+  // consulta = marrom; medicamento = laranja
+  const icone = consulta ? 'calendar-outline' : 'medical-outline';
 
-      <Text style={styles.titulo}>
+  return (
+    <>
+      <Text style={styles.tituloSecao}>
         {consulta ? 'Consultas' : 'Medicamentos'}
       </Text>
 
-      <TextInput
-        style={styles.campo}
-        placeholder={consulta
-          ? 'Nome da consulta'
-          : 'Nome do medicamento'}
-        placeholderTextColor="#8C8177"
-        value={nome}
-        onChangeText={setNome}
-      />
+      {/* formulário */}
+      <View style={styles.card}>
 
-      <TextInput
-        style={styles.campo}
-        placeholder={consulta
-          ? 'Data da consulta: DD/MM/AAAA'
-          : 'Data de início: DD/MM/AAAA'}
-        placeholderTextColor="#8C8177"
-        value={data}
-        onChangeText={texto => setData(formatarData(texto))}
-        keyboardType="numeric"
-        maxLength={10}
-      />
+        <TextInput
+          style={styles.campo}
+          placeholder={consulta
+            ? 'Nome da consulta (ex.: rotina, dentista)'
+            : 'Nome do medicamento'}
+          placeholderTextColor="#A89A82"
+          value={nome}
+          onChangeText={setNome}
+        />
 
-      <TextInput
-        style={styles.campo}
-        placeholder={consulta
-          ? 'Local ou observações'
-          : 'Dosagem e frequência'}
-        placeholderTextColor="#8C8177"
-        value={detalhes}
-        onChangeText={setDetalhes}
-        multiline
-      />
+        <TextInput
+          style={styles.campo}
+          placeholder={consulta
+            ? 'Data da consulta: DD/MM/AAAA'
+            : 'Data de início: DD/MM/AAAA'}
+          placeholderTextColor="#A89A82"
+          value={data}
+          onChangeText={texto => setData(formatarData(texto))}
+          keyboardType="numeric"
+          maxLength={10}
+        />
 
-      <TouchableOpacity
-        style={styles.botao}
-        onPress={salvar}
-        disabled={salvando}
-      >
-        <Text style={styles.botaoTexto}>
-          {editando ? 'Salvar alterações' : '+ Adicionar'}
-        </Text>
-      </TouchableOpacity>
+        <TextInput
+          style={[styles.campo, styles.campoGrande]}
+          placeholder={consulta
+            ? 'Local ou observações (opcional)'
+            : 'Dosagem e frequência (ex.: 1 comprimido a cada 12h)'}
+          placeholderTextColor="#A89A82"
+          value={detalhes}
+          onChangeText={setDetalhes}
+          multiline
+        />
 
-      {editando && (
-        <TouchableOpacity onPress={limparFormulario}>
-          <Text style={styles.acao}>Cancelar edição</Text>
-        </TouchableOpacity>
-      )}
+        <Pressable
+          onPress={salvar}
+          disabled={salvando}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.botao,
+            consulta && styles.bolaEscura,
+            (pressed || salvando) && styles.pressionado
+          ]}
+        >
+          <Ionicons
+            name={editando ? 'checkmark' : 'add'}
+            size={20}
+            color={consulta ? cores.laranjaClaro : cores.marrom}
+          />
+          <Text style={[styles.botaoTexto, consulta && { color: cores.laranjaClaro }]}>
+            {editando ? 'Salvar alterações' : 'Adicionar'}
+          </Text>
+        </Pressable>
 
-      <Text style={styles.subtitulo}>Registros</Text>
+        {editando && (
+          <Pressable onPress={limparFormulario} hitSlop={8}>
+            <Text style={styles.link}>Cancelar edição</Text>
+          </Pressable>
+        )}
 
+      </View>
+
+      {/* lista */}
       {registros.length === 0 && (
-        <Text style={styles.aviso}>
-          Nenhum registro cadastrado.
+        <Text style={styles.vazio}>
+          {consulta
+            ? 'Sem consultas registradas no momento'
+            : 'Sem medicamentos registrados no momento'}
         </Text>
       )}
 
-      {registros.map(item => (
-        <View key={item.id} style={styles.registro}>
+      {registros.map(item => {
 
-          <Text style={styles.nome}>{item.nome}</Text>
-          <Text style={styles.informacao}>
-            Data: {item.data}
-          </Text>
+        const feito = item.concluido;
 
-          {!!item.detalhes && (
-            <Text style={styles.informacao}>
-              {item.detalhes}
-            </Text>
-          )}
+        return (
+          <View key={item.id} style={styles.item}>
 
-          <Text style={styles.informacao}>
-            Status: {item.concluido
-              ? (consulta ? 'Realizada' : 'Finalizado')
-              : (consulta ? 'Agendada' : 'Em uso')}
-          </Text>
+            {/* tocar na bolinha muda o status */}
+            <Pressable
+              onPress={() => alterarStatus(item.id)}
+              disabled={salvando}
+              accessibilityRole="button"
+              accessibilityLabel="Alterar status"
+              style={({ pressed }) => [
+                styles.bola,
+                consulta && styles.bolaEscura,
+                feito && styles.bolaFeita,
+                pressed && styles.pressionado
+              ]}
+            >
+              <Ionicons
+                name={feito ? 'checkmark' : icone}
+                size={20}
+                color={feito || !consulta ? cores.marrom : cores.laranjaClaro}
+              />
+            </Pressable>
 
-          <TouchableOpacity
-            onPress={() => alterarStatus(item.id)}
-            disabled={salvando}
-          >
-            <Text style={styles.acao}>
-              Alterar status
-            </Text>
-          </TouchableOpacity>
+            <View style={styles.textos}>
+              <Text
+                style={[styles.nome, feito && styles.nomeFeito]}
+                numberOfLines={1}
+              >
+                {item.nome}
+              </Text>
 
-          <TouchableOpacity
-            onPress={() => editar(item)}
-            disabled={salvando}
-          >
-            <Text style={styles.acao}>Editar</Text>
-          </TouchableOpacity>
+              <Text style={styles.informacao} numberOfLines={2}>
+                {item.data}{item.detalhes ? ` • ${item.detalhes}` : ''}
+              </Text>
 
-          <TouchableOpacity
-            onPress={() => excluir(item.id)}
-            disabled={salvando}
-          >
-            <Text style={styles.excluir}>Excluir</Text>
-          </TouchableOpacity>
+              <Text style={[styles.status, !feito && styles.statusAtivo]}>
+                {feito
+                  ? (consulta ? 'Realizada' : 'Finalizado')
+                  : (consulta ? 'Agendada' : 'Em uso')}
+              </Text>
+            </View>
 
-        </View>
-      ))}
+            <Pressable
+              onPress={() => editar(item)}
+              disabled={salvando}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Editar"
+              style={({ pressed }) => [styles.iconeAcao, pressed && styles.pressionado]}
+            >
+              <Ionicons name="pencil" size={18} color={cores.marromClaro} />
+            </Pressable>
 
-    </View>
+            <Pressable
+              onPress={() => excluir(item.id)}
+              disabled={salvando}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Excluir"
+              style={({ pressed }) => [styles.iconeAcao, pressed && styles.pressionado]}
+            >
+              <Ionicons name="trash-outline" size={19} color={cores.erro} />
+            </Pressable>
+
+          </View>
+        );
+      })}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#FA9F2A',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 15
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#332716',
-    marginBottom: 12
-  },
-  campo: {
-    borderWidth: 1,
-    borderColor: '#CDBDA9',
-    borderRadius: 10,
-    padding: 12,
+    tituloSecao: {
+    fontFamily: fontes.negrito,
+    fontSize: 24,
+    lineHeight: 32,
+    color: cores.marrom,
+    marginTop: 22,
     marginBottom: 10,
-    color: '#332716'
   },
-  botao: {
-    backgroundColor: '#80502D',
+
+  card: {
+    backgroundColor: cores.branco,
+    borderRadius: 25,
     padding: 14,
-    borderRadius: 12,
-    alignItems: 'center'
+    marginBottom: 10,
+    ...sombra,
   },
-  botaoTexto: {
-    color: '#FFFFFF',
-    fontWeight: 'bold'
-  },
-  subtitulo: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#332716',
-    marginTop: 20,
-    marginBottom: 10
-  },
-  registro: {
-    borderTopWidth: 1,
-    borderTopColor: '#EFE6DD',
-    paddingVertical: 12
-  },
-  nome: {
+
+  campo: {
+    height: 50,
+    backgroundColor: cores.branco,
+    borderWidth: 1.5,
+    borderColor: cores.laranja,
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    fontFamily: fontes.regular,
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#332716'
+    color: cores.marrom,
+    marginBottom: 10,
   },
+
+  campoGrande: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: 'top',
+  },
+
+  botao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: cores.laranja,
+  },
+
+  botaoTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 17,
+    color: cores.marrom,
+  },
+
+  link: {
+    fontFamily: fontes.negrito,
+    fontSize: 15,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: cores.branco,
+    borderRadius: 22,
+    paddingVertical: 11,
+    paddingLeft: 11,
+    paddingRight: 8,
+    marginBottom: 10,
+    ...sombra,
+  },
+
+  bola: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: cores.laranja,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  bolaEscura: {
+    backgroundColor: cores.marrom,
+  },
+
+  bolaFeita: {
+    backgroundColor: 'rgba(51, 39, 22, 0.08)',
+  },
+
+  textos: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  nome: {
+    fontFamily: fontes.negrito,
+    fontSize: 16,
+    lineHeight: 22,
+    color: cores.marrom,
+  },
+
+  nomeFeito: {
+    color: cores.marromClaro,
+    textDecorationLine: 'line-through',
+  },
+
   informacao: {
-    color: '#75571F',
-    marginTop: 5
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: cores.marromClaro,
   },
-  acao: {
-    color: '#80502D',
-    fontWeight: 'bold',
-    marginTop: 10
+
+  selo: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
-  excluir: {
-    color: '#A52C2C',
-    marginTop: 10
+
+  seloTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 12,
+    lineHeight: 18,
   },
+
+  iconeAcao: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  vazio: {
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    paddingVertical: 10,
+  },
+
   aviso: {
-    color: '#75571F',
-    marginVertical: 10
-  }
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    color: cores.marromClaro,
+    marginVertical: 10,
+  },
+
+  pressionado: {
+    opacity: 0.7,
+    transform: [{ scale: 0.97 }],
+  },
+
+  
+  status: {
+    fontFamily: fontes.negrito,
+    fontSize: 12,
+    lineHeight: 18,
+    color: cores.marromClaro,
+  },
+
+  statusAtivo: {
+    color: cores.laranja,
+  },
 });
