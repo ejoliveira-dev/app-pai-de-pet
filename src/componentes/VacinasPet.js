@@ -1,9 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 
-import {
-    View, Text, TextInput, TouchableOpacity, Alert, StyleSheet
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, Alert, StyleSheet } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 import {
@@ -14,6 +12,8 @@ import {
     removerVacina
 } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { cores, fontes, sombra } from '../styles/tema';
 
 // formata automaticamente a data
 function formatarData(texto) {
@@ -221,170 +221,315 @@ export default function VacinasPet() {
         );
     }
 
+    // situação de cada vacina: aplicada, atrasada ou pendente
+    function situacao(vacina) {
+        if (vacina.aplicada) {
+            return { texto: 'Aplicada', fundo: 'rgba(51, 39, 22, 0.08)', cor: cores.marromClaro };
+        }
+
+        const [dia, mes, ano] = vacina.data.split('/').map(Number);
+        const dataVacina = new Date(ano, mes - 1, dia);
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
+        if (dataVacina < hoje) {
+            return { texto: 'Atrasada', fundo: cores.erro, cor: cores.fundo };
+        }
+
+        return { texto: 'Pendente', fundo: cores.laranja, cor: cores.marrom };
+    }
+
     return (
-        <View style={styles.container}>
+        <>
+            <Text style={styles.tituloSecao}>Vacinas</Text>
 
-            <Text style={styles.titulo}>
-                Vacinas e lembretes
-            </Text>
+            {/* formulário */}
+            <View style={styles.card}>
 
-            <TextInput
-                style={styles.campo}
-                placeholder="Nome da vacina"
-                placeholderTextColor="#8C8177"
-                value={nome}
-                onChangeText={setNome}
-            />
+                <TextInput
+                    style={styles.campo}
+                    placeholder="Nome da vacina (ex.: V4, antirrábica)"
+                    placeholderTextColor="#A89A82"
+                    value={nome}
+                    onChangeText={setNome}
+                />
 
-            <TextInput
-                style={styles.campo}
-                placeholder="DD/MM/AAAA"
-                placeholderTextColor="#8C8177"
-                value={data}
-                onChangeText={(texto) => setData(formatarData(texto))}
-                keyboardType="numeric"
-                maxLength={10}
-            />
+                <View style={styles.linha}>
+                    <TextInput
+                        style={[styles.campo, styles.campoData]}
+                        placeholder="DD/MM/AAAA"
+                        placeholderTextColor="#A89A82"
+                        value={data}
+                        onChangeText={(texto) => setData(formatarData(texto))}
+                        keyboardType="numeric"
+                        maxLength={10}
+                    />
 
-            <TouchableOpacity
-                style={styles.botao}
-                onPress={adicionarVacina}
-                disabled={salvando}
-            >
-                <Text style={styles.textoBotao}>
-                    + Adicionar Vacina
-                </Text>
-            </TouchableOpacity>
+                    <Pressable
+                        onPress={adicionarVacina}
+                        disabled={salvando}
+                        accessibilityRole="button"
+                        style={({ pressed }) => [
+                            styles.botao,
+                            styles.botaoLinha,
+                            (pressed || salvando) && styles.pressionado
+                        ]}
+                    >
+                        <Ionicons name="add" size={20} color={cores.marrom} />
+                        <Text style={styles.botaoTexto}>Adicionar</Text>
+                    </Pressable>
+                </View>
 
-            <Text style={styles.subtitulo}>
-                Vacinas cadastradas
-            </Text>
+            </View>
 
+            {/* lista */}
             {vacinas.length === 0 ? (
-                <Text style={styles.aviso}>
-                    Nenhuma vacina cadastrada.
+                <Text style={styles.vazio}>
+                    Sem vacinas registradas no momento
                 </Text>
             ) : (
-                vacinas.map(vacina => (
-                    <View key={vacina.id} style={styles.card}>
+                vacinas.map(vacina => {
 
-                        <Text style={styles.nome}>
-                            {vacina.nome}
-                        </Text>
+                    const s = situacao(vacina);
 
-                        <Text style={styles.informacao}>
-                            Data: {vacina.data}
-                        </Text>
+                    return (
+                        <View key={vacina.id} style={styles.item}>
 
-                        <Text style={styles.informacao}>
-                            Status: {vacina.aplicada
-                                ? 'Aplicada'
-                                : 'Pendente'}
-                        </Text>
+                            {/* tocar na bolinha marca como aplicada / pendente */}
+                            <Pressable
+                                onPress={() => alterarStatus(vacina)}
+                                disabled={salvando}
+                                accessibilityRole="button"
+                                accessibilityLabel={vacina.aplicada ? 'Marcar como pendente' : 'Marcar como aplicada'}
+                                style={({ pressed }) => [
+                                    styles.bola,
+                                    vacina.aplicada && styles.bolaFeita,
+                                    pressed && styles.pressionado
+                                ]}
+                            >
+                                <Ionicons
+                                    name={vacina.aplicada ? 'checkmark' : 'medkit-outline'}
+                                    size={20}
+                                    color={cores.marrom}
+                                />
+                            </Pressable>
 
-                        <TouchableOpacity
-                            onPress={() => alterarStatus(vacina)}
-                            disabled={salvando}
-                        >
-                            <Text style={styles.acao}>
-                                {vacina.aplicada
-                                    ? 'Marcar como pendente'
-                                    : 'Marcar como aplicada'}
-                            </Text>
-                        </TouchableOpacity>
+                            <View style={styles.textos}>
+                                <Text
+                                    style={[styles.nome, vacina.aplicada && styles.nomeFeito]}
+                                    numberOfLines={1}
+                                >
+                                    {vacina.nome}
+                                </Text>
+                                <Text style={styles.informacao}>{vacina.data}</Text>
+                            </View>
 
-                        <TouchableOpacity
-                            onPress={() => excluirVacina(vacina.id)}
-                            disabled={salvando}
-                        >
-                            <Text style={styles.excluir}>
-                                Excluir vacina
-                            </Text>
-                        </TouchableOpacity>
+                            <View style={[styles.selo, { backgroundColor: s.fundo }]}>
+                                <Text style={[styles.seloTexto, { color: s.cor }]}>{s.texto}</Text>
+                            </View>
 
-                    </View>
-                ))
+                            <Pressable
+                                onPress={() => excluirVacina(vacina.id)}
+                                disabled={salvando}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Excluir vacina"
+                                style={({ pressed }) => [styles.iconeAcao, pressed && styles.pressionado]}
+                            >
+                                <Ionicons name="trash-outline" size={19} color={cores.erro} />
+                            </Pressable>
+
+                        </View>
+                    );
+                })
             )}
 
-        </View>
+            {vacinas.length > 0 ? (
+                <Text style={styles.dica}>
+                    Toque na bolinha para marcar como aplicada
+                </Text>
+            ) : null}
+        </>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#FA9F2A',
-        padding: 18,
-        marginBottom: 15
-    },
+  tituloSecao: {
+    fontFamily: fontes.negrito,
+    fontSize: 24,
+    lineHeight: 32,
+    color: cores.marrom,
+    marginTop: 22,
+    marginBottom: 10,
+  },
 
-    titulo: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#332716',
-        marginBottom: 15
-    },
+  card: {
+    backgroundColor: cores.branco,
+    borderRadius: 25,
+    padding: 14,
+    marginBottom: 10,
+    ...sombra,
+  },
 
-    subtitulo: {
-        fontSize: 17,
-        fontWeight: 'bold',
-        color: '#332716',
-        marginVertical: 15
-    },
+  campo: {
+    height: 50,
+    backgroundColor: cores.branco,
+    borderWidth: 1.5,
+    borderColor: cores.laranja,
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    fontFamily: fontes.regular,
+    fontSize: 16,
+    color: cores.marrom,
+    marginBottom: 10,
+  },
 
-    campo: {
-        borderWidth: 1,
-        borderColor: '#CDBDA9',
-        borderRadius: 10,
-        padding: 12,
-        marginBottom: 10,
-        color: '#332716'
-    },
+  campoGrande: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: 'top',
+  },
 
-    botao: {
-        backgroundColor: '#80502D',
-        padding: 14,
-        borderRadius: 12,
-        alignItems: 'center'
-    },
+  botao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: cores.laranja,
+  },
 
-    textoBotao: {
-        color: '#FFFFFF',
-        fontWeight: 'bold'
-    },
+  botaoTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 17,
+    color: cores.marrom,
+  },
 
-    card: {
-        borderTopWidth: 1,
-        borderTopColor: '#EFE6DD',
-        paddingVertical: 12
-    },
+  link: {
+    fontFamily: fontes.negrito,
+    fontSize: 15,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    marginTop: 10,
+  },
 
-    nome: {
-        fontWeight: 'bold',
-        fontSize: 16,
-        color: '#332716'
-    },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: cores.branco,
+    borderRadius: 22,
+    paddingVertical: 11,
+    paddingLeft: 11,
+    paddingRight: 8,
+    marginBottom: 10,
+    ...sombra,
+  },
 
-    informacao: {
-        color: '#75571F',
-        marginTop: 5
-    },
+  bola: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: cores.laranja,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-    acao: {
-        color: '#80502D',
-        fontWeight: 'bold',
-        marginTop: 12
-    },
+  bolaEscura: {
+    backgroundColor: cores.marrom,
+  },
 
-    excluir: {
-        color: '#A52C2C',
-        marginTop: 12
-    },
+  bolaFeita: {
+    backgroundColor: 'rgba(51, 39, 22, 0.08)',
+  },
 
-    aviso: {
-        color: '#75571F',
-        marginVertical: 10
-    }
+  textos: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  nome: {
+    fontFamily: fontes.negrito,
+    fontSize: 16,
+    lineHeight: 22,
+    color: cores.marrom,
+  },
+
+  nomeFeito: {
+    color: cores.marromClaro,
+    textDecorationLine: 'line-through',
+  },
+
+  informacao: {
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: cores.marromClaro,
+  },
+
+  selo: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+
+  seloTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+
+  iconeAcao: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  vazio: {
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    paddingVertical: 10,
+  },
+
+  aviso: {
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    color: cores.marromClaro,
+    marginVertical: 10,
+  },
+
+  pressionado: {
+    opacity: 0.7,
+    transform: [{ scale: 0.97 }],
+  },
+
+  
+  linha: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  campoData: {
+    flex: 1,
+    marginBottom: 0,
+  },
+
+  botaoLinha: {
+    height: 50,
+    paddingHorizontal: 16,
+  },
+
+  dica: {
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
 });

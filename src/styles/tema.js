@@ -10,6 +10,7 @@ export const cores = {
   bordaCartao: "#F5D7A8",
   marrom: "#332716",
   marromClaro: "#75571F",
+  terracota: "#D18B5F",
   borda: "#C9B89D",
   erro: "#A52C2C",
 };

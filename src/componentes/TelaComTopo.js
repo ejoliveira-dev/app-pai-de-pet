@@ -10,9 +10,9 @@ const TAMANHO_LOGO = 120;      // largura e altura da logo
 
 const MOLDURA_LOGO = "quadrado";
 const SOBREPOSICAO = 28;
-export default function TelaComTopo({ titulo, subtitulo, direita, children, rolagem = true, logo }) {
+export default function TelaComTopo({ titulo, subtitulo, direita, children, rolagem = true, logo, centro, }) {
   const insets = useSafeAreaInsets();
-  const comLogo = !!logo;
+  const comLogo = !!logo || !!centro;
 
   const linha = insets.top + ALTURA_TOPO_BAIXO - SOBREPOSICAO;
 
@@ -70,8 +70,20 @@ export default function TelaComTopo({ titulo, subtitulo, direita, children, rola
           )}
         </View>
 
+        {/* outro elemento no lugar da logo (ex.: foto do tutor) */}
+        {centro ? (
+          <View
+            style={[
+              estilos.faixaLogo,
+              { top: linha - TAMANHO_LOGO / 2, height: TAMANHO_LOGO, justifyContent: "center" }
+            ]}
+          >
+            {centro}
+          </View>
+        ) : null}
+
         {/* logo no centro, metade no laranja e metade no claro */}
-        {comLogo ? (
+        {logo ? (
           <View
             style={[estilos.faixaLogo, { top: linha - TAMANHO_LOGO / 2 }]}
             pointerEvents="none"

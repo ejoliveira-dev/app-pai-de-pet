@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Cartao from './Cartao';
 import Botao from './Botao';
-import { cores, fontes, raio, textos } from '../styles/tema';
+import { cores, fontes, raio, sombra, textos } from '../styles/tema';
 
 // Estrutura inicial do painel.
 const VAZIO = {
@@ -132,7 +132,6 @@ function Vazio({ icone, texto, acao, onAcao }) {
   );
 }
 
-// linha de lista (vacina, consulta, medicamento, lembrete).
 function ItemLista({ icone, titulo, detalhe, atrasado, ultimo }) {
   return (
     <View style={[styles.itemLista, !ultimo && styles.itemDivisor]}>
@@ -152,64 +151,210 @@ function ItemLista({ icone, titulo, detalhe, atrasado, ultimo }) {
   );
 }
 
-// componente reutilizável para os gráficos.
-function Grafico({ titulo, pontos, unidade }) {
+// Altura da cápsula do gráfico e a menor barra em que ainda cabe o número
+const ALTURA_CAPSULA = 132;
+const BARRA_MINIMA = 36;
 
-  const maximo = Math.max(
-    1,
-    ...pontos.map(item => item.valor)
+
+const CORES_BARRAS = [
+  { fundo: cores.marrom, texto: cores.laranjaClaro },
+  { fundo: cores.terracota || '#D18B5F', texto: cores.marrom },
+  { fundo: cores.marromClaro, texto: cores.fundo }
+];
+
+function Grafico({ alimentacao, peso }) {
+
+  const [modo, setModo] = useState('alimentacao');
+
+  const escuro = modo === 'peso';
+
+  // vai de 0 (barras vazias) a 1 (barras na altura final)
+  const crescimento = useRef(new Animated.Value(0)).current;
+
+  // colunas do modo escolhido
+  let colunas;
+
+  if (modo === 'alimentacao') {
+
+    const maximo = Math.max(
+      1,
+      ...alimentacao.map(item => item.valor)
+    );
+
+    colunas = alimentacao.map((item, indice) => {
+
+      const hoje = indice === alimentacao.length - 1;
+
+      const cor = hoje
+        ? { fundo: cores.laranja, texto: cores.marrom }
+        : CORES_BARRAS[indice % CORES_BARRAS.length];
+
+      return {
+        chave: `alimentacao-${indice}`,
+        rotulo: hoje ? 'hoje' : item.label,
+        texto: `${numeroBR(item.valor)}g`,
+        altura: item.valor > 0
+          ? BARRA_MINIMA + (item.valor / maximo) * (ALTURA_CAPSULA - BARRA_MINIMA)
+          : 0,
+        destaque: hoje,
+        fundo: cor.fundo,
+        corTexto: cor.texto
+      };
+    });
+
+  } else {
+
+    // no peso, a escala vai do menor ao maior valor, para a variação aparecer
+    const valores = peso.map(item => item.valor);
+    const menor = Math.min(...valores);
+    const maior = Math.max(...valores);
+
+    colunas = peso.map((item, indice) => {
+
+      const ultimo = indice === peso.length - 1;
+
+      return {
+        chave: `peso-${indice}`,
+        rotulo: item.label,
+        texto: `${numeroBR(item.valor)}kg`,
+        altura: maior === menor
+          ? ALTURA_CAPSULA * 0.7
+          : ALTURA_CAPSULA * 0.45 +
+            ((item.valor - menor) / (maior - menor)) * ALTURA_CAPSULA * 0.55,
+        destaque: ultimo,
+        fundo: ultimo ? cores.laranja : cores.laranjaClaro,
+        corTexto: cores.marrom
+      };
+    });
+
+    // completa com cápsulas vazias até ter 5
+    while (colunas.length < 5) {
+      colunas.unshift({
+        chave: `vazia-${colunas.length}`,
+        rotulo: '',
+        texto: '',
+        altura: 0,
+        destaque: false,
+        fundo: 'transparent',
+        corTexto: cores.marrom
+      });
+    }
+  }
+
+  const temDados = colunas.some(coluna => coluna.altura > 0);
+
+  // muda só quando o desenho das barras muda (não a cada minuto)
+  const assinatura = `${modo}:${colunas.map(coluna => Math.round(coluna.altura)).join(',')}`;
+
+  // as barras crescem ao abrir a tela, ao trocar o seletor e quando os dados mudam
+  useFocusEffect(
+    useCallback(() => {
+
+      crescimento.setValue(0);
+
+      const animacao = Animated.timing(crescimento, {
+        toValue: 1,
+        duration: 650,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false
+      });
+
+      animacao.start();
+
+      return () => animacao.stop();
+
+    }, [assinatura, crescimento])
   );
 
-  const temDados = pontos.some(item => item.valor > 0);
-
   return (
-    <Cartao style={styles.cartao}>
+    <>
+      <View style={styles.linhaTitulo}>
 
-      <Text style={styles.tituloCartao}>
-        {titulo}
-      </Text>
+        <TituloSecao>Acompanhamento</TituloSecao>
 
-      {!temDados ? (
-        <Vazio
-          icone="bar-chart-outline"
-          texto="Ainda não há registros para mostrar."
-        />
-      ) : (
+        <View style={styles.seletor}>
+          {[
+            { id: 'alimentacao', nome: 'Alimentação' },
+            { id: 'peso', nome: 'Peso' }
+          ].map(opcao => {
 
-        <View style={styles.grafico}>
+            const ativa = modo === opcao.id;
+            const dePeso = opcao.id === 'peso';
 
-          {pontos.map((item, indice) => (
+            return (
+              <Pressable
+                key={opcao.id}
+                onPress={() => setModo(opcao.id)}
+                accessibilityRole="button"
+                style={[
+                  styles.seletorOpcao,
+                  ativa && (dePeso ? styles.seletorOpcaoPeso : styles.seletorOpcaoAlimentacao)
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.seletorTexto,
+                    ativa && (dePeso ? styles.seletorTextoPeso : styles.seletorTextoAlimentacao)
+                  ]}
+                >
+                  {opcao.nome}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+      </View>
+
+      <View style={[styles.capsulas, escuro && styles.capsulasEscuro]}>
+
+        {temDados ? (
+        <View style={styles.capsulasLinha}>
+
+          {colunas.map(coluna => (
 
             <View
-              key={`${item.label}-${indice}`}
-              style={styles.coluna}
+              key={coluna.chave}
+              style={styles.capsulaColuna}
             >
 
-              <Text
-                style={styles.numeroGrafico}
-                numberOfLines={1}
-              >
-                {numeroBR(item.valor)}{unidade}
-              </Text>
+              <View style={[styles.capsulaTrilho, escuro && styles.capsulaTrilhoEscuro]}>
 
-              <View style={styles.baseBarra}>
-
-                <View
-                  style={[
-                    styles.barra,
-                    {
-                      height: Math.max(
-                        5,
-                        (item.valor / maximo) * 90
-                      )
-                    }
-                  ]}
-                />
+                {coluna.altura > 0 ? (
+                  <Animated.View
+                    style={[
+                      styles.capsulaBarra,
+                      {
+                        backgroundColor: coluna.fundo,
+                        height: crescimento.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, coluna.altura]
+                        })
+                      }
+                    ]}
+                  >
+                    <Text
+                      style={[styles.capsulaNumero, { color: coluna.corTexto }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      {coluna.texto}
+                    </Text>
+                  </Animated.View>
+                ) : null}
 
               </View>
 
-              <Text style={styles.rotuloGrafico}>
-                {item.label}
+              <Text
+                style={[
+                  styles.capsulaRotulo,
+                  escuro && styles.capsulaRotuloEscuro,
+                  coluna.destaque && styles.capsulaRotuloHoje,
+                  coluna.destaque && escuro && styles.capsulaRotuloHojeEscuro
+                ]}
+                numberOfLines={1}
+              >
+                {coluna.rotulo}
               </Text>
 
             </View>
@@ -217,10 +362,16 @@ function Grafico({ titulo, pontos, unidade }) {
           ))}
 
         </View>
+        ) : (
+          <Text style={[styles.capsulasNota, escuro && styles.capsulasNotaEscuro]}>
+            {modo === 'alimentacao'
+              ? 'Sem refeições registradas no momento'
+              : 'Sem pesagens registradas no momento'}
+          </Text>
+        )}
 
-      )}
-
-    </Cartao>
+      </View>
+    </>
   );
 }
 
@@ -630,7 +781,6 @@ export default function PainelHome({
     }
   }
 
-  // Contagem até a próxima refeição
   const refeicao = useMemo(() => {
 
     if (!intervalo) return { estado: 'semIntervalo' };
@@ -655,15 +805,83 @@ export default function PainelHome({
         ? `${h}h`
         : `${m}min`;
 
+    const horaPrevista = new Date(inicio + duracao).getHours();
+
     return {
       estado: falta <= 0 ? 'passou' : 'contando',
-      texto: falta <= 0 ? 'Hora de comer!' : `em ${tempo}`,
+      perto: falta <= 3600000,
+      tempo,
       fracao: Math.min(1, Math.max(0, (agora - inicio) / duracao)),
       ultima: quando(new Date(inicio), agora),
       prevista: quando(new Date(inicio + duracao), agora),
+      deDia: horaPrevista >= 6 && horaPrevista < 18,
     };
 
   }, [dados, agora, intervalo]);
+
+  const modoRefeicao = !intervalo || escolhendoIntervalo
+    ? 'intervalo'
+    : refeicao.estado === 'contando' && !refeicao.perto
+      ? 'longe'
+      : 'acao';
+
+  const paleta = modoRefeicao === 'acao'
+    ? {
+      fundo: cores.laranja,
+      texto: cores.marrom,
+      suave: 'rgba(51, 39, 22, 0.78)',
+      rotulo: 'rgba(51, 39, 22, 0.72)',
+      anel: 'rgba(255, 234, 200, 0.28)',
+      bola: cores.laranjaClaro,
+      trilho: 'rgba(51, 39, 22, 0.16)',
+      barra: cores.marrom,
+      chip: 'rgba(255, 253, 248, 0.38)',
+      botao: cores.marrom,
+      textoBotao: cores.laranjaClaro,
+    }
+    : {
+      fundo: cores.marrom,
+      texto: cores.laranjaClaro,
+      suave: 'rgba(255, 234, 200, 0.72)',
+      rotulo: '#D18B5F',
+      anel: 'rgba(250, 159, 42, 0.13)',
+      bola: cores.laranja,
+      trilho: 'rgba(255, 234, 200, 0.16)',
+      barra: cores.laranja,
+      chip: 'rgba(255, 234, 200, 0.13)',
+      botao: cores.laranja,
+      textoBotao: cores.marrom,
+    };
+
+  const nomePet = pet?.nome || 'Seu pet';
+
+  const primeiroNomePet = nomePet.trim().split(' ')[0];
+
+  const fraseRefeicao = refeicao.estado === 'semRegistro'
+    ? 'Registre a primeira refeição'
+    : refeicao.estado === 'passou'
+      ? `Hora de comer, ${nomePet}!`
+      : `${nomePet} come em ${refeicao.tempo}`;
+
+  const iconeRefeicao = modoRefeicao !== 'longe'
+    ? 'restaurant-outline'
+    : refeicao.deDia
+      ? 'sunny-outline'
+      : 'moon-outline';
+
+  const pesagens = calculos.pesoHistorico;
+
+  const diferencaPeso = pesagens.length >= 2
+    ? pesagens[pesagens.length - 1].valor - pesagens[pesagens.length - 2].valor
+    : null;
+
+  const textoPeso = !calculos.ultimoPeso
+    ? ''
+    : diferencaPeso === null
+      ? 'peso atual'
+      : Math.abs(diferencaPeso) < 0.005
+        ? 'mesmo peso'
+        : `${diferencaPeso > 0 ? 'subiu' : 'desceu'} ${numeroBR(Math.abs(diferencaPeso))} kg`;
 
   // Mensagem se não houver pet selecionado
   if (!pet) {
@@ -674,6 +892,21 @@ export default function PainelHome({
         texto="Selecione um pet para visualizar seu resumo."
       />
     );
+  }
+
+  const agenda = [...calculos.atrasados, ...calculos.proximos];
+
+  function seloAgenda(data) {
+    const hoje = new Date(agora);
+    hoje.setHours(0, 0, 0, 0);
+
+    const dias = Math.round((data - hoje) / 86400000);
+
+    if (dias < 0) return { texto: 'Atrasada', estilo: 'seloAtrasado', estiloTexto: 'textoSeloClaro' };
+    if (dias === 0) return { texto: 'Hoje', estilo: 'seloHoje', estiloTexto: 'textoSeloEscuro' };
+    if (dias === 1) return { texto: 'Amanhã', estilo: 'seloAmanha', estiloTexto: 'textoSeloClaro' };
+
+    return { texto: `em ${dias} dias`, estilo: 'seloDepois', estiloTexto: 'textoSeloEscuro' };
   }
 
   const inicioHoje = new Date(agora).setHours(0, 0, 0, 0);
@@ -705,113 +938,151 @@ export default function PainelHome({
       </View>
 
       {/* HOJE: PRÓXIMA REFEIÇÃO */}
-      <View style={styles.heroi}>
+      <View style={[styles.refeicao, { backgroundColor: paleta.fundo }]}>
 
-        <View style={styles.heroiTopo}>
+        <View style={[styles.refeicaoAnel, { backgroundColor: paleta.anel }]} />
 
-          <View style={styles.heroiIcone}>
-            <Ionicons name="restaurant-outline" size={20} color={cores.marrom} />
-          </View>
+        <View style={[styles.refeicaoBola, { backgroundColor: paleta.bola }]}>
 
-          <View style={styles.heroiRotuloLinha}>
-            <Text style={styles.heroiRotulo} numberOfLines={1}>
-              Próxima refeição
+          <Ionicons name={iconeRefeicao} size={35} color={cores.marrom} />
+
+        </View>
+
+        <View style={styles.refeicaoTextos}>
+
+          <View style={styles.refeicaoRotuloLinha}>
+            <Text style={[styles.refeicaoRotulo, { color: paleta.rotulo }]}>
+              PRÓXIMA REFEIÇÃO
             </Text>
 
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel="Como a previsão funciona"
+              style={{ transform: [{ translateY: -3 }] }}
               onPress={() => Alert.alert(
                 'Como funciona',
                 'A previsão soma o intervalo que você escolheu ao horário da última refeição registrada. Não é uma recomendação veterinária.'
               )}
             >
-              <Ionicons name="information-circle-outline" size={18} color={cores.marromClaro} />
+              <Ionicons name="information-circle-outline" size={14} color={paleta.rotulo} />
             </Pressable>
           </View>
 
-          {intervalo && !escolhendoIntervalo ? (
-            <Pressable
-              style={styles.chipIntervalo}
-              onPress={() => setEscolhendoIntervalo(true)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Mudar o intervalo entre refeições"
+          {modoRefeicao === 'intervalo' ? (
+            <Text style={[styles.refeicaoFrase, { color: paleta.texto }]}>
+              De quanto em quanto tempo?
+            </Text>
+          ) : modoRefeicao === 'longe' ? (
+            <Text
+              style={[styles.refeicaoTempo, { color: paleta.texto }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
             >
-              <Text style={styles.textoChipIntervalo}>
-                a cada {intervalo}h
-              </Text>
-              <Ionicons name="pencil" size={13} color={cores.marrom} />
-            </Pressable>
-          ) : null}
+              <Text style={[styles.refeicaoEm, { color: paleta.suave }]}>em </Text>
+              {refeicao.tempo}
+            </Text>
+          ) : (
+            <Text style={[styles.refeicaoFrase, { color: paleta.texto }]}>
+              {fraseRefeicao}
+            </Text>
+          )}
 
         </View>
 
-        {!intervalo || escolhendoIntervalo ? (
-          <>
-            <Text style={styles.heroiPergunta}>
-              De quanto em quanto tempo?
-            </Text>
+        {modoRefeicao === 'intervalo' ? (
 
-            <View style={styles.opcoesIntervalo}>
-              {OPCOES_INTERVALO.map(horas => (
-                <Pressable
-                  key={horas}
-                  onPress={() => escolherIntervalo(horas)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`A cada ${horas} horas`}
-                  style={({ pressed }) => [
-                    styles.opcaoIntervalo,
-                    intervalo === horas && styles.opcaoIntervaloAtiva,
-                    pressed && styles.pressionado
+          <View style={styles.opcoesIntervalo}>
+            {OPCOES_INTERVALO.map(horas => (
+              <Pressable
+                key={horas}
+                onPress={() => escolherIntervalo(horas)}
+                accessibilityRole="button"
+                accessibilityLabel={`A cada ${horas} horas`}
+                style={({ pressed }) => [
+                  styles.opcaoIntervalo,
+                  { backgroundColor: intervalo === horas ? cores.laranja : paleta.chip },
+                  pressed && styles.pressionado
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.textoOpcaoIntervalo,
+                    { color: intervalo === horas ? cores.marrom : paleta.texto }
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.textoOpcaoIntervalo,
-                      intervalo === horas && styles.textoOpcaoIntervaloAtiva
-                    ]}
-                  >
-                    {horas}h
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : refeicao.estado === 'semRegistro' ? (
-          <Pressable
-            style={styles.heroiLink}
-            onPress={onAbrirCuidados}
-            accessibilityRole="button"
-          >
-            <Text style={styles.heroiPergunta}>
-              Registre a primeira refeição
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color={cores.marrom} />
-          </Pressable>
+                  {horas}h
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
         ) : (
           <>
-            <Text style={styles.heroiGrande}>
-              {refeicao.texto}
-            </Text>
+            {modoRefeicao === 'longe' ? (
+              <>
+                <View style={[styles.barraFundo, { backgroundColor: paleta.trilho }]}>
+                  <View
+                    style={[
+                      styles.barraCheia,
+                      {
+                        backgroundColor: paleta.barra,
+                        width: `${Math.round(refeicao.fracao * 100)}%`
+                      }
+                    ]}
+                  />
+                </View>
 
-            <View style={styles.barraFundo}>
-              <View
-                style={[
-                  styles.barraCheia,
-                  { width: `${Math.round(refeicao.fracao * 100)}%` }
-                ]}
-              />
-            </View>
-
-            <View style={styles.barraPontas}>
-              <Text style={styles.heroiLegenda}>
-                comeu {refeicao.ultima}
-              </Text>
-              <Text style={styles.heroiLegenda}>
+                <View style={styles.barraPontas}>
+                  <Text style={[styles.refeicaoLegenda, { color: paleta.suave }]}>
+                    comeu {refeicao.ultima}
+                  </Text>
+                  <Text style={[styles.refeicaoLegenda, { color: paleta.suave }]}>
+                    prevista {refeicao.prevista}
+                  </Text>
+                </View>
+              </>
+            ) : refeicao.prevista ? (
+              <Text style={[styles.refeicaoLegenda, styles.refeicaoLegendaSolta, { color: paleta.suave }]}>
                 prevista {refeicao.prevista}
               </Text>
+            ) : null}
+
+            <View style={styles.refeicaoAcoes}>
+
+              <Pressable
+                onPress={() => setEscolhendoIntervalo(true)}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Mudar o intervalo entre refeições"
+                style={({ pressed }) => [
+                  styles.refeicaoChip,
+                  { backgroundColor: paleta.bola },
+                  pressed && styles.pressionado
+                ]}
+              >
+                <Text style={[styles.refeicaoChipTexto, { color: cores.marrom }]}>
+                  a cada {intervalo}h
+                </Text>
+                <Ionicons name="pencil" size={13} color={cores.marrom} />
+              </Pressable>
+
+              <Pressable
+                onPress={onAbrirCuidados}
+                accessibilityRole="button"
+                accessibilityLabel="Registrar refeição"
+                style={({ pressed }) => [
+                  styles.refeicaoBotao,
+                  { backgroundColor: paleta.botao },
+                  pressed && styles.pressionado
+                ]}
+              >
+                <Ionicons name="add" size={18} color={paleta.textoBotao} />
+                <Text style={[styles.refeicaoBotaoTexto, { color: paleta.textoBotao }]}>
+                  Refeição
+                </Text>
+              </Pressable>
+
             </View>
           </>
         )}
@@ -821,190 +1092,197 @@ export default function PainelHome({
       <View style={styles.duasColunas}>
 
         {/* Alimentação */}
-        <Cartao style={styles.cartaoMenor}>
+        <Pressable
+          onPress={onAbrirCuidados}
+          accessibilityRole="button"
+          accessibilityLabel="Ver registros de alimentação"
+          style={({ pressed }) => [
+            styles.resumoBloco,
+            pressed && styles.pressionado
+          ]}
+        >
+          <View style={styles.resumoBola}>
+            <Ionicons name="restaurant-outline" size={20} color={cores.marrom} />
+          </View>
 
-          <Bolinha nome="restaurant-outline" />
-
-          <Text style={styles.numero}>
-            {calculos.quantidadeHoje
-              ? 'Registrada'
-              : 'Sem registro'}
-          </Text>
-
-          <Text style={styles.textoSecundario}>
-            Alimentação hoje
-          </Text>
-
-          <Text style={styles.detalhe}>
-            {numeroBR(calculos.totalHoje)} g • {calculos.quantidadeHoje} registro(s)
-          </Text>
-
-        </Cartao>
+          <View style={styles.resumoTextos}>
+            {calculos.totalHoje > 0 ? (
+              <Text style={styles.resumoFrase} numberOfLines={3}>
+                {primeiroNomePet} comeu{' '}
+                <Text style={styles.resumoFraseDestaque}>
+                  {numeroBR(calculos.totalHoje)} g
+                </Text>
+                {' '}hoje!
+              </Text>
+            ) : (
+              <Text style={styles.resumoValor}>—</Text>
+            )}
+          </View>
+        </Pressable>
 
         {/* Peso */}
-        <Cartao style={styles.cartaoMenor}>
+        <Pressable
+          onPress={onAbrirCuidados}
+          accessibilityRole="button"
+          accessibilityLabel="Ver registros de peso"
+          style={({ pressed }) => [
+            styles.resumoBloco,
+            pressed && styles.pressionado
+          ]}
+        >
+          <View style={[styles.resumoBola, styles.resumoBolaEscura]}>
+            <Ionicons name="scale-outline" size={20} color={cores.laranjaClaro} />
+          </View>
 
-          <Bolinha nome="scale-outline" />
-
-          <Text style={styles.numero}>
-            {calculos.ultimoPeso
-              ? `${numeroBR(calculos.ultimoPeso.valor)} kg`
-              : 'Sem registro'}
-          </Text>
-
-          <Text style={styles.textoSecundario}>
-            Último peso registrado
-          </Text>
-
-        </Cartao>
+          <View style={styles.resumoTextos}>
+            <Text style={styles.resumoValor} numberOfLines={1}>
+              {calculos.ultimoPeso
+                ? `${numeroBR(calculos.ultimoPeso.valor)} kg`
+                : '—'}
+            </Text>
+              {textoPeso ? (
+              <Text style={styles.resumoLegenda} numberOfLines={1}>
+                {textoPeso}
+            </Text>
+            ) : null}
+          </View>
+        </Pressable>
 
       </View>
 
       {/* GRÁFICOS */}
-      <TituloSecao>Acompanhamento</TituloSecao>
-
       <Grafico
-        titulo="Alimentação • últimos 7 dias"
-        pontos={calculos.alimentacaoSemana}
-        unidade="g"
+        alimentacao={calculos.alimentacaoSemana}
+        peso={calculos.pesoHistorico}
       />
 
-      <Grafico
-        titulo="Peso • últimos 5 registros"
-        pontos={calculos.pesoHistorico}
-        unidade="kg"
-      />
-
-      {/* CONSULTAS E VACINAS */}
       <View style={styles.linhaTitulo}>
 
-        <TituloSecao style={styles.semMargemTopo}>
-          Consultas e vacinas
-        </TituloSecao>
+        <TituloSecao>Agenda</TituloSecao>
 
-        <View style={styles.filtros}>
-
+        <View style={styles.seletor}>
           {[7, 30].map(dias => (
-
             <Pressable
               key={dias}
               onPress={() => setPeriodo(dias)}
+              accessibilityRole="button"
               style={[
-                styles.filtro,
-                periodo === dias && styles.filtroAtivo
+                styles.seletorOpcao,
+                periodo === dias && styles.seletorOpcaoPeso
               ]}
             >
               <Text
                 style={[
-                  styles.textoFiltro,
-                  periodo === dias && styles.textoFiltroAtivo
+                  styles.seletorTexto,
+                  periodo === dias && styles.seletorTextoPeso
                 ]}
               >
-                {dias === 7 ? '7 dias' : '30 dias'}
+                {dias} dias
               </Text>
             </Pressable>
-
           ))}
-
         </View>
 
       </View>
 
-      <Cartao style={styles.cartao}>
+      {agenda.length === 0 ? (
 
-        {calculos.proximos.length === 0 ? (
+        <Pressable
+          onPress={onAbrirCuidados}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.agendaItem,
+            pressed && styles.pressionado
+          ]}
+        >
+          <View style={[styles.agendaBola, styles.agendaBolaOk]}>
+            <Ionicons name="checkmark" size={22} color={cores.marrom} />
+          </View>
 
-          <Vazio
-            icone="calendar-outline"
-            texto={`Nenhuma consulta ou vacina pendente nos próximos ${periodo} dias.`}
-            acao="Ir para Cuidados"
-            onAcao={onAbrirCuidados}
-          />
+          <View style={styles.agendaTextos}>
+            <Text style={styles.agendaTitulo}>Tudo em dia</Text>
+            <Text style={styles.agendaDetalhe}>
+              Nada pendente nos próximos {periodo} dias
+            </Text>
+          </View>
 
-        ) : (
+          <Ionicons name="chevron-forward" size={18} color={cores.marromClaro} />
+        </Pressable>
 
-          calculos.proximos.map((item, i) => (
+      ) : (
 
-            <ItemLista
+        agenda.map(item => {
+
+          const selo = seloAgenda(item.data);
+
+          return (
+            <Pressable
               key={item.id}
-              icone={item.tipo === 'Vacina' ? 'medkit-outline' : 'calendar-outline'}
-              titulo={item.nome}
-              detalhe={`${item.tipo} • ${item.data.toLocaleDateString('pt-BR')}`}
-              ultimo={i === calculos.proximos.length - 1}
-            />
+              onPress={onAbrirCuidados}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.agendaItem,
+                pressed && styles.pressionado
+              ]}
+            >
+              <View
+                style={[
+                  styles.agendaBola,
+                  item.tipo === 'Vacina' ? styles.agendaBolaVacina : styles.agendaBolaConsulta
+                ]}
+              >
+                <Ionicons
+                  name={item.tipo === 'Vacina' ? 'medkit-outline' : 'calendar-outline'}
+                  size={20}
+                  color={item.tipo === 'Vacina' ? cores.marrom : cores.laranjaClaro}
+                />
+              </View>
 
-          ))
+              <View style={styles.agendaTextos}>
+                <Text style={styles.agendaTitulo} numberOfLines={1}>
+                  {item.nome}
+                </Text>
+                <Text style={styles.agendaDetalhe}>
+                  {item.tipo} • {item.data.toLocaleDateString('pt-BR')}
+                </Text>
+              </View>
 
-        )}
+              <View style={[styles.selo, styles[selo.estilo]]}>
+                <Text style={[styles.textoSelo, styles[selo.estiloTexto]]}>
+                  {selo.texto}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })
 
-      </Cartao>
+      )}
 
-      {/* MEDICAMENTOS */}
-      <TituloSecao>Medicamentos</TituloSecao>
+      {/* remédios em uso, em pílulas */}
+      {calculos.medicamentosAtivos.length > 0 ? (
+        <View style={styles.emUso}>
 
-      <Cartao style={styles.cartao}>
+          <Text style={styles.emUsoRotulo}>Em uso</Text>
 
-        {calculos.medicamentosAtivos.length === 0 ? (
-
-          <Vazio
-            icone="medical-outline"
-            texto="Nenhum medicamento marcado como em uso."
-            acao="Adicionar medicamento"
-            onAcao={onAbrirCuidados}
-          />
-
-        ) : (
-
-          calculos.medicamentosAtivos.map((item, i) => (
-
-            <ItemLista
+          {calculos.medicamentosAtivos.map(item => (
+            <Pressable
               key={String(item.id)}
-              icone="medical-outline"
-              titulo={item.nome}
-              detalhe={item.detalhes || 'Sem dosagem informada'}
-              ultimo={i === calculos.medicamentosAtivos.length - 1}
-            />
+              onPress={onAbrirCuidados}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.emUsoPilula,
+                pressed && styles.pressionado
+              ]}
+            >
+              <Ionicons name="medical-outline" size={14} color={cores.laranja} />
+              <Text style={styles.emUsoTexto} numberOfLines={1}>
+                {item.nome}
+              </Text>
+            </Pressable>
+          ))}
 
-          ))
-
-        )}
-
-      </Cartao>
-
-      {/* LEMBRETES */}
-      <TituloSecao>Lembretes</TituloSecao>
-
-      <Cartao style={styles.cartao}>
-
-        {calculos.lembretes.length === 0 ? (
-
-          <Vazio
-            icone="notifications-outline"
-            texto="Nenhum lembrete urgente nos registros."
-          />
-
-        ) : (
-
-          calculos.lembretes.map((item, i) => (
-
-            <ItemLista
-              key={item.id}
-              icone="notifications-outline"
-              titulo={item.nome}
-              detalhe={`${item.tipo} • ${item.data.toLocaleDateString('pt-BR')}`}
-              atrasado={item.data < inicioHoje}
-              ultimo={i === calculos.lembretes.length - 1}
-            />
-
-          ))
-
-        )}
-
-        <Text style={styles.nota}>
-          {calculos.atrasados.length} cuidado(s) pendente(s) com data passada. Lembretes apenas dentro do aplicativo; sem notificações automáticas.
-        </Text>
-
-      </Cartao>
+        </View>
+      ) : null}
 
     </View>
   );
@@ -1016,145 +1294,163 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  // "Hoje" = cartão da próxima refeição.
+  //"Hoje" =cartão da próxima refeição.
   dataHoje: {
     fontFamily: fontes.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 18,
+    lineHeight: 30,
     color: cores.marromClaro,
     marginTop: 12,
   },
 
-  heroi: {
-    backgroundColor: cores.laranjaClaro,
-    borderRadius: 26,
-    padding: 16,
+  refeicao: {
+    borderRadius: 30,
+    padding: 18,
     marginBottom: 12,
+    overflow: 'hidden',
   },
 
-  heroiTopo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  refeicaoAnel: {
+    position: 'absolute',
+    top: -52,
+    right: -46,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
   },
 
-  heroiIcone: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: cores.fundo,
+  refeicaoBola: {
+    position: 'absolute',
+    top: 18,
+    right: 18,
+    width: 75,
+    height: 75,
+    borderRadius: 39,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  heroiRotuloLinha: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  refeicaoTextos: {
+    minHeight: 78,
+    paddingRight: 88,
   },
 
-  heroiRotulo: {
-    flexShrink: 1,
-    fontFamily: fontes.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: cores.marromClaro,
-  },
-
-  chipIntervalo: {
+  refeicaoRotuloLinha: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    height: 30,
-    paddingHorizontal: 11,
-    borderRadius: 15,
-    backgroundColor: cores.fundo,
   },
 
-  textoChipIntervalo: {
+  refeicaoRotulo: {
     fontFamily: fontes.negrito,
-    fontSize: 13,
-    lineHeight: 18,
-    color: cores.marrom,
+    fontSize: 12,
+    lineHeight: 22,
+    letterSpacing: 1.6,
   },
 
-  heroiGrande: {
+  refeicaoTempo: {
     fontFamily: fontes.negrito,
-    fontSize: 30,
-    lineHeight: 40,
-    color: cores.marrom,
-    marginTop: 10,
+    fontSize: 38,
+    lineHeight: 48,
+    marginTop: 6,
   },
 
-  heroiPergunta: {
+  refeicaoEm: {
+    fontFamily: fontes.regular,
+    fontSize: 17,
+  },
+
+  refeicaoFrase: {
     fontFamily: fontes.negrito,
-    fontSize: 20,
-    lineHeight: 28,
-    color: cores.marrom,
-    marginTop: 12,
-  },
-
-  heroiLink: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    fontSize: 24,
+    lineHeight: 29,
+    marginTop: 5,
   },
 
   barraFundo: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: cores.fundo,
-    marginTop: 8,
+    height: 12,
+    borderRadius: 6,
+    marginTop: 12,
     overflow: 'hidden',
   },
 
   barraCheia: {
     height: '100%',
-    borderRadius: 5,
-    backgroundColor: cores.laranja,
+    borderRadius: 6,
   },
 
   barraPontas: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 7,
+  },
+
+  refeicaoLegenda: {
+    fontFamily: fontes.regular,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+
+  refeicaoLegendaSolta: {
     marginTop: 6,
   },
 
-  heroiLegenda: {
-    fontFamily: fontes.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: cores.marromClaro,
+  refeicaoAcoes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+  },
+
+  refeicaoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 34,
+    paddingHorizontal: 13,
+    borderRadius: 17,
+  },
+
+  refeicaoChipTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 14,
+    lineHeight: 44,
+  },
+
+  refeicaoBotao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 38,
+    paddingLeft: 12,
+    paddingRight: 16,
+    borderRadius: 19,
+  },
+
+  refeicaoBotaoTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 18,
+    lineHeight: 48,
   },
 
   opcoesIntervalo: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 12,
+    marginTop: 14,
   },
 
   opcaoIntervalo: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: cores.fundo,
-  },
-
-  opcaoIntervaloAtiva: {
-    backgroundColor: cores.marrom,
+    paddingVertical: 5,
+    borderRadius: 17,
   },
 
   textoOpcaoIntervalo: {
     fontFamily: fontes.negrito,
     fontSize: 15,
-    lineHeight: 20,
-    color: cores.marrom,
-  },
-
-  textoOpcaoIntervaloAtiva: {
-    color: cores.fundo,
+    lineHeight: 25,
+    paddingTop: 5,
   },
 
   pressionado: {
@@ -1162,11 +1458,194 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.96 }],
   },
 
+  resumoBloco: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: cores.branco,
+    borderRadius: 22,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    ...sombra,
+  },
+
+  resumoBola: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: cores.laranja,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  resumoBolaEscura: {
+    backgroundColor: cores.marrom,
+  },
+
+  resumoTextos: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  resumoValor: {
+    fontFamily: fontes.negrito,
+    fontSize: 20,
+    lineHeight: 27,
+    color: cores.marrom,
+  },
+
+  resumoFrase: {
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    lineHeight: 21,
+    color: cores.marromClaro,
+  },
+
+  resumoFraseDestaque: {
+    fontFamily: fontes.negrito,
+    color: cores.marrom,
+  },
+
+  resumoLegenda: {
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: cores.marromClaro,
+  },
+
+  // seletor de duas opções (Alimentação | Peso)
+  seletor: {
+    flexDirection: 'row',
+    backgroundColor: cores.branco,
+    borderRadius: 17,
+    padding: 3,
+    marginTop: 12,
+    ...sombra,
+  },
+
+  seletorOpcao: {
+    height: 28,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  seletorOpcaoAlimentacao: {
+    backgroundColor: cores.laranja,
+  },
+
+  seletorOpcaoPeso: {
+    backgroundColor: cores.marrom,
+  },
+
+  seletorTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 13,
+    color: cores.marromClaro,
+  },
+
+  seletorTextoAlimentacao: {
+    color: cores.marrom,
+  },
+
+  seletorTextoPeso: {
+    color: cores.fundo,
+  },
+
+  capsulas: {
+    backgroundColor: cores.branco,
+    borderRadius: 28,
+    paddingTop: 16,
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+    marginBottom: 12,
+    ...sombra,
+  },
+
+  capsulasEscuro: {
+    backgroundColor: cores.marrom,
+  },
+
+  capsulasLinha: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  capsulaColuna: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+  },
+
+  capsulaTrilho: {
+    width: '100%',
+    height: ALTURA_CAPSULA,
+    borderRadius: 19,
+    backgroundColor: 'rgba(51, 39, 22, 0.06)',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+
+  capsulaTrilhoEscuro: {
+    backgroundColor: 'rgba(255, 234, 200, 0.12)',
+  },
+
+  capsulaBarra: {
+    width: '100%',
+    borderRadius: 19,
+    justifyContent: 'flex-end',
+    paddingBottom: 4,
+    overflow: 'hidden',
+  },
+
+  capsulaNumero: {
+    width: '100%',
+    textAlign: 'center',
+    fontFamily: fontes.negrito,
+    fontSize: 12,
+  },
+
+  capsulaRotulo: {
+    fontFamily: fontes.regular,
+    fontSize: 12,
+    color: cores.marromClaro,
+    marginTop: 2,
+  },
+
+  capsulaRotuloEscuro: {
+    color: 'rgba(255, 234, 200, 0.75)',
+  },
+
+  capsulaRotuloHoje: {
+    fontFamily: fontes.negrito,
+    color: cores.marrom,
+  },
+
+  capsulaRotuloHojeEscuro: {
+    color: cores.laranjaClaro,
+  },
+
+  capsulasNota: {
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: cores.marromClaro,
+    textAlign: 'center',
+    paddingVertical: 14,
+  },
+
+  capsulasNotaEscuro: {
+    color: 'rgba(255, 234, 200, 0.75)',
+  },
+
   tituloSecao: {
     ...textos.tituloSecao,
-    fontSize: 24,
+    fontSize: 25,
     marginTop: 24,
     marginBottom: 12,
+    lineHeight: 32,
   },
 
   semMargemTopo: {
@@ -1210,7 +1689,7 @@ const styles = StyleSheet.create({
   tituloCartao: {
     fontFamily: fontes.negrito,
     color: cores.marrom,
-    fontSize: 20,
+    fontSize: 28,
     marginBottom: 8,
   },
 
@@ -1371,17 +1850,125 @@ const styles = StyleSheet.create({
     color: cores.marrom,
   },
 
+    // ----- agenda -----
+  agendaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: cores.branco,
+    borderRadius: 22,
+    paddingVertical: 11,
+    paddingLeft: 11,
+    paddingRight: 14,
+    marginBottom: 10,
+    ...sombra,
+  },
+
+  agendaBola: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  agendaBolaVacina: {
+    backgroundColor: cores.laranja,
+  },
+
+  agendaBolaConsulta: {
+    backgroundColor: cores.marrom,
+  },
+
+  agendaBolaOk: {
+    backgroundColor: cores.laranjaClaro,
+  },
+
+  agendaTextos: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  agendaTitulo: {
+    fontFamily: fontes.negrito,
+    fontSize: 16,
+    lineHeight: 22,
+    color: cores.marrom,
+  },
+
+  agendaDetalhe: {
+    fontFamily: fontes.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: cores.marromClaro,
+  },
+
   selo: {
-    backgroundColor: '#FBE4E4',
     borderRadius: raio.chip,
     paddingHorizontal: 10,
-    paddingVertical: 2,
+    paddingVertical: 3,
+  },
+
+  seloAtrasado: {
+    backgroundColor: cores.erro,
+  },
+
+  seloHoje: {
+    backgroundColor: cores.laranja,
+  },
+
+  seloAmanha: {
+    backgroundColor: cores.marrom,
+  },
+
+  seloDepois: {
+    backgroundColor: 'rgba(51, 39, 22, 0.06)',
   },
 
   textoSelo: {
     fontFamily: fontes.negrito,
     fontSize: 12,
-    color: cores.erro,
+    lineHeight: 18,
+  },
+
+  textoSeloClaro: {
+    color: cores.fundo,
+  },
+
+  textoSeloEscuro: {
+    color: cores.marrom,
+  },
+
+  emUso: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+
+  emUsoRotulo: {
+    fontFamily: fontes.regular,
+    fontSize: 14,
+    color: cores.marromClaro,
+  },
+
+  emUsoPilula: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: cores.branco,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    ...sombra,
+  },
+
+  emUsoTexto: {
+    fontFamily: fontes.negrito,
+    fontSize: 13,
+    color: cores.marrom,
   },
 
   vazio: {

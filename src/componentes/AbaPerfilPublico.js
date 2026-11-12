@@ -79,10 +79,13 @@ export default function AbaPerfilPublico({
 }) {
     const db = useSQLiteContext();
 
-    const { height } = useWindowDimensions();
+    const { width, height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
 
     const alturaExpandida = height * 0.75;
+
+    // tamanho de cada foto da grade (3 por linha)
+    const tamanhoFoto = Math.floor((width - 28 - 16 - 32 - 16) / 3);
 
     const [aberto, setAberto] = useState(false);
     const [mostrarFundo, setMostrarFundo] = useState(false);
@@ -499,20 +502,11 @@ export default function AbaPerfilPublico({
                                     <Image
                                         key={String(publicacao.id)}
                                         source={{ uri: publicacao.foto_uri }}
-                                        style={styles.fotoPublicacao}
+                                        style={[styles.fotoPublicacao, { width: tamanhoFoto, height: tamanhoFoto }]}
                                     />
                                 ))}
                             </View>
                         )}
-
-                        <Botao
-                            titulo={onPublicar ? "Nova publicação" : "Publicações em preparação"}
-                            icone="add"
-                            larga
-                            onPress={onPublicar}
-                            desabilitado={!pet || !onPublicar}
-                            style={styles.publicar}
-                        />
 
                     </ScrollView>
                 )}
@@ -595,7 +589,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         left: 14,
         right: 14,
-        backgroundColor: COR.creme,
+        backgroundColor: COR.marrom,
         borderRadius: 28,
         overflow: "hidden",
 
@@ -649,7 +643,7 @@ const styles = StyleSheet.create({
         fontFamily: "Ruwudu-Bold",
         fontSize: 26,
         lineHeight: 30,
-        color: COR.marrom,
+        color: COR.creme,
         paddingBottom: 5,
     },
 
@@ -657,7 +651,7 @@ const styles = StyleSheet.create({
         fontFamily: "Ruwudu-Regular",
         fontSize: 18,
         lineHeight: 23,
-        color: COR.oliva,
+        color: 'rgba(255, 234, 200, 0.72)',
     },
 
     indicadorContainer: {
@@ -697,7 +691,8 @@ const styles = StyleSheet.create({
     numero: {
         flex: 1,
         alignItems: "center",
-        backgroundColor: COR.creme,
+        backgroundColor: '#FFFFFF',
+        elevation: 3,
         borderRadius: 18,
         paddingVertical: 10,
     },
@@ -736,7 +731,7 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: COR.creme,
+        backgroundColor: COR.laranja,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -809,8 +804,8 @@ const styles = StyleSheet.create({
     botaoTutorPublico: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: COR.creme,
+        backgroundColor: '#FFFFFF',
+        elevation: 3,
         padding: 10,
         borderRadius: 18,
         marginTop: 16,
@@ -821,7 +816,7 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: COR.creme,
+        backgroundColor: COR.laranja,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -840,14 +835,8 @@ const styles = StyleSheet.create({
     },
 
     fotoPublicacao: {
-        width: "31%",
-        aspectRatio: 1,
         borderRadius: 16,
-        backgroundColor: COR.creme,
-    },
-
-    publicar: {
-        marginTop: 18,
+        backgroundColor: 'rgba(51, 39, 22, 0.06)',
     },
 
     // janela "Conheça o tutor"
@@ -872,7 +861,7 @@ const styles = StyleSheet.create({
         width: 84,
         height: 84,
         borderRadius: 42,
-        backgroundColor: COR.creme,
+        backgroundColor: COR.marrom,
         alignItems: "center",
         justifyContent: "center",
     },

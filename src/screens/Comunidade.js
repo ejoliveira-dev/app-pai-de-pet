@@ -3,8 +3,6 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { buscarPet, obterPetSelecionadoId, listarPublicacoes, inserirPublicacao } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Modal, TextInput } from 'react-native';
-
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";
@@ -14,7 +12,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Cartao from "../componentes/Cartao";
 import Botao from "../componentes/Botao";
 import AvatarPet from "../componentes/AvatarPet";
-import { cores, fontes } from "../styles/tema";
+import { cores, fontes, sombra } from "../styles/tema";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Alert, Modal, TextInput } from 'react-native';
+
+// Ex.: "agora", "há 5 min", "há 2 h", "ontem", "12/11"
+function tempoRelativo(texto) {
+    const data = new Date(texto);
+    const minutos = Math.floor((Date.now() - data.getTime()) / 60000);
+
+    if (Number.isNaN(minutos)) return '';
+    if (minutos < 1) return 'agora';
+    if (minutos < 60) return `há ${minutos} min`;
+
+    const horas = Math.floor(minutos / 60);
+    if (horas < 24) return `há ${horas} h`;
+    if (horas < 48) return 'ontem';
+
+    return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
 
 export default function Comunidade() {
     const db = useSQLiteContext();
@@ -26,6 +41,7 @@ export default function Comunidade() {
     const [legenda, setLegenda] = useState("");
     const [foto, setFoto] = useState(null);
     const [salvando, setSalvando] = useState(false);
+    const [curtidos, setCurtidos] = useState({});
 
     useFocusEffect(
         useCallback(() => {
@@ -174,6 +190,14 @@ export default function Comunidade() {
         }
     }
 
+    // primeiro nome do pet para a barra de publicar
+    const primeiroNome = pet?.nome?.split(' ')[0] || 'seu pet';
+
+    // curtir / descurtir (só na tela, por enquanto)
+    function alternarCurtida(id) {
+        setCurtidos((atual) => ({ ...atual, [id]: !atual[id] }));
+    }
+
     return (
         <View style={styles.container}>
 
@@ -186,48 +210,48 @@ export default function Comunidade() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* feed */}
-                <View style={styles.linhaFeed}>
-                    <Text style={styles.tituloFeed}>
-                        Feed
+                <Pressable
+                    onPress={abrirPublicacao}
+                    style={({ pressed }) => [styles.compor, pressed && styles.pressionado]}
+                >
+                    <AvatarPet foto={pet?.foto_perfil} tamanho={40} />
+                    <Text style={styles.comporTexto} numberOfLines={1}>
+                        O que {primeiroNome} está aprontando?
                     </Text>
-                </View>
+                    <View style={styles.comporFoto}>
+                        <Ionicons name="image-outline" size={18} color={cores.marrom} />
+                    </View>
+                </Pressable>
+
+                <Text style={styles.tituloFeed}>Feed</Text>
 
                 {/* publicações cadastradas */}
                 {publicacoes.length === 0 ? (
-                    <Cartao style={styles.vazio}>
-                        <View style={styles.bolinhaVazio}>
-                            <Ionicons name="images-outline" size={26} color={cores.marrom} />
-                        </View>
+                    <View style={styles.vazio}>
                         <Text style={styles.textoVazio}>
-                            Nenhuma publicação ainda. Que tal criar a primeira? 🐾
+                            Nenhuma publicação ainda.{'\n'}Toque no + para criar a primeira!
                         </Text>
-                    </Cartao>
+                    </View>
                 ) : (
                     publicacoes.map((post) => (
-                        <Cartao
+                        <View
                             key={String(post.id)}
                             style={styles.cardPublicacao}
                         >
 
                             <View style={styles.cabecalhoPost}>
-
-                                <AvatarPet
-                                    foto={post.foto_pet}
-                                    tamanho={50}
-                                    style={styles.fotoPost}
-                                />
-
-                                <View style={styles.infoPost}>
-                                    <Text style={styles.autorPost}>
-                                        {post.nome_pet}
-                                    </Text>
-
-                                    <Text style={styles.dataPost}>
-                                        {new Date(post.criado_em)
-                                            .toLocaleDateString("pt-BR")}
-                                    </Text>
+                                <View style={styles.anelAvatar}>
+                                    <AvatarPet foto={post.foto_pet} tamanho={38} />
                                 </View>
 
+                                <View style={styles.infoPost}>
+                                    <Text style={styles.autorPost} numberOfLines={1}>
+                                        {post.nome_pet}
+                                    </Text>
+                                    <Text style={styles.dataPost}>
+                                        {tempoRelativo(post.criado_em)}
+                                    </Text>
+                                </View>
                             </View>
 
                             {post.foto_uri ? (
@@ -240,11 +264,32 @@ export default function Comunidade() {
 
                             {!!post.legenda && (
                                 <Text style={styles.legendaPost}>
+                                    <Text style={styles.legendaNome}>{post.nome_pet} </Text>
                                     {post.legenda}
                                 </Text>
                             )}
 
-                        </Cartao>
+                            <View style={styles.acoesPost}>
+                                <Pressable
+                                    onPress={() => alternarCurtida(post.id)}
+                                    hitSlop={10}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Curtir"
+                                    style={({ pressed }) => pressed && styles.pressionado}
+                                >
+                                    <Ionicons
+                                        name={curtidos[post.id] ? 'heart' : 'heart-outline'}
+                                        size={26}
+                                        color={curtidos[post.id] ? cores.laranja : cores.marrom}
+                                    />
+                                </Pressable>
+
+                                {curtidos[post.id] && (
+                                    <Text style={styles.textoCurtida}>Você curtiu</Text>
+                                )}
+                            </View>
+
+                        </View>
                     ))
                 )}
 
@@ -275,43 +320,73 @@ export default function Comunidade() {
                 onRequestClose={fecharPublicacao}
             >
                 <View style={styles.modalFundo}>
+
+                    {/* tocar fora fecha */}
+                    <Pressable style={StyleSheet.absoluteFillObject} onPress={fecharPublicacao} />
+
                     <View style={styles.modalConteudo}>
 
-                        <Text style={styles.tituloFeed}>
-                            Nova publicação
-                        </Text>
+                        <View style={styles.puxador} />
 
-                        <Text style={styles.legendaPost}>
-                            Publicando como: {pet?.nome}
-                        </Text>
+                        <View style={styles.topoModal}>
+                            <View style={styles.autorModal}>
+                                <AvatarPet foto={pet?.foto_perfil} tamanho={42} />
+                                <View>
+                                    <Text style={styles.autorPost}>Nova publicação</Text>
+                                    <Text style={styles.dataPost}>como {pet?.nome}</Text>
+                                </View>
+                            </View>
+
+                            <Pressable
+                                onPress={fecharPublicacao}
+                                disabled={salvando}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Cancelar"
+                                style={styles.fechar}
+                            >
+                                <Ionicons name="close" size={20} color={cores.marrom} />
+                            </Pressable>
+                        </View>
 
                         <TextInput
                             style={styles.campoLegenda}
                             placeholder="O que seu pet está aprontando?"
-                            placeholderTextColor="#8C8177"
+                            placeholderTextColor="#A89A82"
                             value={legenda}
                             onChangeText={setLegenda}
                             multiline
                             maxLength={500}
                         />
 
-                        <Botao
-                            titulo={foto ? "Trocar foto" : "Escolher foto"}
-                            icone="image-outline"
-                            variante="contorno"
-                            larga
-                            onPress={selecionarFoto}
-                            desabilitado={salvando}
-                            style={styles.botaoModal}
-                        />
+                        <Text style={styles.contador}>{legenda.length}/500</Text>
 
-                        {foto && (
-                            <Image
-                                source={{ uri: foto }}
-                                style={styles.imagemPost}
-                                resizeMode="cover"
-                            />
-                        )}
+                        {/* área da foto: toque para escolher */}
+                        <Pressable
+                            onPress={selecionarFoto}
+                            disabled={salvando}
+                            accessibilityRole="button"
+                            style={({ pressed }) => [styles.escolherFoto, pressed && styles.pressionado]}
+                        >
+                            {foto ? (
+                                <>
+                                    <Image
+                                        source={{ uri: foto }}
+                                        style={styles.previaFoto}
+                                        resizeMode="cover"
+                                    />
+                                    <View style={styles.trocarFoto}>
+                                        <Ionicons name="image-outline" size={14} color={cores.laranjaClaro} />
+                                        <Text style={styles.textoTrocarFoto}>Trocar</Text>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    <Ionicons name="image-outline" size={30} color={cores.laranja} />
+                                    <Text style={styles.textoEscolherFoto}>Adicionar foto</Text>
+                                </>
+                            )}
+                        </Pressable>
 
                         <Botao
                             titulo="Publicar"
@@ -320,15 +395,6 @@ export default function Comunidade() {
                             onPress={publicar}
                             style={styles.botaoModal}
                         />
-
-                        <TouchableOpacity
-                            onPress={fecharPublicacao}
-                            disabled={salvando}
-                        >
-                            <Text style={styles.cancelar}>
-                                Cancelar
-                            </Text>
-                        </TouchableOpacity>
 
                     </View>
                 </View>
@@ -342,306 +408,277 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        position: 'relative',
-        backgroundColor: '#FFFDF8',
+        backgroundColor: cores.fundo,
     },
 
     conteudo: {
         paddingHorizontal: 20,
-        paddingTop: 135,
-        paddingBottom: 35,
-    },
-
-    cabecalho: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 25,
-    },
-
-    titulo: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 32,
-        color: '#332716',
-    },
-
-    subtitulo: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 16,
-        color: '#75571F',
-    },
-
-    // perfil público
-
-    cardPerfil: {
-        backgroundColor: '#FFEAC8',
-        borderRadius: 22,
-        padding: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 30,
-    },
-
-    fotoPerfil: {
-        width: 65,
-        height: 65,
-        borderRadius: 33,
-        marginRight: 14,
-    },
-
-    infoPerfil: {
-        flex: 1,
-    },
-
-    nomePet: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 23,
-        color: '#332716',
-    },
-
-    textoPerfil: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 15,
-        color: '#75571F',
-    },
-
-    dicaPerfil: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 13,
-        color: '#75571F',
-    },
-
-    // feed
-
-    linhaFeed: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 18,
+        paddingBottom: 100,
     },
 
     tituloFeed: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 26,
-        color: '#332716',
+        fontFamily: fontes.negrito,
+        fontSize: 24,
+        lineHeight: 32,
+        color: cores.marrom,
+        marginBottom: 10,
     },
 
-    botaoPublicar: {
-        minWidth: 0,
-        height: 44,
-        marginTop: 0,
-        paddingHorizontal: 20,
-    },
-
-    botaoFlutuante: {
-        position: "absolute",
-        right: 20,
-        bottom: 20,
-        width: 62,
-        height: 62,
-        borderRadius: 31,
-        backgroundColor: "#FA9F2A",
-        alignItems: "center",
-        justifyContent: "center",
-        elevation: 6,
-        shadowColor: "#332716",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-    },
 
     vazio: {
-        alignItems: "center",
+        alignItems: 'center',
+        backgroundColor: cores.branco,
+        borderRadius: 25,
         paddingVertical: 28,
-    },
-
-    bolinhaVazio: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: "#FFF1DC",
-        borderWidth: 1,
-        borderColor: "#F2DFC4",
-        alignItems: "center",
-        justifyContent: "center",
+        paddingHorizontal: 20,
+        ...sombra,
     },
 
     textoVazio: {
-        fontFamily: "Ruwudu-Regular",
-        fontSize: 17,
-        lineHeight: 24,
-        color: "#75571F",
-        textAlign: "center",
+        fontFamily: fontes.regular,
+        fontSize: 16,
+        lineHeight: 23,
+        color: cores.marromClaro,
+        textAlign: 'center',
         marginTop: 12,
     },
 
-    botaoVazio: {
-        minWidth: 0,
-        height: 44,
-        paddingHorizontal: 26,
-    },
-
-    textoPublicar: {
-        fontFamily: "Ruwudu-Bold",
-        fontSize: 14,
-        color: "#FFFDF8",
-    },
-
-    // publicações
-
     cardPublicacao: {
+        backgroundColor: cores.branco,
         borderRadius: 25,
-        marginBottom: 20,
+        overflow: 'hidden',
+        marginBottom: 18,
+        ...sombra,
     },
 
     cabecalhoPost: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 15,
-    },
-
-    fotoPost: {
-        marginRight: 12,
-    },
-
-    infoPost: {
-        flex: 1,
-    },
-
-    autorPost: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 19,
-        color: '#332716',
-    },
-
-    dataPost: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 13,
-        color: '#75571F',
+        gap: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
     },
 
     imagemPost: {
         width: '100%',
-        height: 230,
-        borderRadius: 18,
+        aspectRatio: 4 / 5,
+        backgroundColor: 'rgba(51, 39, 22, 0.06)',
     },
 
     legendaPost: {
-        fontFamily: 'Ruwudu-Regular',
+        fontFamily: fontes.regular,
         fontSize: 16,
-        color: '#332716',
-        marginTop: 12,
+        lineHeight: 23,
+        color: cores.marrom,
+        paddingHorizontal: 14,
+        paddingTop: 10,
     },
 
-    acoesPost: {
-        flexDirection: 'row',
-        gap: 20,
-        marginTop: 15,
+    autorPost: {
+        fontFamily: fontes.negrito,
+        fontSize: 17,
+        lineHeight: 23,
+        color: cores.marrom,
     },
 
-    painelPerfil: {
-        backgroundColor: '#FFFDF8',
-        borderRadius: 28,
-        marginHorizontal: 15,
-        marginTop: 45,
-        padding: 22,
-        height: '78%',
+    infoPost: {
+        flex: 1,
+        minWidth: 0,
     },
 
-    topoPainel: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    dataPost: {
+        fontFamily: fontes.regular,
+        fontSize: 13,
+        lineHeight: 18,
+        color: cores.marromClaro,
+    },
+
+    legendaNome: {
+        fontFamily: fontes.negrito,
+    },
+
+    botaoFlutuante: {
+        position: 'absolute',
+        right: 20,
+        bottom: 20,
+        width: 62,
+        height: 62,
+        borderRadius: 31,
+        backgroundColor: cores.laranja,
         alignItems: 'center',
-        marginBottom: 20,
-    },
-
-    tituloPainel: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 24,
-        color: '#332716',
-    },
-
-    dadosPublicos: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-
-    fotoPublica: {
-        width: 85,
-        height: 85,
-        borderRadius: 43,
-        marginRight: 15,
-    },
-
-    textoDescricao: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 16,
-        color: '#75571F',
-        marginBottom: 25,
-    },
-
-    tituloPublicacoes: {
-        fontFamily: 'Ruwudu-Bold',
-        fontSize: 21,
-        color: '#332716',
-        marginBottom: 15,
-    },
-
-    gradeFotos: {
-        flexDirection: 'row',
-        gap: 8,
-        flexWrap: 'wrap',
-    },
-
-    fotoGrade: {
-        width: 100,
-        height: 100,
-        borderRadius: 12,
-    },
-
-    avisoExemplo: {
-        fontFamily: 'Ruwudu-Regular',
-        fontSize: 14,
-        color: '#75571F',
-        marginTop: 15,
+        justifyContent: 'center',
+        elevation: 6,
+        shadowColor: cores.marrom,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
 
     modalFundo: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        padding: 20,
+        backgroundColor: 'rgba(30, 23, 15, 0.55)',
+        justifyContent: 'flex-end',
     },
 
     modalConteudo: {
-        backgroundColor: "#FFFDF8",
-        borderRadius: 30,
+        backgroundColor: cores.fundo,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
         padding: 20,
+        paddingBottom: 30,
         gap: 12,
     },
 
+    puxador: {
+        alignSelf: 'center',
+        width: 42,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: 'rgba(51, 39, 22, 0.15)',
+    },
+
+    topoModal: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+
+    autorModal: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+
     campoLegenda: {
-        borderWidth: 1,
-        borderColor: "#FA9F2A",
-        backgroundColor: "#FFFFFF",
-        borderRadius: 15,
+        borderWidth: 1.5,
+        borderColor: cores.laranja,
+        backgroundColor: cores.branco,
+        borderRadius: 18,
         padding: 12,
         minHeight: 100,
-        textAlignVertical: "top",
-        color: "#332716",
+        textAlignVertical: 'top',
+        fontFamily: fontes.regular,
+        fontSize: 16,
+        color: cores.marrom,
+    },
+
+    contador: {
+        fontFamily: fontes.regular,
+        fontSize: 12,
+        color: cores.marromClaro,
+        textAlign: 'right',
+        marginTop: -6,
+    },
+
+    escolherFoto: {
+        height: 140,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderStyle: 'dashed',
+        borderColor: cores.laranja,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        overflow: 'hidden',
+    },
+
+    previaFoto: {
+        width: '100%',
+        height: '100%',
+    },
+
+    trocarFoto: {
+        position: 'absolute',
+        right: 10,
+        bottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: cores.marrom,
+        borderRadius: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+    },
+
+    textoTrocarFoto: {
+        fontFamily: fontes.negrito,
+        fontSize: 13,
+        color: cores.laranjaClaro,
+    },
+
+    textoEscolherFoto: {
+        fontFamily: fontes.negrito,
+        fontSize: 15,
+        color: cores.marromClaro,
     },
 
     botaoModal: {
         marginTop: 0,
     },
 
-    cancelar: {
-        fontFamily: "Ruwudu-Bold",
-        fontSize: 16,
-        textAlign: "center",
-        padding: 12,
-        color: "#A52C2C",
+    fechar: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(51, 39, 22, 0.08)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
+    // barra "O que ... está aprontando?"
+    compor: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: cores.branco,
+        borderRadius: 25,
+        padding: 10,
+        marginBottom: 22,
+        ...sombra,
+    },
+
+    comporTexto: {
+        flex: 1,
+        fontFamily: fontes.regular,
+        fontSize: 16,
+        color: cores.marromClaro,
+    },
+
+    comporFoto: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: cores.laranja,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // anel laranja em volta do avatar do post
+    anelAvatar: {
+        padding: 2,
+        borderRadius: 26,
+        borderWidth: 2,
+        borderColor: cores.laranja,
+    },
+
+    // linha do coração
+    acoesPost: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 14,
+        paddingTop: 10,
+        paddingBottom: 14,
+    },
+
+    textoCurtida: {
+        fontFamily: fontes.regular,
+        fontSize: 14,
+        color: cores.marromClaro,
+    },
+
+    pressionado: {
+        opacity: 0.7,
+        transform: [{ scale: 0.97 }],
+    },
 });
