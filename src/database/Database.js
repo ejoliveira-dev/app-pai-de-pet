@@ -224,6 +224,7 @@ export async function excluirPet(db, idPet) {
     await db.runAsync("DELETE FROM registros WHERE id_pet = ?", [id]);
     await db.runAsync("DELETE FROM vacinas WHERE id_pet = ?", [id]);
     await db.runAsync("DELETE FROM cuidados WHERE id_pet = ?", [id]);
+    await db.runAsync("DELETE FROM publicacoes WHERE id_pet = ?", [id]);
     await db.runAsync(
         "DELETE FROM configuracoes WHERE chave IN (?, ?)",
         [`intervaloAlimentacao:${id}`, `bioPublica:${id}`]
