@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { buscarPet, obterPetSelecionadoId, listarPublicacoes, inserirPublicacao } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,7 +13,7 @@ import Cartao from "../componentes/Cartao";
 import Botao from "../componentes/Botao";
 import AvatarPet from "../componentes/AvatarPet";
 import { cores, fontes, sombra } from "../styles/tema";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Alert, Modal, TextInput, Animated, StatusBar } from 'react-native';
 
 // Ex.: "agora", "há 5 min", "há 2 h", "ontem", "12/11"
 function tempoRelativo(texto) {
@@ -42,6 +42,34 @@ export default function Comunidade() {
     const [foto, setFoto] = useState(null);
     const [salvando, setSalvando] = useState(false);
     const [curtidos, setCurtidos] = useState({});
+    
+    // rolagem do feed: move a aba do perfil junto e decide quando mostrar o +
+    const rolagem = useRef(new Animated.Value(0)).current;
+    const [mostrarBotao, setMostrarBotao] = useState(false);
+
+    const deslocamentoAba = rolagem.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -1],
+        extrapolateLeft: 'clamp',
+    });
+
+    const aoRolar = Animated.event(
+        [{ nativeEvent: { contentOffset: { y: rolagem } } }],
+        {
+            useNativeDriver: false,
+            listener: (evento) => {
+                // o + aparece quando a barra "O que ... está aprontando?" sai da tela
+                setMostrarBotao(evento.nativeEvent.contentOffset.y > ALTURA_FECHADA + 70);
+            },
+        }
+    );
+
+    useFocusEffect(
+        useCallback(() => {
+            StatusBar.setBarStyle('light-content');
+            return () => StatusBar.setBarStyle('dark-content');
+        }, [])
+    );
 
     useFocusEffect(
         useCallback(() => {
@@ -201,8 +229,10 @@ export default function Comunidade() {
     return (
         <View style={styles.container}>
 
-            <ScrollView
+            <Animated.ScrollView
                 style={{ flex: 1 }}
+                onScroll={aoRolar}
+                scrollEventThrottle={16}
                 contentContainerStyle={[
                     styles.conteudo,
                     { paddingTop: insets.top + MARGEM_TOPO + ALTURA_FECHADA + 18 }
@@ -293,25 +323,31 @@ export default function Comunidade() {
                     ))
                 )}
 
-            </ScrollView>
+            </Animated.ScrollView>
 
             {/* botão flutuante de publicar */}
-            <TouchableOpacity
-                style={styles.botaoFlutuante}
-                onPress={abrirPublicacao}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Nova publicação"
-            >
-                <Ionicons name="add" size={32} color="#332716" />
+            {mostrarBotao && (
+                <TouchableOpacity
+                    style={styles.botaoFlutuante}
+                    onPress={abrirPublicacao}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Nova publicação"
+                >
+                    <Ionicons name="add" size={32} color="#332716" />
 
-            </TouchableOpacity>
+                </TouchableOpacity>
+            )}
 
             <AbaPerfilPublico
                 pet={pet}
                 publicacoes={publicacoes}
                 onPublicar={abrirPublicacao}
+                deslocamento={deslocamentoAba}
             />
+
+            {/* faixa marrom fixa atrás da barra de status */}
+            <View style={[styles.faixaStatus, { height: insets.top }]} />
 
             <Modal
                 visible={modalAberto}
@@ -675,6 +711,16 @@ const styles = StyleSheet.create({
         fontFamily: fontes.regular,
         fontSize: 14,
         color: cores.marromClaro,
+    },
+
+    faixaStatus: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: cores.marrom,
+        zIndex: 1000,
+        elevation: 21,
     },
 
     pressionado: {

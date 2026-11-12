@@ -27,7 +27,7 @@ const COR = {
 // Altura do cartão fechado e distância até o topo.
 // A Comunidade usa estes valores para o Feed começar logo abaixo do cartão.
 export const ALTURA_FECHADA = 125;
-export const MARGEM_TOPO = 8;
+export const MARGEM_TOPO = 0;
 
 function calcularIdadePet(pet) {
     if (!pet) return "";
@@ -75,7 +75,8 @@ function calcularIdadePet(pet) {
 export default function AbaPerfilPublico({
     pet,
     publicacoes = [],
-    onPublicar
+    onPublicar,
+    deslocamento
 }) {
     const db = useSQLiteContext();
 
@@ -248,7 +249,7 @@ export default function AbaPerfilPublico({
     // essa é altura animada do painel.
     const alturaPainel = animacao.interpolate({
         inputRange: [0, 1],
-        outputRange: [ALTURA_FECHADA, alturaExpandida],
+        outputRange: [ALTURA_FECHADA + insets.top, alturaExpandida + insets.top],
     });
 
     return (
@@ -278,7 +279,9 @@ export default function AbaPerfilPublico({
                     styles.painel,
                     {
                         height: alturaPainel,
-                        top: insets.top + MARGEM_TOPO,
+                        top: 0,
+                        paddingTop: insets.top,
+                        transform: [{ translateY: aberto || !deslocamento ? 0 : deslocamento }],
                     }
                 ]}
             >
@@ -587,10 +590,11 @@ const styles = StyleSheet.create({
     // cartão flutuante
     painel: {
         position: "absolute",
-        left: 14,
-        right: 14,
+        left: 0,
+        right: 0,
         backgroundColor: COR.marrom,
-        borderRadius: 28,
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
         overflow: "hidden",
 
         elevation: 8,
