@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator,  Pressable } from 'react-native';
+import { Alert } from "../componentes/AlertaTutus";
 
 import RegistrosPet from '../componentes/RegistrosPet';
 import VacinasPet from '../componentes/VacinasPet';

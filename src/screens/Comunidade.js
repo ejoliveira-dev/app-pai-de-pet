@@ -13,7 +13,8 @@ import Cartao from "../componentes/Cartao";
 import Botao from "../componentes/Botao";
 import AvatarPet from "../componentes/AvatarPet";
 import { cores, fontes, sombra } from "../styles/tema";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Alert, Modal, TextInput, Animated, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl } from 'react-native';
+import { Alert } from "../componentes/AlertaTutus";
 
 // Ex.: "agora", "há 5 min", "há 2 h", "ontem", "12/11"
 function tempoRelativo(texto) {
@@ -42,6 +43,9 @@ export default function Comunidade() {
     const [foto, setFoto] = useState(null);
     const [salvando, setSalvando] = useState(false);
     const [curtidos, setCurtidos] = useState({});
+    const [atualizando, setAtualizando] = useState(false);
+    const [coracaoVisivel, setCoracaoVisivel] = useState(null);
+    const ultimoToque = useRef({});
     
     // rolagem do feed: move a aba do perfil junto e decide quando mostrar o +
     const rolagem = useRef(new Animated.Value(0)).current;
@@ -202,11 +206,6 @@ export default function Comunidade() {
             setFoto(null);
             setModalAberto(false);
 
-            Alert.alert(
-                "Sucesso",
-                "Publicação criada!"
-            );
-
         } catch (erro) {
             console.error("Erro ao publicar:", erro);
             Alert.alert(
@@ -221,9 +220,37 @@ export default function Comunidade() {
     // primeiro nome do pet para a barra de publicar
     const primeiroNome = pet?.nome?.split(' ')[0] || 'seu pet';
 
-    // curtir / descurtir (só na tela, por enquanto)
+    // curtir/descurtir
     function alternarCurtida(id) {
         setCurtidos((atual) => ({ ...atual, [id]: !atual[id] }));
+    }
+    
+    // toque duplo na foto curte o post (igual ao Insta)
+    function tocarFoto(id) {
+        const agora = Date.now();
+
+        if (agora - (ultimoToque.current[id] || 0) < 300) {
+            setCurtidos((atual) => ({ ...atual, [id]: true }));
+            setCoracaoVisivel(id);
+            setTimeout(() => setCoracaoVisivel(null), 700);
+        }
+
+        ultimoToque.current[id] = agora;
+    }
+
+    // puxar para atualizar o feed
+    async function atualizarFeed() {
+        setAtualizando(true);
+
+        try {
+            const lista = await listarPublicacoes(db);
+            setPublicacoes(lista);
+        } catch (erro) {
+            console.error("Erro ao atualizar feed:", erro);
+            Alert.alert("Ops!", "Não foi possível atualizar o feed.");
+        } finally {
+            setAtualizando(false);
+        }
     }
 
     return (
@@ -233,6 +260,15 @@ export default function Comunidade() {
                 style={{ flex: 1 }}
                 onScroll={aoRolar}
                 scrollEventThrottle={16}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={atualizando}
+                        onRefresh={atualizarFeed}
+                        colors={[cores.laranja]}
+                        tintColor={cores.laranja}
+                        progressViewOffset={insets.top + ALTURA_FECHADA}
+                    />
+                }
                 contentContainerStyle={[
                     styles.conteudo,
                     { paddingTop: insets.top + MARGEM_TOPO + ALTURA_FECHADA + 18 }
@@ -285,11 +321,19 @@ export default function Comunidade() {
                             </View>
 
                             {post.foto_uri ? (
-                                <Image
-                                    source={{ uri: post.foto_uri }}
-                                    style={styles.imagemPost}
-                                    resizeMode="cover"
-                                />
+                                <Pressable onPress={() => tocarFoto(post.id)}>
+                                    <Image
+                                        source={{ uri: post.foto_uri }}
+                                        style={styles.imagemPost}
+                                        resizeMode="cover"
+                                    />
+
+                                    {coracaoVisivel === post.id && (
+                                        <View style={styles.coracaoGrande} pointerEvents="none">
+                                            <Ionicons name="heart" size={96} color={cores.branco} />
+                                        </View>
+                                    )}
+                                </Pressable>
                             ) : null}
 
                             {!!post.legenda && (
@@ -711,6 +755,12 @@ const styles = StyleSheet.create({
         fontFamily: fontes.regular,
         fontSize: 14,
         color: cores.marromClaro,
+    },
+
+    coracaoGrande: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     faixaStatus: {

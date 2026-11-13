@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Modal } from 'react-native';
+import { Alert } from "../componentes/AlertaTutus";
 
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';

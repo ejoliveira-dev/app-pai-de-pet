@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import { inserirPet, atualizarPet, excluirPet } from "../database/Database";
 
-import { View, Image, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Modal, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Image, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
+
+import { Alert } from "../componentes/AlertaTutus";
 
 import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";

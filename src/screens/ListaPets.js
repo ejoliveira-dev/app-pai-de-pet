@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, Pressable, ScrollView, FlatList, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, Pressable, ScrollView, FlatList, } from "react-native";
+import { Alert } from "../componentes/AlertaTutus";
 
 import { useSQLiteContext } from "expo-sqlite";
 import { listarPets, definirPetSelecionadoId } from "../database/Database";
