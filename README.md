@@ -18,46 +18,70 @@ A proposta também busca minimizar problemas como a desorganização das informa
 
 ## Funcionalidades Implementadas
 
-- Telas Splash Screen, Welcome, Login, Criar Conta e Recuperação de Senha, com validações básicas, autenticação demonstrativa e estrutura básica.
-- Navegação entre as principais telas e abas em desenvolvimento utilizando React Navigation;
-- Estrutura de navegação inferior com as abas Início, Comunidade, Meu Pet e Tutor;
-- Perfil do Tutor com visualização dos pets cadastrados e estrutura inicial de configurações e privacidade.
-- Comunidade com feed básico, perfil público do pet e publicações locais de fotos e legendas;
-- Perfil privado do pet com registro e gerenciamento de alimentação, peso, vacinas, consultas e medicamentos;
-- Cadastro de um ou mais pets;
-- Lista de seleção dos pets;
-- Cadastro, listagem e seleção de pets, com validação de campos e armazenamento  via SQLite (expo-sqlite);
-- Persistência dos dados individuais de cada pet, permitindo recuperá-los após reiniciar o aplicativo;
-- Home com resumo dos cuidados, gráficos de acompanhamento, previsão de refeições e lembretes (Ainda em fase de experimentação).
+- Telas de Splash, Boas-vindas, Login, Criar Conta e Recuperação de Senha, com validações;
+- Navegação com React Navigation e barra inferior (Início, Comunidade, Meu Pet e Tutor);
+- Cadastro, edição, seleção e exclusão de pets, com dados salvos em SQLite;
+- Início com resumo do dia, previsão da próxima refeição, gráficos de alimentação e peso e agenda de cuidados;
+- Meu Pet com registro de alimentação, peso, vacinas, consultas e medicamentos;
+- Perfil do Tutor com dados da conta, lista de pets e preferências;
+- Comunidade com feed, publicações com foto e legenda, curtidas e perfil público do pet;
+- Pop-ups de alerta e componentes visuais padronizados no estilo do app.
 
 <p align="center">
-  <img src="assets/images/screen-welcome.jpeg" alt="Boas-vindas" width="210">
-  <img src="assets/images/screen-login.jpeg" alt="Login" width="210">
-  <img src="assets/images/screen-tutor.jpeg" alt="Perfil do Tutor" width="210">
+  <img src="assets/images/prints/print_7.png" alt="Boas-vindas" width="200">
+  <img src="assets/images/prints/print_8.png" alt="Login" width="200">
+  <img src="assets/images/prints/print_9.png" alt="Criar conta" width="200">
 </p>
+<p align="center"><em>Boas-vindas • Login • Criar conta</em></p>
 
 <p align="center">
-  <em>Boas-vindas • Login • Perfil do Tutor</em>
+  <img src="assets/images/prints/print_2.png" alt="Início" width="200">
+  <img src="assets/images/prints/print_3.png" alt="Meu Pet" width="200">
+  <img src="assets/images/prints/print_1.png" alt="Tutor" width="200">
 </p>
+<p align="center"><em>Início • Meu Pet • Tutor</em></p>
+
+<p align="center">
+  <img src="assets/images/prints/print_6.png" alt="Comunidade" width="200">
+  <img src="assets/images/prints/print_5.png" alt="Perfil público" width="200">
+  <img src="assets/images/prints/print_10.png" alt="Esqueci a senha" width="200">
+</p>
+<p align="center"><em>Comunidade • Perfil público • Esqueci a senha</em></p>
 
 ## Funcionalidades planejadas
 
-- Implementação da autenticação real de usuários e recuperação de senha por e-mail;
 - Aprimoramento do perfil público do pet e da experiência na Comunidade;
 - Publicações de vídeos e interação entre tutores de diferentes dispositivos;
 - Implementação de uma comunidade com compartilhamento remoto de publicações;
 - Personalização geral do tema do aplicativo;
 - Finalização das informações da conta, privacidade e personalização do Perfil do Tutor;
-- Edição e exclusão dos pets cadastrados;
 - Integração com serviços remotos para armazenamento e compartilhamento de dados;
 - Aprimoramento das interfaces, design e experiência de navegação.
 
 ## Tecnologias utilizadas (até o momento)
 
-- React Native.
-- Expo.
-- JavaScript.
+- React Native e Expo;
+- React Navigation;
+- JavaScript;
+- SQLite (expo-sqlite);
 - Git & Github.
+
+## Como executar
+
+1. Instale o [Node.js](https://nodejs.org) e o app **Expo Go** no celular.
+2. Clone o repositório e instale as dependências:
+   ```bash
+   git clone https://github.com/ejoliveira-dev/app-pai-de-pet.git
+   cd app-pai-de-pet
+   npm install
+   ```
+3. Inicie o projeto:
+   ```bash
+   npx expo start
+   ```
+4. Leia o QR Code com o Expo Go (o celular e o computador precisam estar na mesma rede).
+
+> **Requisito:** Expo SDK 57. No celular, use o **Expo Go** compatível com o SDK 57.
 
 ## Status do projeto
 
