@@ -100,6 +100,7 @@ export default function AbaPerfilPublico({
 
     const [tutorPublico, setTutorPublico] = useState(null);
     const [modalTutor, setModalTutor] = useState(false);
+    const [fotoAberta, setFotoAberta] = useState(null);
 
     useFocusEffect(
         useCallback(() => {
@@ -502,11 +503,15 @@ export default function AbaPerfilPublico({
                         ) : (
                             <View style={styles.fotosContainer}>
                                 {fotosPet.map((publicacao) => (
-                                    <Image
+                                                                                        <Pressable
                                         key={String(publicacao.id)}
-                                        source={{ uri: publicacao.foto_uri }}
-                                        style={[styles.fotoPublicacao, { width: tamanhoFoto, height: tamanhoFoto }]}
-                                    />
+                                        onPress={() => setFotoAberta(publicacao)}
+                                    >
+                                        <Image
+                                            source={{ uri: publicacao.foto_uri }}
+                                            style={[styles.fotoPublicacao, { width: tamanhoFoto, height: tamanhoFoto }]}
+                                        />
+                                    </Pressable>
                                 ))}
                             </View>
                         )}
@@ -564,6 +569,32 @@ export default function AbaPerfilPublico({
                     </View>
 
                 </View>
+            </Modal>
+            
+            <Modal
+                visible={!!fotoAberta}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                onRequestClose={() => setFotoAberta(null)}
+            >
+                <Pressable style={styles.fundoFoto} onPress={() => setFotoAberta(null)}>
+                    <Image
+                        source={{ uri: fotoAberta?.foto_uri }}
+                        style={styles.fotoGrande}
+                        resizeMode="contain"
+                    />
+
+                    {!!fotoAberta?.legenda && (
+                        <Text style={styles.legendaFoto} numberOfLines={3}>
+                            {fotoAberta.legenda}
+                        </Text>
+                    )}
+
+                    <View style={[styles.fecharFoto, { top: insets.top + 12 }]}>
+                        <Ionicons name="close" size={24} color={COR.fundo} />
+                    </View>
+                </Pressable>
             </Modal>
 
         </View>
@@ -843,7 +874,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(51, 39, 22, 0.06)',
     },
 
-    // janela "Conheça o tutor"
     fundoModalTutor: {
         flex: 1,
         backgroundColor: 'rgba(30, 23, 15, 0.55)',
@@ -887,6 +917,40 @@ const styles = StyleSheet.create({
 
     fecharTutor: {
         marginTop: 20,
+    },
+    
+    fundoFoto: {
+        flex: 1,
+        backgroundColor: "rgba(20, 15, 10, 0.94)",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+    },
+
+    fotoGrande: {
+        width: "100%",
+        height: "75%",
+        borderRadius: 20,
+    },
+
+    legendaFoto: {
+        fontFamily: "Ruwudu-Regular",
+        fontSize: 16,
+        lineHeight: 23,
+        color: COR.creme,
+        textAlign: "center",
+        marginTop: 14,
+    },
+
+    fecharFoto: {
+        position: "absolute",
+        right: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "rgba(255, 253, 248, 0.15)",
+        alignItems: "center",
+        justifyContent: "center",
     },
 
 });

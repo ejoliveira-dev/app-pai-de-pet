@@ -46,6 +46,7 @@ export default function Comunidade() {
     const [atualizando, setAtualizando] = useState(false);
     const [coracaoVisivel, setCoracaoVisivel] = useState(null);
     const ultimoToque = useRef({});
+    const escalaCoracao = useRef(new Animated.Value(0)).current;
     
     // rolagem do feed: move a aba do perfil junto e decide quando mostrar o +
     const rolagem = useRef(new Animated.Value(0)).current;
@@ -232,7 +233,12 @@ export default function Comunidade() {
         if (agora - (ultimoToque.current[id] || 0) < 300) {
             setCurtidos((atual) => ({ ...atual, [id]: true }));
             setCoracaoVisivel(id);
-            setTimeout(() => setCoracaoVisivel(null), 700);
+            escalaCoracao.setValue(0);
+            Animated.sequence([
+                Animated.spring(escalaCoracao, { toValue: 1, friction: 4, tension: 120, useNativeDriver: true }),
+                Animated.delay(250),
+                Animated.timing(escalaCoracao, { toValue: 0, duration: 200, useNativeDriver: true }),
+            ]).start(() => setCoracaoVisivel(null));
         }
 
         ultimoToque.current[id] = agora;
@@ -329,9 +335,12 @@ export default function Comunidade() {
                                     />
 
                                     {coracaoVisivel === post.id && (
-                                        <View style={styles.coracaoGrande} pointerEvents="none">
-                                            <Ionicons name="heart" size={96} color={cores.branco} />
-                                        </View>
+                                                                                             <Animated.View
+                                            style={[styles.coracaoGrande, { opacity: escalaCoracao, transform: [{ scale: escalaCoracao }] }]}
+                                            pointerEvents="none"
+                                        >
+                                            <Ionicons name="heart" size={110} color={cores.laranja} style={styles.sombraCoracao} />
+                                        </Animated.View>
                                     )}
                                 </Pressable>
                             ) : null}
@@ -758,9 +767,21 @@ const styles = StyleSheet.create({
     },
 
     coracaoGrande: {
-        ...StyleSheet.absoluteFillObject,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 10,
+        elevation: 10,
+    },
+
+    sombraCoracao: {
+        textShadowColor: 'rgba(0, 0, 0, 0.35)',
+        textShadowOffset: { width: 0, height: 3 },
+        textShadowRadius: 10,
     },
 
     faixaStatus: {

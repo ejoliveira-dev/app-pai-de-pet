@@ -314,15 +314,6 @@ export default function CuidadosPet({ tipo }) {
 
       </View>
 
-      {/* lista */}
-      {registros.length === 0 && (
-        <Text style={styles.vazio}>
-          {consulta
-            ? 'Sem consultas registradas no momento'
-            : 'Sem medicamentos registrados no momento'}
-        </Text>
-      )}
-
       {registros.map(item => {
 
         const feito = item.concluido;

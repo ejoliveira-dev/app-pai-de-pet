@@ -129,18 +129,7 @@ function SecaoRegistro({
 
       </View>
 
-      {/* histórico */}
-      {registros.length === 0 ? (
-
-        <Text style={styles.vazio}>
-          {ehAlimentacao
-            ? 'Sem refeições registradas no momento'
-            : 'Sem pesagens registradas no momento'}
-        </Text>
-
-      ) : (
-
-        ultimos.map((registro) => (
+      {ultimos.map((registro) => (
 
           <View key={registro.id} style={styles.item}>
 
@@ -166,9 +155,7 @@ function SecaoRegistro({
 
           </View>
 
-        ))
-
-      )}
+      ))}
 
       {restantes > 0 ? (
         <Text style={styles.informacaoCentro}>

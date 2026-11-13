@@ -9,6 +9,7 @@ export const estilosAuth = StyleSheet.create({
 
     conteudo: {
         flexGrow: 1,
+        justifyContent: "center",
         paddingHorizontal: 20,
         paddingBottom: 120,
     },

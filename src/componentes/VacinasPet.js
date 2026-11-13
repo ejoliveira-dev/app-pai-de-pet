@@ -283,13 +283,7 @@ export default function VacinasPet() {
 
             </View>
 
-            {/* lista */}
-            {vacinas.length === 0 ? (
-                <Text style={styles.vazio}>
-                    Sem vacinas registradas no momento
-                </Text>
-            ) : (
-                vacinas.map(vacina => {
+            {vacinas.map(vacina => {
 
                     const s = situacao(vacina);
 
@@ -342,8 +336,7 @@ export default function VacinasPet() {
 
                         </View>
                     );
-                })
-            )}
+                })}    
 
             {vacinas.length > 0 ? (
                 <Text style={styles.dica}>
