@@ -319,6 +319,26 @@ export const style = StyleSheet.create({
         borderRadius: 30,
         alignItems: "center",
         justifyContent: "center",
-        marginTop: 10,
+                marginTop: 10,
+    },
+
+    botaoExcluir: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        height: 52,
+        width: "100%",
+        borderRadius: 30,
+        borderWidth: 1.5,
+        borderColor: "#A52C2C",
+        marginTop: 12,
+    },
+
+    textoExcluir: {
+        color: "#A52C2C",
+        fontSize: 18,
+        fontFamily: "Ruwudu-Bold",
     },
 });
+

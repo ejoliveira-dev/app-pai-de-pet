@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Modal } from 'react-native';
+import { Alert } from "../componentes/AlertaTutus";
 
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
-import { listarPets, obterPerfilTutor, salvarPerfilTutor, definirPetSelecionadoId } from '../database/Database';
+import { listarPets, obterPerfilTutor, salvarPerfilTutor, definirPetSelecionadoId, excluirPet } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 import TelaComTopo from '../componentes/TelaComTopo';
@@ -44,6 +45,9 @@ export default function Tutor({ navigation }) {
 
     const [perfil, setPerfil] = useState(PERFIL_INICIAL);
     const [pets, setPets] = useState([]);
+
+    const [gerenciando, setGerenciando] = useState(false);
+
     // controla a janela da engrenagem
     const [configVisivel, setConfigVisivel] = useState(false);
 
@@ -185,6 +189,34 @@ export default function Tutor({ navigation }) {
         }
     }
 
+    // exclui um pet pelo modo "Gerenciar"
+    function confirmarExclusao(pet) {
+        Alert.alert(
+            `Excluir ${pet.nome}?`,
+            'Todos os registros, vacinas, consultas, medicamentos e publicações deste pet serão apagados. Isso não pode ser desfeito.',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await excluirPet(db, pet.id_pet);
+
+                            const restantes = pets.filter((p) => p.id_pet !== pet.id_pet);
+                            setPets(restantes);
+
+                            if (restantes.length === 0) setGerenciando(false);
+                        } catch (erro) {
+                            console.error('Erro ao excluir pet:', erro);
+                            Alert.alert('Erro', 'Não foi possível excluir o pet.');
+                        }
+                    },
+                },
+            ]
+        );
+    }
+
     // abre o cadastro em modo edição (segurar o dedo no pet)
     function editarPet(pet) {
         navigation.getParent()?.navigate('CadastroPets', { petParaEditar: pet });
@@ -289,12 +321,18 @@ export default function Tutor({ navigation }) {
                 <Text style={styles.tituloSecao}>Meus pets</Text>
 
                 <Pressable
-                    onPress={() => navigation.getParent()?.navigate('ListaPets')}
+                    onPress={() => setGerenciando((atual) => !atual)}
                     hitSlop={10}
                     style={styles.link}
                 >
-                    <Text style={styles.textoLink}>Gerenciar</Text>
-                    <Ionicons name="chevron-forward" size={16} color={cores.laranja} />
+                    <Text style={styles.textoLink}>
+                        {gerenciando ? 'Concluir' : 'Gerenciar'}
+                    </Text>
+                    <Ionicons
+                        name={gerenciando ? 'checkmark' : 'create-outline'}
+                        size={16}
+                        color={cores.laranja}
+                    />
                 </Pressable>
             </View>
 
@@ -308,11 +346,23 @@ export default function Tutor({ navigation }) {
                         <Pressable
                             key={String(pet.id_pet)}
                             style={({ pressed }) => [styles.itemPet, pressed && styles.pressionado]}
-                            onPress={() => selecionarPet(pet)}
+                            onPress={() => (gerenciando ? editarPet(pet) : selecionarPet(pet))}
                             onLongPress={() => editarPet(pet)}
                             delayLongPress={350}
                         >
                             <AvatarPet foto={pet.foto_perfil} tamanho={64} />
+
+                            {gerenciando && (
+                                <Pressable
+                                    style={styles.badgeExcluir}
+                                    onPress={() => confirmarExclusao(pet)}
+                                    hitSlop={8}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Excluir ${pet.nome}`}
+                                >
+                                    <Ionicons name="close" size={15} color={cores.branco} />
+                                </Pressable>
+                            )}
 
                             <Text style={styles.nomePet} numberOfLines={1}>
                                 {pet.nome}
@@ -332,7 +382,9 @@ export default function Tutor({ navigation }) {
                 </ScrollView>
 
                 <Text style={styles.dica}>
-                    Toque para escolher • segure para editar
+                    {gerenciando
+                        ? 'Toque no pet para editar • no ✕ para excluir'
+                        : 'Toque para escolher • segure para editar'}
                 </Text>
             </View>
 
@@ -786,6 +838,20 @@ const styles = StyleSheet.create({
         marginTop: 6,
         textAlign: 'center',
         width: 74,
+    },
+
+    badgeExcluir: {
+        position: 'absolute',
+        top: -2,
+        right: 2,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: cores.erro,
+        borderWidth: 2,
+        borderColor: cores.branco,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     dica: {

@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 
-import { Text, View, ScrollView, TextInput,TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform} from "react-native";
+import { Text, View, ScrollView, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert } from "../componentes/AlertaTutus";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BotaoVoltar from "../componentes/BotaoVoltar";
+import Botao from "../componentes/Botao";
+import CabecalhoAuth from "../componentes/CabecalhoAuth";
+import { estilosAuth } from "../styles/AuthStyles";
+import { cores, fontes } from "../styles/tema";
 
 import { Ionicons } from "@expo/vector-icons";
 
@@ -64,137 +69,109 @@ export default function VerificarCodigo({ navigation, route }) {
       setCarregando(false);
     }
   }
-    
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={estilosAuth.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={[estilosAuth.conteudo, { paddingTop: insets.top + 20 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-
-        <View style={styles.conteudo}>
-          <Ionicons
-            name="mail-open-outline"
-            size={75}
-            color="#FA9F2A"
-          />
-
-          <Text style={styles.titulo}>
-            Verifique seu e-mail!
-          </Text>
-
-          <Text style={styles.subtitulo}>
-            Enviamos um código de 6 dígitos para:
-          </Text>
-
-          <Text style={styles.email}>
+        <CabecalhoAuth
+          rotulo="VERIFICAÇÃO"
+          titulo="Confira seu e-mail"
+          texto="Digite o código de 6 números que enviamos para:"
+        >
+          <Text style={estilosAuth.emailDestaque} numberOfLines={1}>
             {email}
           </Text>
+        </CabecalhoAuth>
 
-          <Text style={styles.label}>
-            Código de verificação *
-          </Text>
+        {/* 6 caixinhas; o campo de verdade fica invisível por cima delas */}
+        <View style={estilosAuth.cartao}>
+          <View style={styles.caixas}>
+            {[0, 1, 2, 3, 4, 5].map((indice) => (
+              <View
+                key={indice}
+                style={[
+                  styles.caixa,
+                  codigo[indice] && styles.caixaPreenchida,
+                  indice === codigo.length && styles.caixaAtual,
+                ]}
+              >
+                <Text style={styles.digito}>{codigo[indice] || ""}</Text>
+              </View>
+            ))}
 
-          <TextInput
-            style={styles.input}
-            placeholder="Digite o código"
-            value={codigo}
-            onChangeText={(texto) =>
-              setCodigo(texto.replace(/[^0-9]/g, "").slice(0, 6))
-            }
-            keyboardType="number-pad"
-            maxLength={6}
-          />
-
-          <TouchableOpacity
-            style={styles.botao}
-            onPress={verificarCodigo}
-            disabled={carregando}
-          >
-            <Text style={styles.textoBotao}>
-              {carregando ? "Verificando..." : "Verificar Código"}
-            </Text>
-          </TouchableOpacity>
+            <TextInput
+              style={styles.campoInvisivel}
+              value={codigo}
+              onChangeText={(texto) =>
+                setCodigo(texto.replace(/[^0-9]/g, "").slice(0, 6))
+              }
+              keyboardType="number-pad"
+              maxLength={6}
+              autoFocus
+              caretHidden
+            />
+          </View>
         </View>
+
+        <Text style={estilosAuth.dica}>Não chegou? Confira a caixa de spam.</Text>
+
+        <Botao
+          titulo="Verificar código"
+          larga
+          carregando={carregando}
+          onPress={verificarCodigo}
+          style={estilosAuth.botao}
+        />
       </ScrollView>
+
       <BotaoVoltar />
     </KeyboardAvoidingView>
   );
 }
 
-
 const styles = StyleSheet.create({
-  container: {
+  caixas: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+
+  caixa: {
     flex: 1,
-    backgroundColor: "#FFFDF8",
-    padding: 25,
-  },
-
-  voltar: {
-    marginTop: 15,
-  },
-
-  conteudo: {
-    flex: 1,
-    justifyContent: "center",
-    paddingBottom: 110,
-  },
-
-  titulo: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 30,
-    color: "#332716",
-    marginTop: 25,
-  },
-
-  subtitulo: {
-    fontFamily: "Ruwudu-Regular",
-    fontSize: 17,
-    color: "#75571F",
-    marginTop: 10,
-  },
-
-  email: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 17,
-    color: "#332716",
-    marginTop: 5,
-    marginBottom: 35,
-  },
-
-  label: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 18,
-    color: "#332716",
-    marginBottom: 10,
-  },
-
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#FFEAC8",
-    borderRadius: 15,
-    padding: 15,
-    fontSize: 20,
-    color: "#332716",
-    letterSpacing: 5,
-  },
-
-  botao: {
-    backgroundColor: "#FA9F2A",
-    borderRadius: 18,
-    padding: 16,
+    height: 58,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(51, 39, 22, 0.15)",
+    backgroundColor: cores.branco,
     alignItems: "center",
-    marginTop: 25,
+    justifyContent: "center",
   },
 
-  textoBotao: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 20,
-    color: "#332716",
+  caixaPreenchida: {
+    borderColor: cores.laranja,
+  },
+
+  caixaAtual: {
+    borderColor: cores.marrom,
+    borderWidth: 2,
+  },
+
+  digito: {
+    fontFamily: fontes.negrito,
+    fontSize: 26,
+    lineHeight: 48,
+    color: cores.marrom,
+  },
+
+  campoInvisivel: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0,
   },
 });

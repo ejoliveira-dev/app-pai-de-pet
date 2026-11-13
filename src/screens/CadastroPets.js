@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useSQLiteContext } from "expo-sqlite";
-import { inserirPet, atualizarPet } from "../database/Database";
+import { inserirPet, atualizarPet, excluirPet } from "../database/Database";
 
-import { View, Image, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Modal, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Image, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
+
+import { Alert } from "../componentes/AlertaTutus";
 
 import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";
@@ -253,8 +255,10 @@ export default function CadastroPet({ navigation, route }) {
             }
 
             Alert.alert(
-                "Cadastro realizado!",
-                `${novoPet.nome} foi cadastrado com sucesso.`,
+                modoEdicao ? "Alterações salvas!" : "Cadastro realizado!",
+                modoEdicao
+                    ? `Os dados de ${novoPet.nome} foram atualizados.`
+                    : `${novoPet.nome} foi cadastrado com sucesso.`,
                 [
                     {
                         text: "OK",
@@ -275,6 +279,32 @@ export default function CadastroPet({ navigation, route }) {
         }
     }
 
+    function confirmarExclusao() {
+        Alert.alert(
+            `Excluir ${petParaEditar.nome}?`,
+            "Todos os registros, vacinas, consultas, medicamentos e publicações deste pet serão apagados. Isso não pode ser desfeito.",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await excluirPet(db, petParaEditar.id_pet);
+
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: "ListaPets" }],
+                            });
+                        } catch (erro) {
+                            console.error("Erro ao excluir pet:", erro);
+                            Alert.alert("Erro", "Não foi possível excluir o pet.");
+                        }
+                    },
+                },
+            ]
+        );
+    }
 
     async function escolherFoto() {
         try {
@@ -568,6 +598,20 @@ export default function CadastroPet({ navigation, route }) {
                                     : "Salvar Pet"}
                         </Text>
                     </TouchableOpacity>
+
+                    {modoEdicao && (
+                        <TouchableOpacity
+                            style={style.botaoExcluir}
+                            onPress={confirmarExclusao}
+                            disabled={salvando}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Excluir pet"
+                        >
+                            <Ionicons name="trash-outline" size={20} color="#A52C2C" />
+                            <Text style={style.textoExcluir}>Excluir pet</Text>
+                        </TouchableOpacity>
+                    )}
                 </ScrollView>
 
                 {/* rodapé */}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Alert, Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert } from "./AlertaTutus";
 
 import { useSQLiteContext } from 'expo-sqlite';
 

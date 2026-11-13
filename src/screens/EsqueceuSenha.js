@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 
-import { Text, View, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Text, View, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Alert } from "../componentes/AlertaTutus";
 
 import BotaoVoltar from "../componentes/BotaoVoltar";
+import Botao from "../componentes/Botao";
+import CabecalhoAuth from "../componentes/CabecalhoAuth";
+import CampoAuth from "../componentes/CampoAuth";
+import { estilosAuth } from "../styles/AuthStyles";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -50,11 +55,6 @@ export default function EsqueciSenha({ navigation }) {
         return;
       }
 
-      Alert.alert(
-        "Código enviado!",
-        "Confira sua caixa de entrada para continuar."
-      );
-
       navigation.navigate("VerificarCodigo", {
         email: email.trim().toLowerCase()
       });
@@ -69,122 +69,51 @@ export default function EsqueciSenha({ navigation }) {
     }
   }
 
-
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={estilosAuth.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={[estilosAuth.conteudo, { paddingTop: insets.top + 20 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <CabecalhoAuth
+          rotulo="RECUPERAR ACESSO"
+          titulo="Esqueceu a senha?"
+          texto="Sem problemas! Enviamos um código para o seu e-mail."
+        />
 
-        <View style={styles.conteudo}>
-          <Ionicons
-            name="lock-closed-outline"
-            size={75}
-            color="#FA9F2A"
-          />
-
-          <Text style={styles.titulo}>
-            Esqueceu sua senha?
-          </Text>
-
-          <Text style={styles.subtitulo}>
-            Informe seu e-mail para solicitar
-            a recuperação da sua conta.
-          </Text>
-
-          <Text style={styles.label}>E-mail *</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Digite seu e-mail"
+        <View style={estilosAuth.cartao}>
+          <CampoAuth
+            icone="mail-outline"
+            placeholder="E-mail da sua conta"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
             autoCorrect={false}
           />
+        </View>
 
-          <TouchableOpacity
-            style={styles.botao}
-            onPress={recuperarSenha}
-            disabled={carregando}
-          >
-            <Text style={styles.textoBotao}>
-              {carregando ? "Enviando..." : "Recuperar Senha"}
-            </Text>
-          </TouchableOpacity>
+        <Botao
+          titulo="Enviar código"
+          larga
+          carregando={carregando}
+          onPress={recuperarSenha}
+          style={estilosAuth.botao}
+        />
+
+        <View style={estilosAuth.linhaLink}>
+          <Text style={estilosAuth.textoLink}>Lembrou a senha?</Text>
+          <Pressable onPress={() => navigation.navigate("Login")} hitSlop={8}>
+            <Text style={estilosAuth.textoLinkDestaque}>Entrar</Text>
+          </Pressable>
         </View>
       </ScrollView>
+
       <BotaoVoltar />
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFDF8",
-    padding: 25,
-  },
-
-  voltar: {
-    marginTop: 15,
-  },
-
-  conteudo: {
-    flex: 1,
-    justifyContent: "center",
-    paddingBottom: 110,
-  },
-
-  titulo: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 30,
-    color: "#332716",
-    marginTop: 25,
-  },
-
-  subtitulo: {
-    fontFamily: "Ruwudu-Regular",
-    fontSize: 17,
-    color: "#75571F",
-    marginTop: 10,
-    marginBottom: 35,
-  },
-
-  label: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 18,
-    color: "#332716",
-    marginBottom: 10,
-  },
-
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#FFEAC8",
-    borderRadius: 15,
-    padding: 15,
-    fontSize: 16,
-    color: "#332716",
-  },
-
-  botao: {
-    backgroundColor: "#FA9F2A",
-    borderRadius: 18,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 25,
-  },
-
-  textoBotao: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 20,
-    color: "#332716",
-  },
-});

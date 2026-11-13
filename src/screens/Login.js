@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
-import { Text, View, Image, TextInput, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { Text, View, Image, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { Alert } from "../componentes/AlertaTutus";
 
 import { style } from "../../src/styles/LoginStyles";
 

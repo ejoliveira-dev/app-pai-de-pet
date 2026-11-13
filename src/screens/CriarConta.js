@@ -1,12 +1,16 @@
-
 import React, { useState } from "react";
-import {Text, View, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, View, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert } from "../componentes/AlertaTutus";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Ionicons } from "@expo/vector-icons";
 
 import BotaoVoltar from "../componentes/BotaoVoltar";
+import Botao from "../componentes/Botao";
+import CabecalhoAuth from "../componentes/CabecalhoAuth";
+import CampoAuth from "../componentes/CampoAuth";
+import { estilosAuth } from "../styles/AuthStyles";
 
 import { useSQLiteContext } from "expo-sqlite";
 import { cadastrarUsuario } from "../database/Database";
@@ -80,195 +84,73 @@ export default function CriarConta({ navigation }) {
     }
   }
 
-      return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-          >
-        <View style={styles.container}>
-
+  return (
+    <KeyboardAvoidingView
+      style={estilosAuth.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <ScrollView
-        contentContainerStyle={[styles.conteudo, { paddingTop: insets.top + 15 }]}
+        contentContainerStyle={[estilosAuth.conteudo, { paddingTop: insets.top + 20 }]}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-
-        <Text style={styles.titulo}>
-          Crie sua conta!
-        </Text>
-
-        <Text style={styles.subtitulo}>
-          Faça parte do Tutus e comece a cuidar
-          do seu companheiro!
-        </Text>
-
-        <Text style={styles.label}>Seu nome *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Digite seu nome"
-          value={nome}
-          onChangeText={setNome}
+        <CabecalhoAuth
+          rotulo="NOVA CONTA"
+          titulo="Crie sua conta!"
+          texto="Faça parte do Tutus e comece a cuidar do seu companheiro."
         />
 
-        <Text style={styles.label}>E-mail *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Digite seu e-mail"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoCorrect={false}
-        />
-      <Text style={styles.label}>Senha *</Text>
-      <View style={styles.campoSenha}>
-        <TextInput
-          style={styles.inputSenha}
-          placeholder="Crie uma senha"
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry={!mostrarSenha}
-        />
-
-      <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
-        <Ionicons
-            name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
-            size={23}
-            color="#75571F"
+        <View style={estilosAuth.cartao}>
+          <CampoAuth
+            icone="person-outline"
+            placeholder="Seu nome"
+            value={nome}
+            onChangeText={setNome}
           />
-        </TouchableOpacity>
-      </View>
-    
-      <Text style={styles.label}>Confirmar Senha *</Text>
-      <View style={styles.campoSenha}>
-          <TextInput
-            style={styles.inputSenha}
-            placeholder="Digite sua senha novamente"
+
+          <CampoAuth
+            icone="mail-outline"
+            placeholder="E-mail"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoCorrect={false}
+          />
+
+          <CampoAuth
+            icone="lock-closed-outline"
+            placeholder="Senha (mín. 6 caracteres)"
+            value={senha}
+            onChangeText={setSenha}
+            senha
+          />
+
+          <CampoAuth
+            icone="shield-checkmark-outline"
+            placeholder="Confirme a senha"
             value={confirmarSenha}
             onChangeText={setConfirmarSenha}
-            secureTextEntry={!mostrarConfirmarSenha}
+            senha
           />
+        </View>
 
-  <TouchableOpacity onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}>
-        <Ionicons
-          name={mostrarConfirmarSenha ? "eye-off-outline" : "eye-outline"}
-          size={23}
-          color="#75571F"
-        />
-      </TouchableOpacity>
-       </View>
-
-        <TouchableOpacity
-          style={styles.botao}
+        <Botao
+          titulo="Criar conta"
+          larga
           onPress={criarConta}
-        >
-          <Text style={styles.textoBotao}>
-            Criar Conta
-          </Text>
-        </TouchableOpacity>
+          style={estilosAuth.botao}
+        />
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Login")}
-          style={styles.link}
-        >
-          <Text style={styles.textoLink}>
-            Já tem uma conta? Entre aqui!
-          </Text>
-        </TouchableOpacity>
+        <View style={estilosAuth.linhaLink}>
+          <Text style={estilosAuth.textoLink}>Já tem uma conta?</Text>
+          <Pressable onPress={() => navigation.navigate("Login")} hitSlop={8}>
+            <Text style={estilosAuth.textoLinkDestaque}>Entrar</Text>
+          </Pressable>
+        </View>
       </ScrollView>
-    </View>
-    <BotaoVoltar />
-  </KeyboardAvoidingView>
-);
-}    
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFDF8",
-  },
-
-  conteudo: {
-    padding: 25,
-    paddingBottom: 110,
-  },
-
-  voltar: {
-    marginBottom: 30,
-  },
-
-  titulo: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 32,
-    color: "#332716",
-    marginBottom: 5,
-  },
-
-  subtitulo: {
-    fontFamily: "Ruwudu-Regular",
-    fontSize: 17,
-    color: "#75571F",
-    marginBottom: 30,
-  },
-
-  label: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 17,
-    color: "#332716",
-    marginBottom: 8,
-  },
-
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#FFEAC8",
-    borderRadius: 15,
-    padding: 15,
-    fontSize: 16,
-    marginBottom: 20,
-    color: "#332716",
-  },
-
-  botao: {
-    backgroundColor: "#FA9F2A",
-    borderRadius: 18,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 15,
-  },
-
-  textoBotao: {
-    fontFamily: "Ruwudu-Bold",
-    fontSize: 20,
-    color: "#332716",
-  },
-
-  link: {
-    alignItems: "center",
-    marginTop: 25,
-  },
-
-  textoLink: {
-    fontFamily: "Ruwudu-Regular",
-    fontSize: 17,
-    color: "#75571F",
-    textDecorationLine: "underline",
-  },
-
-  campoSenha: {
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: "#FFFFFF",
-  borderWidth: 1,
-  borderColor: "#FFEAC8",
-  borderRadius: 15,
-  paddingHorizontal: 15,
-  marginBottom: 20,
-},
-
-inputSenha: {
-  flex: 1,
-  paddingVertical: 15,
-  fontSize: 16,
-  color: "#332716",
-},
-});
+      <BotaoVoltar />
+    </KeyboardAvoidingView>
+  );
+}

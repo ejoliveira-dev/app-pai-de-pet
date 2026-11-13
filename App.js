@@ -17,6 +17,8 @@ import NovaSenha from "./src/screens/NovaSenha";
 
 import { inicializarBanco } from './src/database/Database';
 
+import AlertaTutus from './src/componentes/AlertaTutus';
+
 const Stack = createNativeStackNavigator(); /* cria o navegador responsável pela sequencia das telas. */
 
 export default function App() {
@@ -90,6 +92,8 @@ export default function App() {
         </Stack.Navigator>
 
       </NavigationContainer>
+
+      <AlertaTutus />
 
     </SQLiteProvider >
   )
