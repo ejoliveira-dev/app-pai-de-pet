@@ -86,7 +86,15 @@ export default function Comunidade() {
 
                     const encontrado = id ? await buscarPet(db, id) : null;
 
-                    const listaPosts = await listarPublicacoes(db);
+                    const resposta = await fetch(
+                         "https://app-pai-de-pet.onrender.com/publicacoes"
+                    );
+
+                    if (!resposta.ok) {
+                        throw new Error("Erro ao carregar publicações.");
+                    }
+
+                    const listaPosts = await resposta.json();
 
                     if (ativo) {
                         setPet(encontrado);
@@ -154,69 +162,87 @@ export default function Comunidade() {
 
     // salva a publicação
     async function publicar() {
-        if (salvando || !pet) return;
+    if (salvando || !pet) return;
 
-        if (!legenda.trim() && !foto) {
-            Alert.alert(
-                "Publicação vazia",
-                "Escreva uma legenda ou escolha uma foto."
-            );
-            return;
-        }
+    if (!legenda.trim() && !foto) {
+        Alert.alert(
+            "Publicação vazia",
+            "Escreva uma legenda ou escolha uma foto."
+        );
+        return;
+    }
 
-        setSalvando(true);
+    setSalvando(true);
 
-        try {
-            let fotoSalva = null;
+    const API_URL = "https://app-pai-de-pet.onrender.com";
 
-            if (foto) {
-                const extensao =
-                    foto.match(/\.(jpg|jpeg|png|webp|heic)(?:\?.*)?$/i)?.[1]
-                    || "jpg";
+    try {
+        let imagemId = null;
 
-                const origem = new File(foto);
+        // Enviar imagem ao servidor
+        if (foto) {
+            const arquivo = new File(foto);
+            const formData = new FormData();
 
-                const destino = new File(
-                    Paths.document,
-                    `tutus-post-${Date.now()}.${extensao}`
-                );
+            formData.append("foto", arquivo);
 
-                await origem.copy(destino);
-                fotoSalva = destino.uri;
+            const respostaFoto = await fetch(`${API_URL}/upload-foto`, {
+                method: "POST",
+                body: formData
+            });
+
+            if (!respostaFoto.ok) {
+                throw new Error(`Erro ao enviar foto: ${respostaFoto.status}`);
             }
 
-            const novaPublicacao = {
-                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                id_pet: pet.id_pet,
-                nome_pet: pet.nome,
-                foto_pet: pet.foto_perfil || null,
-                foto_uri: fotoSalva,
-                legenda: legenda.trim(),
-                criado_em: new Date().toISOString(),
-            };
+            const dadosFoto = await respostaFoto.json();
+            imagemId = dadosFoto.imagem_id;
 
-            const listaAtualizada = [
-                novaPublicacao,
-                ...publicacoes
-            ];
-
-            await inserirPublicacao(db, novaPublicacao);
-
-            setPublicacoes(listaAtualizada);
-            setLegenda("");
-            setFoto(null);
-            setModalAberto(false);
-
-        } catch (erro) {
-            console.error("Erro ao publicar:", erro);
-            Alert.alert(
-                "Erro",
-                "Não foi possível salvar a publicação."
-            );
-        } finally {
-            setSalvando(false);
+            if (!imagemId) {
+                throw new Error("Servidor não retornou o ID da imagem.");
+            }
         }
+
+        // Salvar publicação no PostgreSQL
+        const resposta = await fetch(`${API_URL}/publicacoes`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id_pet: String(pet.id_pet),
+                nome_pet: pet.nome,
+                legenda: legenda.trim(),
+                imagem_id: imagemId
+            })
+        });
+
+        if (!resposta.ok) {
+            throw new Error(`Erro ao publicar: ${resposta.status}`);
+        }
+
+        // Atualizar publicações
+        const respostaFeed = await fetch(`${API_URL}/publicacoes`);
+
+        if (!respostaFeed.ok) {
+            throw new Error("Erro ao atualizar o feed.");
+        }
+
+        setPublicacoes(await respostaFeed.json());
+
+        setLegenda("");
+        setFoto(null);
+        setModalAberto(false);
+
+        Alert.alert("Sucesso", "Publicação criada!");
+
+    } catch (erro) {
+        console.error("Erro ao publicar:", erro);
+        Alert.alert("Erro", "Não foi possível concluir a publicação.");
+    } finally {
+        setSalvando(false);
     }
+}
 
     // primeiro nome do pet para a barra de publicar
     const primeiroNome = pet?.nome?.split(' ')[0] || 'seu pet';
@@ -249,8 +275,16 @@ export default function Comunidade() {
         setAtualizando(true);
 
         try {
-            const lista = await listarPublicacoes(db);
-            setPublicacoes(lista);
+            const resposta = await fetch(
+                "https://app-pai-de-pet.onrender.com/publicacoes"
+           );
+
+             if (!resposta.ok) {
+                throw new Error("Erro ao atualizar o feed.");
+            }
+
+             const lista = await resposta.json();
+             setPublicacoes(lista);
         } catch (erro) {
             console.error("Erro ao atualizar feed:", erro);
             Alert.alert("Ops!", "Não foi possível atualizar o feed.");
@@ -326,10 +360,12 @@ export default function Comunidade() {
                                 </View>
                             </View>
 
-                            {post.foto_uri ? (
+                            {post.imagem_id ? (
                                 <Pressable onPress={() => tocarFoto(post.id)}>
                                     <Image
-                                        source={{ uri: post.foto_uri }}
+                                        source={{
+                                        uri: `https://app-pai-de-pet.onrender.com/imagens/${post.imagem_id}`
+                                        }}
                                         style={styles.imagemPost}
                                         resizeMode="cover"
                                     />
@@ -461,7 +497,7 @@ export default function Comunidade() {
                                 <>
                                     <Image
                                         source={{ uri: foto }}
-                                        style={styles.previaFoto}
+                                       style={styles.previaFoto}
                                         resizeMode="cover"
                                     />
                                     <View style={styles.trocarFoto}>
