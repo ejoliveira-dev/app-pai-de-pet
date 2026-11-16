@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { Text, View, Image, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { style } from "../../src/styles/LoginStyles";
 
 import BotaoVoltar from "../componentes/BotaoVoltar";
@@ -80,6 +82,13 @@ export default function Login({ navigation }) {
                     email: emailConta,
                 });
             }
+
+            // Guarda o login do usuário para manter a conta conectada ao reabrir o app
+
+            await AsyncStorage.setItem(
+                "usuarioLogado",
+                 emailConta
+            );
 
             navigation.reset({
                 index: 0,

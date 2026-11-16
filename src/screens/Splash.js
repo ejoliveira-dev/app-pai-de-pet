@@ -1,23 +1,33 @@
 import { View, StyleSheet, Image } from 'react-native';
 
 import { useEffect } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Splash({ navigation }) {
     /* o 'navigation' permite navegar entre telas. */
 
-    useEffect(() => {
-        /* cria um tempo de espera antes de sair da Splash. */
-        const timer = setTimeout(() => {
+useEffect(() => {
+    /* cria um tempo de espera antes de sair da Splash. */
+    const timer = setTimeout(async () => {
+        try {
+            const usuarioLogado = await AsyncStorage.getItem("usuarioLogado");
 
-            /* substitui a Splash pela tela Welcome. */
-            navigation.replace('Welcome'); /* aqui está 'replace' porque se tivesse 'navigate' o usuário poderia voltar para splash. */
+            if (usuarioLogado) {
+                navigation.replace('ListaPets');
+            } else {
+                /* substitui a Splash pela tela Welcome. */
+                navigation.replace('Welcome'); /* aqui está 'replace' porque se tivesse 'navigate' o usuário poderia voltar para splash. */
+            }
+        } catch (erro) {
+            console.error("Erro ao verificar login:", erro);
+            navigation.replace('Welcome');
+        }
+    }, 2000); /* 2000 milisegundos = 2 seg. */
 
-        }, 2000); /* 2000 milisegundos = 2 seg. */
+    /* limpa o temporizador caso a tela seja desmontada antes. */
+    return () => clearTimeout(timer);
 
-        /* limpa o temporizador caso a tela seja desmontada antes. */
-        return () => clearTimeout(timer);
-
-    }, [navigation]);
+}, [navigation]);
     return (
         <View style={styles.container}>
             <Image

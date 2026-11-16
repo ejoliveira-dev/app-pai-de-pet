@@ -1,32 +1,9 @@
 import { View, Text, StyleSheet, Image, Pressable, TouchableOpacity } from 'react-native'; /* componentes básicos do react native; view = div.*/
 /* flex-box = algoritmo de layout do react native*/
 
-import * as Font from 'expo-font';
-/* importa o expo-font, biblioteca usada para carregar fontes personalizadas no aplicativo. */
-
-import { useEffect, useState } from 'react'; /* importa dois hooks do react; o primeiro guarda/atualiza um valor durante a execução do componente e o segundo executa uma ação quando ele é carregado.*/
+import React from 'react';
 
 export default function Welcome({ navigation }) {
-    const [fonteCarregada, setFonteCarregada] = useState(false); /* cria um estado para verficicar se a fonte já terminou de carregar; false no inicio porque não foi carregada ainda.*/
-
-    useEffect(() => { /* executa esse código quando a 'welcome' é carregada.*/
-        async function carregarFonte() { /* função responsável por carregar.*/
-            await Font.loadAsync({
-                'Ruwudu-Regular': require('../../assets/fonts/Ruwudu-Regular.ttf'),
-                'Ruwudu-Bold': require('../../assets/fonts/Ruwudu-Bold.ttf'),
-            });/* carrega o arquivo da fonte e define o nome p/ utilizá-la nos estilos.*/
-
-            setFonteCarregada(true);
-            /* depois que é carregada, o estado vira true.*/
-        }
-
-        carregarFonte(); /* chama a função que carrega a fonte.*/
-
-    }, []); /* o [] faz o efeito carregar apenas quando o componente for carregado.*/
-
-    if (!fonteCarregada) {
-        return null;
-    }/* enquanto a fonte não terminar de carregar, a tela não é exibida; para evitar que o texto apareça primeiramente com a fonte padrão.*/
 
     return (
         <View style={styles.container}>
