@@ -77,7 +77,7 @@ app.get("/publicacoes", async (req, res) => {
 // Criar publicação com legenda e imagem
 app.post("/publicacoes", async (req, res) => {
   try {
-const { id_pet, nome_pet, foto_pet, legenda, imagem_id } = req.body;
+const { id_pet, id_tutor, nome_pet, foto_pet, legenda, imagem_id } = req.body;
 
     const texto = typeof legenda === "string" ? legenda.trim() : "";
     const idImagem = imagem_id == null ? null : Number(imagem_id);
@@ -110,13 +110,13 @@ const { id_pet, nome_pet, foto_pet, legenda, imagem_id } = req.body;
       }
     }
 
-    const resultado = await pool.query(
-      `INSERT INTO publicacoes
-       (id_pet, nome_pet, foto_pet, legenda, imagem_id)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [id_pet.trim(), nome_pet.trim(), foto_pet || null, texto, idImagem]
-    );
+  const resultado = await pool.query(
+  `INSERT INTO publicacoes
+   (id_pet, id_tutor, nome_pet, foto_pet, legenda, imagem_id)
+   VALUES ($1, $2, $3, $4, $5, $6)
+   RETURNING *`,
+  [id_pet.trim(), id_tutor || null, nome_pet.trim(), foto_pet || null, texto, idImagem]
+);
 
     return res.status(201).json(resultado.rows[0]);
 
@@ -128,6 +128,72 @@ const { id_pet, nome_pet, foto_pet, legenda, imagem_id } = req.body;
     });
   }
 });
+
+ // Excluir publicação, curtidas e imagens
+app.delete("/publicacoes/:id", async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const id = Number(req.params.id);
+    const { id_pet, id_tutor } = req.body;
+
+    if (!Number.isSafeInteger(id) || id <= 0 || !id_pet || !id_tutor) {
+      return res.status(400).json({ mensagem: "Dados inválidos." });
+    }
+
+    await client.query("BEGIN");
+
+    const resultado = await client.query(
+      `DELETE FROM publicacoes
+       WHERE id = $1 AND id_pet = $2 AND id_tutor = $3
+       RETURNING imagem_id, foto_pet`,
+      [id, String(id_pet), String(id_tutor)]
+    );
+
+    if (resultado.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ mensagem: "Publicação não encontrada ou não pertence a este pet." });
+    }
+
+    const { imagem_id, foto_pet } = resultado.rows[0];
+    const imagens = new Set();
+
+    if (imagem_id) imagens.add(imagem_id);
+
+    // Identificar a imagem de perfil enviada ao servidor
+    const prefixo = "https://app-pai-de-pet.onrender.com/imagens/";
+
+    if (typeof foto_pet === "string" && foto_pet.startsWith(prefixo)) {
+      const idFoto = Number(foto_pet.slice(prefixo.length));
+      if (Number.isSafeInteger(idFoto) && idFoto > 0) imagens.add(idFoto);
+    }
+
+    for (const idImagem of imagens) {
+      await client.query(
+        `DELETE FROM imagens_feed
+         WHERE id = $1
+         AND NOT EXISTS (
+           SELECT 1 FROM publicacoes
+           WHERE imagem_id = $1
+           OR foto_pet = $2
+         )`,
+        [idImagem, `${prefixo}${idImagem}`]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    return res.json({ mensagem: "Publicação excluída com sucesso!" });
+
+  } catch (erro) {
+    await client.query("ROLLBACK");
+    console.error("Erro ao excluir publicação:", erro.message);
+    return res.status(500).json({ mensagem: "Erro ao excluir publicação." });
+  } finally {
+    client.release();
+  }
+});
+
 
 app.post("/upload-foto", upload.single("foto"), async (req, res) => {
   try {
@@ -381,6 +447,12 @@ async function criarTabelaPublicacoes() {
       ALTER TABLE publicacoes
       ADD COLUMN IF NOT EXISTS imagem_id INTEGER REFERENCES imagens_feed(id)
     `);
+
+// Guardar o tutor responsável por cada publicação
+await pool.query(`
+  ALTER TABLE publicacoes
+  ADD COLUMN IF NOT EXISTS id_tutor TEXT
+`);
 
 // Criar tabela para armazenar curtidas das publicações
 await pool.query(`

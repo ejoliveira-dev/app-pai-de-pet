@@ -13,7 +13,7 @@ import Cartao from "../componentes/Cartao";
 import Botao from "../componentes/Botao";
 import AvatarPet from "../componentes/AvatarPet";
 import { cores, fontes, sombra } from "../styles/tema";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl, Alert as AlertNativo } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -39,6 +39,7 @@ export default function Comunidade() {
 
     const [pet, setPet] = useState(null);
     const [publicacoes, setPublicacoes] = useState([]);
+    const [abaAtiva, setAbaAtiva] = useState("publicacoes");
     const [modalAberto, setModalAberto] = useState(false);
     const [legenda, setLegenda] = useState("");
     const [foto, setFoto] = useState(null);
@@ -278,6 +279,7 @@ export default function Comunidade() {
             },
             body: JSON.stringify({
                 id_pet: String(pet.id_pet),
+                id_tutor: idTutor,
                 nome_pet: pet.nome,
                 foto_pet: fotoPetPublica,
                 legenda: legenda.trim(),
@@ -314,6 +316,11 @@ export default function Comunidade() {
 
     // primeiro nome do pet para a barra de publicar
     const primeiroNome = pet?.nome?.split(' ')[0] || 'seu pet';
+
+    // filtra as publicações de acordo com a aba ativa
+    const publicacoesExibidas = abaAtiva === "meusPosts"
+        ? publicacoes.filter((post) => post.id_pet === String(pet?.id_pet) && post.id_tutor === idTutor)
+        : publicacoes;
 
     // curtir/descurtir
     async function alternarCurtida(id) {
@@ -417,6 +424,47 @@ export default function Comunidade() {
         ultimoToque.current[id] = agora;
     }
 
+    // Confirmar e excluir publicação
+    function confirmarExclusao(post) {
+        AlertNativo.alert(
+            "Excluir publicação",
+            "Deseja realmente excluir esta publicação?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const resposta = await fetch(
+                                `https://app-pai-de-pet.onrender.com/publicacoes/${post.id}`,
+                                {
+                                    method: "DELETE",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        id_pet: String(pet.id_pet),
+                                        id_tutor: idTutor
+                                    })
+                                }
+                            );
+
+                            if (!resposta.ok) {
+                                throw new Error("Erro ao excluir publicação.");
+                            }
+
+                            setPublicacoes((atual) => atual.filter((item) => item.id !== post.id));
+
+                            Alert.alert("Pronto!", "Publicação excluída com sucesso!");
+                        } catch (erro) {
+                            console.error("Erro ao excluir publicação:", erro);
+                            Alert.alert("Erro", "Não foi possível excluir a publicação.");
+                        }
+                    }
+                }
+            ]
+        );
+    }
+
     // puxar para atualizar o feed
     async function atualizarFeed() {
         setAtualizando(true);
@@ -476,17 +524,36 @@ export default function Comunidade() {
                     </View>
                 </Pressable>
 
-                <Text style={styles.tituloFeed}>Feed</Text>
+                {/* abas de Publicações e Meus posts */}
+                <View style={styles.abasComunidade}>
+                    <TouchableOpacity
+                        style={[styles.botaoAba, abaAtiva === "publicacoes" && styles.abaSelecionada]}
+                        onPress={() => setAbaAtiva("publicacoes")}
+                    >
+                        <Text style={[styles.textoAba, abaAtiva === "publicacoes" && styles.textoAbaSelecionada]}>
+                            Publicações
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.botaoAba, abaAtiva === "meusPosts" && styles.abaSelecionada]}
+                        onPress={() => setAbaAtiva("meusPosts")}
+                    >
+                        <Text style={[styles.textoAba, abaAtiva === "meusPosts" && styles.textoAbaSelecionada]}>
+                            Meus posts
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
                 {/* publicações cadastradas */}
-                {publicacoes.length === 0 ? (
+                {publicacoesExibidas.length === 0 ? (
                     <View style={styles.vazio}>
                         <Text style={styles.textoVazio}>
                             Nenhuma publicação ainda.{'\n'}Toque no + para criar a primeira!
                         </Text>
                     </View>
                 ) : (
-                    publicacoes.map((post) => (
+                    publicacoesExibidas.map((post) => (
                         <View
                             key={String(post.id)}
                             style={styles.cardPublicacao}
@@ -505,6 +572,18 @@ export default function Comunidade() {
                                         {tempoRelativo(post.criado_em)}
                                     </Text>
                                 </View>
+                                {/* botão de excluir só aparece na aba "Meus posts" */}
+                                {abaAtiva === "meusPosts" && (
+                                <Pressable
+                                    onPress={() => confirmarExclusao(post)}
+                                    hitSlop={10}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Excluir publicação"
+                                    style={({ pressed }) => pressed && styles.pressionado}
+                                >
+                                    <Ionicons name="trash-outline" size={19} color="#D64545" />
+                                </Pressable>
+                            )}                   
                             </View>
 
                             {post.imagem_id ? (
@@ -983,4 +1062,34 @@ const styles = StyleSheet.create({
         opacity: 0.7,
         transform: [{ scale: 0.97 }],
     },
+
+    abasComunidade: {
+    flexDirection: "row",
+    marginBottom: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E8DED1",
+
+    },
+    botaoAba: {
+        flex: 1,
+        alignItems: "center",
+        paddingVertical: 12,
+    },
+
+    abaSelecionada: {
+        borderBottomWidth: 3,
+        borderBottomColor: cores.laranja,
+    },
+
+    textoAba: {
+        fontFamily: fontes.regular,
+        fontSize: 16,
+        color: cores.marromClaro,
+    },
+
+    textoAbaSelecionada: {
+        fontFamily: fontes.negrito,
+        color: cores.marrom,
+    },
+
 });
