@@ -77,7 +77,7 @@ app.get("/publicacoes", async (req, res) => {
 // Criar publicação com legenda e imagem
 app.post("/publicacoes", async (req, res) => {
   try {
-    const { id_pet, nome_pet, legenda, imagem_id } = req.body;
+const { id_pet, nome_pet, foto_pet, legenda, imagem_id } = req.body;
 
     const texto = typeof legenda === "string" ? legenda.trim() : "";
     const idImagem = imagem_id == null ? null : Number(imagem_id);
@@ -112,10 +112,10 @@ app.post("/publicacoes", async (req, res) => {
 
     const resultado = await pool.query(
       `INSERT INTO publicacoes
-       (id_pet, nome_pet, legenda, imagem_id)
-       VALUES ($1, $2, $3, $4)
+       (id_pet, nome_pet, foto_pet, legenda, imagem_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [id_pet.trim(), nome_pet.trim(), texto, idImagem]
+      [id_pet.trim(), nome_pet.trim(), foto_pet || null, texto, idImagem]
     );
 
     return res.status(201).json(resultado.rows[0]);

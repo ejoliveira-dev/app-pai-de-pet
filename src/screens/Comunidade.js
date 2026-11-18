@@ -223,6 +223,29 @@ export default function Comunidade() {
     try {
         let imagemId = null;
 
+    // Enviar a foto de perfil do pet para o servidor
+    let fotoPetPublica = null;
+
+    if (pet.foto_perfil) {
+        const arquivoPet = new File(pet.foto_perfil);
+        const formDataPet = new FormData();
+
+        formDataPet.append("foto", arquivoPet);
+
+        const respostaPet = await fetch(`${API_URL}/upload-foto`, {
+            method: "POST",
+            body: formDataPet
+        });
+
+        if (!respostaPet.ok) {
+            throw new Error("Erro ao enviar foto de perfil do pet.");
+        }
+
+        const dadosPet = await respostaPet.json();
+
+        fotoPetPublica = `${API_URL}/imagens/${dadosPet.imagem_id}`;
+    }
+
         // Enviar imagem ao servidor
         if (foto) {
             const arquivo = new File(foto);
@@ -256,6 +279,7 @@ export default function Comunidade() {
             body: JSON.stringify({
                 id_pet: String(pet.id_pet),
                 nome_pet: pet.nome,
+                foto_pet: fotoPetPublica,
                 legenda: legenda.trim(),
                 imagem_id: imagemId
             })
