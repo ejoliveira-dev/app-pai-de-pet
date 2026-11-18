@@ -15,6 +15,7 @@ import AvatarPet from "../componentes/AvatarPet";
 import { cores, fontes, sombra } from "../styles/tema";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Ex.: "agora", "há 5 min", "há 2 h", "ontem", "12/11"
 function tempoRelativo(texto) {
@@ -43,6 +44,9 @@ export default function Comunidade() {
     const [foto, setFoto] = useState(null);
     const [salvando, setSalvando] = useState(false);
     const [curtidos, setCurtidos] = useState({});
+    const [totalCurtidas, setTotalCurtidas] = useState({});
+    const curtidasEmAndamento = useRef(new Set());
+    const [idTutor, setIdTutor] = useState(null);
     const [atualizando, setAtualizando] = useState(false);
     const [coracaoVisivel, setCoracaoVisivel] = useState(null);
     const ultimoToque = useRef({});
@@ -84,6 +88,10 @@ export default function Comunidade() {
                 try {
                     const id = await obterPetSelecionadoId(db);
 
+                    const emailTutor = await AsyncStorage.getItem("usuarioLogado");
+                        if (ativo) {
+                            setIdTutor(emailTutor);
+                        }   
                     const encontrado = id ? await buscarPet(db, id) : null;
 
                     const resposta = await fetch(
@@ -96,9 +104,45 @@ export default function Comunidade() {
 
                     const listaPosts = await resposta.json();
 
+                    // Buscar as curtidas salvas de cada publicação
+                    const resultadosCurtidas = await Promise.all(
+                        listaPosts.map(async (post) => {
+                            const parametros = new URLSearchParams({
+                                id_pet: String(encontrado?.id_pet ?? ""),
+                                id_tutor: emailTutor ?? ""
+                            });
+
+                            const respostaCurtidas = await fetch(
+                                `https://app-pai-de-pet.onrender.com/curtidas/${post.id}?${parametros.toString()}`
+                            );
+
+                            if (!respostaCurtidas.ok) {
+                                throw new Error("Erro ao carregar curtidas.");
+                            }
+
+                            const dados = await respostaCurtidas.json();
+
+                            return {
+                                id: post.id,
+                                total: dados.total,
+                                curtiu: dados.curtiu
+                            };
+                        })
+                    );
+
+                    const curtidasSalvas = {};
+                    const totaisSalvos = {};
+
+                    resultadosCurtidas.forEach((item) => {
+                        curtidasSalvas[item.id] = item.curtiu;
+                        totaisSalvos[item.id] = item.total;
+                    });                   
+
                     if (ativo) {
                         setPet(encontrado);
                         setPublicacoes(listaPosts);
+                        setCurtidos(curtidasSalvas);
+                        setTotalCurtidas(totaisSalvos);
                     }
 
                 } catch (erro) {
@@ -248,23 +292,102 @@ export default function Comunidade() {
     const primeiroNome = pet?.nome?.split(' ')[0] || 'seu pet';
 
     // curtir/descurtir
-    function alternarCurtida(id) {
-        setCurtidos((atual) => ({ ...atual, [id]: !atual[id] }));
+    async function alternarCurtida(id) {
+        if (!pet?.id_pet || !idTutor) {
+            Alert.alert("Atenção!", "Você precisa escolher um dos seus pets para curtir.");
+            return;
+        }
+
+        // Impedir solicitações repetidas enquanto salva
+        if (curtidasEmAndamento.current.has(id)) return;
+
+        curtidasEmAndamento.current.add(id);
+
+        try {
+            const jaCurtiu = !!curtidos[id];
+
+            const resposta = await fetch(
+                "https://app-pai-de-pet.onrender.com/curtidas",
+                {
+                    method: jaCurtiu ? "DELETE" : "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id_publicacao: id,
+                        id_pet: String(pet.id_pet),
+                        id_tutor: idTutor
+                    })
+                }
+            );
+
+            if (!resposta.ok) {
+                throw new Error("Erro ao atualizar curtida.");
+            }
+
+            // Consultar o estado verdadeiro no banco
+            const parametros = new URLSearchParams({
+                id_pet: String(pet.id_pet),
+                id_tutor: idTutor
+            });
+
+            const consulta = await fetch(
+                `https://app-pai-de-pet.onrender.com/curtidas/${id}?${parametros.toString()}`
+            );
+
+            if (!consulta.ok) {
+                throw new Error("Erro ao consultar curtidas.");
+            }
+
+            const dados = await consulta.json();
+
+            setCurtidos((atual) => ({
+                ...atual,
+                [id]: dados.curtiu
+            }));
+
+            setTotalCurtidas((atual) => ({
+                ...atual,
+                [id]: dados.total
+            }));
+
+        } catch (erro) {
+            console.error("Erro ao curtir publicação:", erro);
+            Alert.alert("Erro", "Não foi possível atualizar a curtida.");
+        } finally {
+            curtidasEmAndamento.current.delete(id);
+        }
     }
     
-    // toque duplo na foto curte o post (igual ao Insta)
+    // toque duplo na foto curte o post apenas uma vez, mas continua aparecendo a animação(igual ao Insta)
     function tocarFoto(id) {
         const agora = Date.now();
 
         if (agora - (ultimoToque.current[id] || 0) < 300) {
-            setCurtidos((atual) => ({ ...atual, [id]: true }));
+
+            // Mostrar a animação sempre
             setCoracaoVisivel(id);
             escalaCoracao.setValue(0);
+
             Animated.sequence([
-                Animated.spring(escalaCoracao, { toValue: 1, friction: 4, tension: 120, useNativeDriver: true }),
+                Animated.spring(escalaCoracao, {
+                    toValue: 1,
+                    friction: 4,
+                    tension: 120,
+                    useNativeDriver: true
+                }),
                 Animated.delay(250),
-                Animated.timing(escalaCoracao, { toValue: 0, duration: 200, useNativeDriver: true }),
+                Animated.timing(escalaCoracao, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: true
+                }),
             ]).start(() => setCoracaoVisivel(null));
+
+            // Só registrar curtida se o pet ainda não curtiu
+            if (!curtidos[id]) {
+                alternarCurtida(id);
+            }
         }
 
         ultimoToque.current[id] = agora;
@@ -402,10 +525,12 @@ export default function Comunidade() {
                                         color={curtidos[post.id] ? cores.laranja : cores.marrom}
                                     />
                                 </Pressable>
+                                {/* exibe o total de curtidas e se o usuário curtiu */}
+                                <Text style={styles.textoCurtida}>
+                                    {totalCurtidas[post.id] || 0} curtidas
+                                    {curtidos[post.id] ? " • Você curtiu" : ""}
+                                </Text>
 
-                                {curtidos[post.id] && (
-                                    <Text style={styles.textoCurtida}>Você curtiu</Text>
-                                )}
                             </View>
 
                         </View>
