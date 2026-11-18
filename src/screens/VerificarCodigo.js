@@ -1,6 +1,7 @@
-import React, { useState } from "react";
 
-import { Text, View, ScrollView, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+
+import { Text, View, ScrollView, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Pressable, Keyboard } from "react-native";
 import { Alert } from "../componentes/AlertaTutus";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +23,15 @@ export default function VerificarCodigo({ navigation, route }) {
 
   const [codigo, setCodigo] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const inputCodigoRef = useRef(null);
+
+  useEffect(() => {
+    const listener = Keyboard.addListener("keyboardDidHide", () => {
+      inputCodigoRef.current?.blur();
+    });
+
+    return () => listener.remove();
+  }, []); 
 
   async function verificarCodigo() {
     if (codigo.length !== 6) {
@@ -92,10 +102,14 @@ export default function VerificarCodigo({ navigation, route }) {
 
         {/* 6 caixinhas; o campo de verdade fica invisível por cima delas */}
         <View style={estilosAuth.cartao}>
-          <View style={styles.caixas}>
+          <Pressable
+            style={styles.caixas}
+            onPress={() => inputCodigoRef.current?.focus()}
+          >
             {[0, 1, 2, 3, 4, 5].map((indice) => (
               <View
                 key={indice}
+                pointerEvents="none"
                 style={[
                   styles.caixa,
                   codigo[indice] && styles.caixaPreenchida,
@@ -107,6 +121,7 @@ export default function VerificarCodigo({ navigation, route }) {
             ))}
 
             <TextInput
+              ref={inputCodigoRef}
               style={styles.campoInvisivel}
               value={codigo}
               onChangeText={(texto) =>
@@ -117,7 +132,7 @@ export default function VerificarCodigo({ navigation, route }) {
               autoFocus
               caretHidden
             />
-          </View>
+          </Pressable>
         </View>
 
         <Text style={estilosAuth.dica}>Não chegou? Confira a caixa de spam.</Text>
@@ -139,12 +154,15 @@ export default function VerificarCodigo({ navigation, route }) {
 const styles = StyleSheet.create({
   caixas: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    alignSelf: "center",
+    width: "100%",
     gap: 8,
   },
 
   caixa: {
     flex: 1,
+    maxWidth: 48,
     height: 58,
     borderRadius: 16,
     borderWidth: 1.5,
@@ -174,4 +192,5 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     opacity: 0,
   },
+
 });
