@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { buscarPet, obterPetSelecionadoId, listarPublicacoes, inserirPublicacao } from '../database/Database';
@@ -467,6 +468,34 @@ export default function Comunidade() {
         setEnviandoComentario(true);
 
         try {
+
+            // Buscar uma foto pública já enviada pelo pet
+            let fotoPetPublica = publicacoes.find(
+                (post) => post.id_pet === String(pet.id_pet) &&
+                        post.id_tutor === idTutor &&
+                        post.foto_pet
+            )?.foto_pet || null;
+
+            // Se ainda não existe foto pública, enviar ao servidor
+            if (!fotoPetPublica && pet.foto_perfil) {
+                const arquivoPet = new File(pet.foto_perfil);
+                const formDataPet = new FormData();
+
+                formDataPet.append("foto", arquivoPet);
+
+                const respostaFoto = await fetch(
+                    "https://app-pai-de-pet.onrender.com/upload-foto",
+                    { method: "POST", body: formDataPet }
+                );
+
+                if (!respostaFoto.ok) {
+                    throw new Error("Erro ao enviar foto do pet.");
+                }
+
+                const dadosFoto = await respostaFoto.json();
+                fotoPetPublica = `https://app-pai-de-pet.onrender.com/imagens/${dadosFoto.imagem_id}`;
+            }
+
             const resposta = await fetch(
                 "https://app-pai-de-pet.onrender.com/comentarios",
                 {
@@ -477,6 +506,7 @@ export default function Comunidade() {
                         id_pet: String(pet.id_pet),
                         id_tutor: idTutor,
                         nome_pet: pet.nome,
+                        foto_pet: fotoPetPublica,
                         texto: textoComentario.trim()
                     })
                 }
@@ -631,7 +661,7 @@ export default function Comunidade() {
         <View style={styles.container}>
 
             <Animated.ScrollView
-                style={{ flex: 1 }}
+                style={styles.rolagemFeed}
                 onScroll={aoRolar}
                 scrollEventThrottle={16}
                 refreshControl={
@@ -821,50 +851,26 @@ export default function Comunidade() {
                 transparent
                 onRequestClose={() => setPostComentario(null)}
             >
-                <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" }}>
+                <View style={styles.fundoComentarios}>
 
                     {/* Tocar fora fecha os comentários */}
                     <Pressable
-                        style={StyleSheet.absoluteFillObject}
+                        style={styles.preencherFundoComentarios}
                         onPress={() => setPostComentario(null)}
                     />
 
-                    <View style={{
-                        height: "78%",
-                        backgroundColor: cores.fundo,
-                        borderTopLeftRadius: 25,
-                        borderTopRightRadius: 25,
-                        paddingTop: 12
-                    }}>
+                    <View style={styles.painelComentarios}>
 
-                        <View style={{
-                            width: 40,
-                            height: 5,
-                            borderRadius: 5,
-                            backgroundColor: "#D4C9BB",
-                            alignSelf: "center",
-                            marginBottom: 15
-                        }} />
+                        <View style={styles.puxadorComentarios} />
 
-                        <View style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            paddingBottom: 15,
-                            borderBottomWidth: 1,
-                            borderBottomColor: "#E8DED1"
-                        }}>
-                            <Text style={{
-                                fontFamily: fontes.negrito,
-                                fontSize: 18,
-                                color: cores.marrom
-                            }}>
+                        <View style={styles.cabecalhoComentarios}>
+                            <Text style={styles.tituloComentarios}>
                                 Comentários
                             </Text>
 
                             <Pressable
                                 onPress={() => setPostComentario(null)}
-                                style={{ position: "absolute", right: 20, top: 0 }}
+                                style={styles.fecharComentarios}
                             >
                                 <Ionicons name="close" size={24} color={cores.marrom} />
                             </Pressable>
@@ -872,21 +878,16 @@ export default function Comunidade() {
 
                         {/* Lista dos comentários */}
                         <ScrollView
-                            style={{ flex: 1 }}
-                            contentContainerStyle={{ padding: 20, gap: 20 }}
+                            style={styles.listaComentarios}
+                            contentContainerStyle={styles.conteudoListaComentarios}
                             keyboardShouldPersistTaps="handled"
                         >
                             {carregandoComentarios ? (
-                                <Text style={{ textAlign: "center", color: cores.marromClaro }}>
+                                <Text style={styles.textoCarregandoComentarios}>
                                     Carregando comentários...
                                 </Text>
                             ) : comentarios.length === 0 ? (
-                                <Text style={{
-                                    textAlign: "center",
-                                    fontFamily: fontes.regular,
-                                    color: cores.marromClaro,
-                                    marginTop: 30
-                                }}>
+                                <Text style={styles.textoSemComentarios}>
                                     Nenhum comentário ainda. Seja o primeiro! 🐾
                                 </Text>
                             ) : (
@@ -895,43 +896,23 @@ export default function Comunidade() {
                                         key={String(comentario.id)}
                                         onLongPress={() => mostrarOpcoesComentario(comentario)}
                                         delayLongPress={400}
-                                        style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}
+                                        style={styles.itemComentario}
                                     >
 
-                                        <View style={{
-                                            width: 38,
-                                            height: 38,
-                                            borderRadius: 19,
-                                            backgroundColor: "#FFE7C2",
-                                            justifyContent: "center",
-                                            alignItems: "center"
-                                        }}>
+                                        <View style={styles.avatarComentario}>
                                             <Ionicons name="paw" size={20} color={cores.marrom} />
                                         </View>
 
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={{
-                                                fontFamily: fontes.negrito,
-                                                color: cores.marrom,
-                                                fontSize: 15
-                                            }}>
+                                        <View style={styles.corpoComentario}>
+                                            <Text style={styles.nomeComentario}>
                                                 {comentario.nome_pet}
                                             </Text>
 
-                                            <Text style={{
-                                                fontFamily: fontes.regular,
-                                                color: cores.marrom,
-                                                fontSize: 15
-                                            }}>
+                                            <Text style={styles.textoComentario}>
                                                 {comentario.texto}
                                             </Text>
 
-                                            <Text style={{
-                                                fontFamily: fontes.regular,
-                                                fontSize: 12,
-                                                color: cores.marromClaro,
-                                                marginTop: 4
-                                            }}>
+                                            <Text style={styles.dataComentario}>
                                                 {tempoRelativo(comentario.criado_em)}
                                             </Text>
                                         </View>
@@ -943,7 +924,7 @@ export default function Comunidade() {
                                                 hitSlop={10}
                                                 accessibilityRole="button"
                                                 accessibilityLabel="Opções do comentário"
-                                                style={{ padding: 5 }}
+                                                style={styles.opcoesComentario}
                                             >
                                                 <Ionicons name="ellipsis-horizontal" size={22} color={cores.marrom} />
                                             </Pressable>
@@ -954,28 +935,11 @@ export default function Comunidade() {
                         </ScrollView>
 
                         {/* Campo para escrever comentário */}
-                        <View style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            padding: 15,
-                            paddingBottom: Math.max(insets.bottom, 15),
-                            borderTopWidth: 1,
-                            borderTopColor: "#E8DED1",
-                            gap: 10
-                        }}>
+                        <View style={[styles.rodapeComentarios, { paddingBottom: Math.max(insets.bottom, 15) }]}>
                             <AvatarPet foto={pet?.foto_perfil} tamanho={36} />
 
                             <TextInput
-                                style={{
-                                    flex: 1,
-                                    backgroundColor: cores.branco,
-                                    borderRadius: 22,
-                                    paddingHorizontal: 15,
-                                    paddingVertical: 10,
-                                    fontFamily: fontes.regular,
-                                    color: cores.marrom,
-                                    maxHeight: 100
-                                }}
+                                style={styles.inputComentario}
                                 placeholder="Adicione um comentário..."
                                 placeholderTextColor="#A89A82"
                                 value={textoComentario}
@@ -1012,7 +976,7 @@ export default function Comunidade() {
                 <View style={styles.modalFundo}>
 
                     {/* tocar fora fecha */}
-                    <Pressable style={StyleSheet.absoluteFillObject} onPress={fecharPublicacao} />
+                    <Pressable style={styles.preencherFundoComentarios} onPress={fecharPublicacao} />
 
                     <View style={styles.modalConteudo}>
 
@@ -1113,7 +1077,6 @@ const styles = StyleSheet.create({
         color: cores.marrom,
         marginBottom: 10,
     },
-
 
     vazio: {
         alignItems: 'center',
@@ -1429,4 +1392,137 @@ const styles = StyleSheet.create({
         color: cores.marrom,
     },
 
+    // Estilos da área de comentários (antes definidos diretamente no JSX)
+    rolagemFeed: {
+        flex: 1,
+    },
+
+    fundoComentarios: {
+        flex: 1,
+        justifyContent: "flex-end",
+        backgroundColor: "rgba(0,0,0,0.45)",
+    },
+
+    painelComentarios: {
+        height: "78%",
+        backgroundColor: cores.fundo,
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        paddingTop: 12,
+    },
+
+    puxadorComentarios: {
+        width: 40,
+        height: 5,
+        borderRadius: 5,
+        backgroundColor: "#D4C9BB",
+        alignSelf: "center",
+        marginBottom: 15,
+    },
+
+    cabecalhoComentarios: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: "#E8DED1",
+    },
+
+    tituloComentarios: {
+        fontFamily: fontes.negrito,
+        fontSize: 18,
+        color: cores.marrom,
+    },
+
+    fecharComentarios: {
+        position: "absolute",
+        right: 20,
+        top: 0,
+    },
+
+    listaComentarios: {
+        flex: 1,
+    },
+
+    conteudoListaComentarios: {
+        padding: 20,
+        gap: 20,
+    },
+
+    textoCarregandoComentarios: {
+        textAlign: "center",
+        color: cores.marromClaro,
+    },
+
+    textoSemComentarios: {
+        textAlign: "center",
+        fontFamily: fontes.regular,
+        color: cores.marromClaro,
+        marginTop: 30,
+    },
+
+    itemComentario: {
+        flexDirection: "row",
+        gap: 10,
+        alignItems: "flex-start",
+    },
+
+    avatarComentario: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "#FFE7C2",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    corpoComentario: {
+        flex: 1,
+    },
+
+    nomeComentario: {
+        fontFamily: fontes.negrito,
+        color: cores.marrom,
+        fontSize: 15,
+    },
+
+    textoComentario: {
+        fontFamily: fontes.regular,
+        color: cores.marrom,
+        fontSize: 15,
+    },
+
+    dataComentario: {
+        fontFamily: fontes.regular,
+        fontSize: 12,
+        color: cores.marromClaro,
+        marginTop: 4,
+    },
+
+    opcoesComentario: {
+        padding: 5,
+    },
+
+    rodapeComentarios: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 15,
+        borderTopWidth: 1,
+        borderTopColor: "#E8DED1",
+        gap: 10,
+    },
+
+    inputComentario: {
+        flex: 1,
+        backgroundColor: cores.branco,
+        borderRadius: 22,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        fontFamily: fontes.regular,
+        color: cores.marrom,
+        maxHeight: 100,
+    },
+
+    preencherFundoComentarios: StyleSheet.absoluteFillObject,
 });

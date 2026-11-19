@@ -416,7 +416,7 @@ app.get("/curtidas/:id_publicacao", async (req, res) => {
 // Adicionar comentário a uma publicação
 app.post("/comentarios", async (req, res) => {
   try {
-    const { id_publicacao, id_pet, id_tutor, nome_pet, texto } = req.body;
+    const { id_publicacao, id_pet, id_tutor, nome_pet, foto_pet, texto } = req.body;
     const publicacaoId = Number(id_publicacao);
     const comentario = typeof texto === "string" ? texto.trim() : "";
 
@@ -429,12 +429,12 @@ app.post("/comentarios", async (req, res) => {
     ) {
       return res.status(400).json({ mensagem: "Dados do comentário inválidos." });
     }
-
+    
     const resultado = await pool.query(
-      `INSERT INTO comentarios (id_publicacao, id_pet, id_tutor, nome_pet, texto)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO comentarios (id_publicacao, id_pet, id_tutor, nome_pet, foto_pet, texto)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [publicacaoId, id_pet.trim(), id_tutor.trim(), nome_pet.trim(), comentario]
+      [publicacaoId, id_pet.trim(), id_tutor.trim(), nome_pet.trim(), foto_pet || null, comentario]
     );
 
     return res.status(201).json(resultado.rows[0]);
@@ -570,6 +570,12 @@ await pool.query(`
     texto TEXT NOT NULL,
     criado_em TIMESTAMPTZ DEFAULT NOW()
   )
+`);
+
+// Adicionar foto de perfil aos comentários
+await pool.query(`
+  ALTER TABLE comentarios
+  ADD COLUMN IF NOT EXISTS foto_pet TEXT
 `);
 
     console.log("Tabela de publicações pronta!");
