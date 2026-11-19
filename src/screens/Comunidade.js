@@ -197,9 +197,10 @@ export default function Comunidade() {
     async function selecionarFoto() {
         try {
             const resultado = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ["images"],
-                allowsEditing: false,
-                quality: 0.8,
+                   mediaTypes: ["images"],
+                   allowsEditing: true,
+                   aspect: [4, 5],
+                   quality: 0.8,
             });
 
             if (!resultado.canceled && resultado.assets?.length) {
@@ -709,7 +710,7 @@ export default function Comunidade() {
                         onPress={() => setAbaAtiva("meusPosts")}
                     >
                         <Text style={[styles.textoAba, abaAtiva === "meusPosts" && styles.textoAbaSelecionada]}>
-                            Meus posts
+                            Minhas publicações
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -741,7 +742,7 @@ export default function Comunidade() {
                                         {tempoRelativo(post.criado_em)}
                                     </Text>
                                 </View>
-                                {/* botão de excluir só aparece na aba "Meus posts" */}
+                                {/* botão de excluir só aparece na aba "Minhas publicações" */}
                                 {abaAtiva === "meusPosts" && (
                                 <Pressable
                                     onPress={() => confirmarExclusao(post)}
