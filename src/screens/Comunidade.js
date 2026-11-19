@@ -46,6 +46,11 @@ export default function Comunidade() {
     const [salvando, setSalvando] = useState(false);
     const [curtidos, setCurtidos] = useState({});
     const [totalCurtidas, setTotalCurtidas] = useState({});
+    const [postComentario, setPostComentario] = useState(null);
+    const [comentarios, setComentarios] = useState([]);
+    const [textoComentario, setTextoComentario] = useState("");
+    const [enviandoComentario, setEnviandoComentario] = useState(false);
+    const [carregandoComentarios, setCarregandoComentarios] = useState(false);
     const curtidasEmAndamento = useRef(new Set());
     const [idTutor, setIdTutor] = useState(null);
     const [atualizando, setAtualizando] = useState(false);
@@ -424,6 +429,140 @@ export default function Comunidade() {
         ultimoToque.current[id] = agora;
     }
 
+    // Buscar comentários de uma publicação
+    async function abrirComentarios(post) {
+        setPostComentario(post);
+        setComentarios([]);
+        setTextoComentario("");
+        setCarregandoComentarios(true);
+
+        try {
+            const resposta = await fetch(
+                `https://app-pai-de-pet.onrender.com/comentarios/${post.id}`
+            );
+
+            if (!resposta.ok) {
+                throw new Error("Erro ao buscar comentários.");
+            }
+
+            const dados = await resposta.json();
+            setComentarios(dados);
+        } catch (erro) {
+            console.error("Erro ao carregar comentários:", erro);
+            Alert.alert("Erro", "Não foi possível carregar os comentários.");
+        } finally {
+            setCarregandoComentarios(false);
+        }
+    }
+
+    // Enviar comentário para uma publicação
+    async function enviarComentario() {
+        if (enviandoComentario || !postComentario || !textoComentario.trim()) return;
+
+        if (!pet?.id_pet || !idTutor) {
+            Alert.alert("Atenção!", "Selecione um pet antes de comentar.");
+            return;
+        }
+
+        setEnviandoComentario(true);
+
+        try {
+            const resposta = await fetch(
+                "https://app-pai-de-pet.onrender.com/comentarios",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id_publicacao: postComentario.id,
+                        id_pet: String(pet.id_pet),
+                        id_tutor: idTutor,
+                        nome_pet: pet.nome,
+                        texto: textoComentario.trim()
+                    })
+                }
+            );
+
+            if (!resposta.ok) {
+                throw new Error("Erro ao enviar comentário.");
+            }
+
+            const novoComentario = await resposta.json();
+
+            setComentarios((atual) => [...atual, novoComentario]);
+            setTextoComentario("");
+
+        } catch (erro) {
+            console.error("Erro ao comentar:", erro);
+            Alert.alert("Erro", "Não foi possível enviar o comentário.");
+        } finally {
+            setEnviandoComentario(false);
+        }
+    }
+
+    // Mostrar opção de excluir comentário
+    function mostrarOpcoesComentario(comentario) {
+        if (
+            comentario.id_pet !== String(pet?.id_pet) ||
+            comentario.id_tutor !== idTutor
+        ) return;
+
+        AlertNativo.alert(
+            "Opções do comentário",
+            "O que deseja fazer?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir comentário",
+                    style: "destructive",
+                    onPress: () => confirmarExclusaoComentario(comentario)
+                }
+            ]
+        );
+    }
+
+    // Confirmar e excluir comentário
+    function confirmarExclusaoComentario(comentario) {
+        AlertNativo.alert(
+            "Excluir comentário",
+            "Deseja realmente excluir este comentário?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const resposta = await fetch(
+                                `https://app-pai-de-pet.onrender.com/comentarios/${comentario.id}`,
+                                {
+                                    method: "DELETE",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        id_pet: String(pet.id_pet),
+                                        id_tutor: idTutor
+                                    })
+                                }
+                            );
+
+                            if (!resposta.ok) {
+                                throw new Error("Erro ao excluir comentário.");
+                            }
+
+                            setComentarios((atual) =>
+                                atual.filter((item) => item.id !== comentario.id)
+                            );
+
+                            Alert.alert("Pronto!", "Comentário excluído com sucesso!");
+                        } catch (erro) {
+                            console.error("Erro ao excluir comentário:", erro);
+                            Alert.alert("Erro", "Não foi possível excluir o comentário.");
+                        }
+                    }
+                }
+            ]
+        );
+    }
+
     // Confirmar e excluir publicação
     function confirmarExclusao(post) {
         AlertNativo.alert(
@@ -628,6 +767,18 @@ export default function Comunidade() {
                                         color={curtidos[post.id] ? cores.laranja : cores.marrom}
                                     />
                                 </Pressable>
+
+                                {/* abrir comentários da publicação */}
+                                <Pressable
+                                    onPress={() => abrirComentarios(post)}
+                                    hitSlop={10}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Ver comentários"
+                                    style={({ pressed }) => pressed && styles.pressionado}
+                                >
+                                    <Ionicons name="chatbubble-outline" size={25} color={cores.marrom} />
+                                </Pressable>
+
                                 {/* exibe o total de curtidas e se o usuário curtiu */}
                                 <Text style={styles.textoCurtida}>
                                     {totalCurtidas[post.id] || 0} curtidas
@@ -662,6 +813,192 @@ export default function Comunidade() {
                 onPublicar={abrirPublicacao}
                 deslocamento={deslocamentoAba}
             />
+
+            {/* Área de comentários estilo Instagram */}
+            <Modal
+                visible={postComentario !== null}
+                animationType="slide"
+                transparent
+                onRequestClose={() => setPostComentario(null)}
+            >
+                <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" }}>
+
+                    {/* Tocar fora fecha os comentários */}
+                    <Pressable
+                        style={StyleSheet.absoluteFillObject}
+                        onPress={() => setPostComentario(null)}
+                    />
+
+                    <View style={{
+                        height: "78%",
+                        backgroundColor: cores.fundo,
+                        borderTopLeftRadius: 25,
+                        borderTopRightRadius: 25,
+                        paddingTop: 12
+                    }}>
+
+                        <View style={{
+                            width: 40,
+                            height: 5,
+                            borderRadius: 5,
+                            backgroundColor: "#D4C9BB",
+                            alignSelf: "center",
+                            marginBottom: 15
+                        }} />
+
+                        <View style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            paddingBottom: 15,
+                            borderBottomWidth: 1,
+                            borderBottomColor: "#E8DED1"
+                        }}>
+                            <Text style={{
+                                fontFamily: fontes.negrito,
+                                fontSize: 18,
+                                color: cores.marrom
+                            }}>
+                                Comentários
+                            </Text>
+
+                            <Pressable
+                                onPress={() => setPostComentario(null)}
+                                style={{ position: "absolute", right: 20, top: 0 }}
+                            >
+                                <Ionicons name="close" size={24} color={cores.marrom} />
+                            </Pressable>
+                        </View>
+
+                        {/* Lista dos comentários */}
+                        <ScrollView
+                            style={{ flex: 1 }}
+                            contentContainerStyle={{ padding: 20, gap: 20 }}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            {carregandoComentarios ? (
+                                <Text style={{ textAlign: "center", color: cores.marromClaro }}>
+                                    Carregando comentários...
+                                </Text>
+                            ) : comentarios.length === 0 ? (
+                                <Text style={{
+                                    textAlign: "center",
+                                    fontFamily: fontes.regular,
+                                    color: cores.marromClaro,
+                                    marginTop: 30
+                                }}>
+                                    Nenhum comentário ainda. Seja o primeiro! 🐾
+                                </Text>
+                            ) : (
+                                comentarios.map((comentario) => (
+                                    <Pressable
+                                        key={String(comentario.id)}
+                                        onLongPress={() => mostrarOpcoesComentario(comentario)}
+                                        delayLongPress={400}
+                                        style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}
+                                    >
+
+                                        <View style={{
+                                            width: 38,
+                                            height: 38,
+                                            borderRadius: 19,
+                                            backgroundColor: "#FFE7C2",
+                                            justifyContent: "center",
+                                            alignItems: "center"
+                                        }}>
+                                            <Ionicons name="paw" size={20} color={cores.marrom} />
+                                        </View>
+
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{
+                                                fontFamily: fontes.negrito,
+                                                color: cores.marrom,
+                                                fontSize: 15
+                                            }}>
+                                                {comentario.nome_pet}
+                                            </Text>
+
+                                            <Text style={{
+                                                fontFamily: fontes.regular,
+                                                color: cores.marrom,
+                                                fontSize: 15
+                                            }}>
+                                                {comentario.texto}
+                                            </Text>
+
+                                            <Text style={{
+                                                fontFamily: fontes.regular,
+                                                fontSize: 12,
+                                                color: cores.marromClaro,
+                                                marginTop: 4
+                                            }}>
+                                                {tempoRelativo(comentario.criado_em)}
+                                            </Text>
+                                        </View>
+                                    {/* Opções para excluir o próprio comentário */}
+                                        {comentario.id_pet === String(pet?.id_pet) &&
+                                        comentario.id_tutor === idTutor && (
+                                            <Pressable
+                                                onPress={() => mostrarOpcoesComentario(comentario)}
+                                                hitSlop={10}
+                                                accessibilityRole="button"
+                                                accessibilityLabel="Opções do comentário"
+                                                style={{ padding: 5 }}
+                                            >
+                                                <Ionicons name="ellipsis-horizontal" size={22} color={cores.marrom} />
+                                            </Pressable>
+                                        )}                
+                                    </Pressable>
+                                ))
+                            )}
+                        </ScrollView>
+
+                        {/* Campo para escrever comentário */}
+                        <View style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            padding: 15,
+                            paddingBottom: Math.max(insets.bottom, 15),
+                            borderTopWidth: 1,
+                            borderTopColor: "#E8DED1",
+                            gap: 10
+                        }}>
+                            <AvatarPet foto={pet?.foto_perfil} tamanho={36} />
+
+                            <TextInput
+                                style={{
+                                    flex: 1,
+                                    backgroundColor: cores.branco,
+                                    borderRadius: 22,
+                                    paddingHorizontal: 15,
+                                    paddingVertical: 10,
+                                    fontFamily: fontes.regular,
+                                    color: cores.marrom,
+                                    maxHeight: 100
+                                }}
+                                placeholder="Adicione um comentário..."
+                                placeholderTextColor="#A89A82"
+                                value={textoComentario}
+                                onChangeText={setTextoComentario}
+                                maxLength={500}
+                                multiline
+                            />
+
+                            <Pressable
+                                onPress={enviarComentario}
+                                disabled={enviandoComentario || !textoComentario.trim()}
+                            >
+                                <Ionicons
+                                    name="arrow-up-circle"
+                                    size={32}
+                                    color={textoComentario.trim() ? cores.laranja : "#C9C1B5"}
+                                />
+                            </Pressable>
+                        </View>
+
+                    </View>
+                </View>
+            </Modal>
 
             {/* faixa marrom fixa atrás da barra de status */}
             <View style={[styles.faixaStatus, { height: insets.top }]} />

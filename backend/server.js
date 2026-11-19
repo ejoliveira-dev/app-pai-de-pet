@@ -413,6 +413,99 @@ app.get("/curtidas/:id_publicacao", async (req, res) => {
   }
 });
 
+// Adicionar comentário a uma publicação
+app.post("/comentarios", async (req, res) => {
+  try {
+    const { id_publicacao, id_pet, id_tutor, nome_pet, texto } = req.body;
+    const publicacaoId = Number(id_publicacao);
+    const comentario = typeof texto === "string" ? texto.trim() : "";
+
+    if (
+      !Number.isSafeInteger(publicacaoId) || publicacaoId <= 0 ||
+      typeof id_pet !== "string" || !id_pet.trim() ||
+      typeof id_tutor !== "string" || !id_tutor.trim() ||
+      typeof nome_pet !== "string" || !nome_pet.trim() ||
+      !comentario || comentario.length > 500
+    ) {
+      return res.status(400).json({ mensagem: "Dados do comentário inválidos." });
+    }
+
+    const resultado = await pool.query(
+      `INSERT INTO comentarios (id_publicacao, id_pet, id_tutor, nome_pet, texto)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [publicacaoId, id_pet.trim(), id_tutor.trim(), nome_pet.trim(), comentario]
+    );
+
+    return res.status(201).json(resultado.rows[0]);
+  } catch (erro) {
+    if (erro.code === "23503") {
+      return res.status(404).json({ mensagem: "Publicação não encontrada." });
+    }
+
+    console.error("Erro ao comentar:", erro.message);
+    return res.status(500).json({ mensagem: "Erro ao salvar comentário." });
+  }
+});
+
+// Listar comentários de uma publicação
+app.get("/comentarios/:id_publicacao", async (req, res) => {
+  try {
+    const id = Number(req.params.id_publicacao);
+
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      return res.status(400).json({ mensagem: "Publicação inválida." });
+    }
+
+    const resultado = await pool.query(
+      `SELECT * FROM comentarios
+       WHERE id_publicacao = $1
+       ORDER BY criado_em ASC, id ASC
+       LIMIT 100`,
+      [id]
+    );
+
+    return res.json(resultado.rows);
+  } catch (erro) {
+    console.error("Erro ao buscar comentários:", erro.message);
+    return res.status(500).json({ mensagem: "Erro ao carregar comentários." });
+  }
+});
+
+// Excluir comentário do próprio pet
+app.delete("/comentarios/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { id_pet, id_tutor } = req.body;
+
+    if (
+      !Number.isSafeInteger(id) || id <= 0 ||
+      typeof id_pet !== "string" || !id_pet.trim() ||
+      typeof id_tutor !== "string" || !id_tutor.trim()
+    ) {
+      return res.status(400).json({ mensagem: "Dados inválidos." });
+    }
+
+    const resultado = await pool.query(
+      `DELETE FROM comentarios
+       WHERE id = $1 AND id_pet = $2 AND id_tutor = $3
+       RETURNING id`,
+      [id, id_pet.trim(), id_tutor.trim()]
+    );
+
+    if (resultado.rowCount === 0) {
+      return res.status(404).json({
+        mensagem: "Comentário não encontrado ou não pertence a este pet."
+      });
+    }
+
+    return res.json({ mensagem: "Comentário excluído com sucesso!" });
+  } catch (erro) {
+    console.error("Erro ao excluir comentário:", erro.message);
+    return res.status(500).json({ mensagem: "Erro ao excluir comentário." });
+  }
+});
+
 // Criar tabela de publicações do feed
 async function criarTabelaPublicacoes() {
   try {
@@ -463,6 +556,19 @@ await pool.query(`
     id_tutor TEXT NOT NULL,
     criado_em TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (id_publicacao, id_tutor, id_pet)
+  )
+`);
+
+// Criar tabela para armazenar comentários das publicações
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS comentarios (
+    id SERIAL PRIMARY KEY,
+    id_publicacao INTEGER NOT NULL REFERENCES publicacoes(id) ON DELETE CASCADE,
+    id_pet TEXT NOT NULL,
+    id_tutor TEXT NOT NULL,
+    nome_pet TEXT NOT NULL,
+    texto TEXT NOT NULL,
+    criado_em TIMESTAMPTZ DEFAULT NOW()
   )
 `);
 
