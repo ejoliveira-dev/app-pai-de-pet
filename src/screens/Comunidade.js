@@ -899,9 +899,7 @@ export default function Comunidade() {
                                         style={styles.itemComentario}
                                     >
 
-                                        <View style={styles.avatarComentario}>
-                                            <Ionicons name="paw" size={20} color={cores.marrom} />
-                                        </View>
+<AvatarPet                               foto={comentario.foto_pet} tamanho={38} />
 
                                         <View style={styles.corpoComentario}>
                                             <Text style={styles.nomeComentario}>
