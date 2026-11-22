@@ -77,14 +77,11 @@ export default function AbaPerfilPublico({
     publicacoes = [],
     onPublicar,
     deslocamento,
-<<<<<<< HEAD
-    carregando = false
-=======
-     perfilExterno = false,
+    carregando = false,
+    perfilExterno = false,
     onVoltarPerfil,
     podeVoltar = false,
     idTutorAtual
->>>>>>> 6eb8a8bc30c14c8cb5985e9dc6ae1a5d9f101477
 }) {
     const db = useSQLiteContext();
 

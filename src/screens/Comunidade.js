@@ -813,22 +813,15 @@ export default function Comunidade() {
                         >
 
                             <View style={styles.cabecalhoPost}>
-<<<<<<< HEAD
-                                <View style={styles.anelAvatar}>
+                                {/* botão de abrir perfil do pet */}
+                                <Pressable
+                                    style={styles.anelAvatar}
+                                    onPress={() => abrirPerfilPet(post)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Ver perfil de ${post.nome_pet}`}
+                                >
                                     <AvatarPet foto={post.foto_pet} tamanho={35} />
-                                </View>
-=======
-
-                             {/* botão de abrir perfil do pet */}   
-                            <Pressable
-                                style={styles.anelAvatar}
-                                onPress={() => abrirPerfilPet(post)}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Ver perfil de ${post.nome_pet}`}
-                            >
-                                <AvatarPet foto={post.foto_pet} tamanho={38} />
-                            </Pressable>
->>>>>>> 6eb8a8bc30c14c8cb5985e9dc6ae1a5d9f101477
+                                </Pressable>
 
                                 <View style={styles.infoPost}>
                                     <Text style={styles.autorPost} numberOfLines={1}>
@@ -955,14 +948,11 @@ export default function Comunidade() {
                 publicacoes={publicacoes}
                 onPublicar={abrirPublicacao}
                 deslocamento={deslocamentoAba}
-<<<<<<< HEAD
                 carregando={carregandoFeed}
-=======
                 perfilExterno={!!petVisualizado}
                 onVoltarPerfil={voltarPerfilPet}
                 podeVoltar={historicoPerfis.length > 0}
                 idTutorAtual={idTutor}
->>>>>>> 6eb8a8bc30c14c8cb5985e9dc6ae1a5d9f101477
             />
 
 
