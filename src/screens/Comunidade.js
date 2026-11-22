@@ -39,6 +39,8 @@ export default function Comunidade() {
     const insets = useSafeAreaInsets();
 
     const [pet, setPet] = useState(null);
+    const [petVisualizado, setPetVisualizado] = useState(null);
+    const [historicoPerfis, setHistoricoPerfis] = useState([]);
     const [publicacoes, setPublicacoes] = useState([]);
     const [abaAtiva, setAbaAtiva] = useState("publicacoes");
     const [modalAberto, setModalAberto] = useState(false);
@@ -60,7 +62,7 @@ export default function Comunidade() {
     const [coracaoVisivel, setCoracaoVisivel] = useState(null);
     const ultimoToque = useRef({});
     const escalaCoracao = useRef(new Animated.Value(0)).current;
-    
+
     // rolagem do feed: move a aba do perfil junto e decide quando mostrar o +
     const rolagem = useRef(new Animated.Value(0)).current;
     const [mostrarBotao, setMostrarBotao] = useState(false);
@@ -98,13 +100,16 @@ export default function Comunidade() {
                     const id = await obterPetSelecionadoId(db);
 
                     const emailTutor = await AsyncStorage.getItem("usuarioLogado");
-                        if (ativo) {
-                            setIdTutor(emailTutor);
-                        }   
+                    if (ativo) {
+                        setIdTutor(emailTutor);
+                    }
                     const encontrado = id ? await buscarPet(db, id) : null;
 
+                    // mostra o pet na aba do perfil sem esperar o feed carregar
+                    if (ativo) setPet(encontrado);
+
                     const resposta = await fetch(
-                         "https://app-pai-de-pet.onrender.com/publicacoes"
+                        "https://app-pai-de-pet.onrender.com/publicacoes"
                     );
 
                     if (!resposta.ok) {
@@ -167,18 +172,6 @@ export default function Comunidade() {
                         setTotalComentarios(comentariosSalvos);
                     }
 
-                    resultadosCurtidas.forEach((item) => {
-                        curtidasSalvas[item.id] = item.curtiu;
-                        totaisSalvos[item.id] = item.total;
-                    });                   
-
-                    if (ativo) {
-                        setPet(encontrado);
-                        setPublicacoes(listaPosts);
-                        setCurtidos(curtidasSalvas);
-                        setTotalCurtidas(totaisSalvos);
-                    }
-
                 } catch (erro) {
                     console.error(
                         'Erro ao carregar pet público:',
@@ -199,6 +192,39 @@ export default function Comunidade() {
 
         }, [db])
     );
+
+    // abre o perfil do pet de uma publicação
+    function abrirPerfilPet(post) {
+        if (!post?.id_pet || !post?.id_tutor) return;
+
+        const novoPet = {
+            id_pet: String(post.id_pet),
+            id_tutor: post.id_tutor,
+            nome: post.nome_pet,
+            foto_perfil: post.foto_pet || null
+        };
+
+        const atual = petVisualizado || pet;
+
+        if (atual &&
+            String(atual.id_pet) === novoPet.id_pet &&
+            String(petVisualizado?.id_tutor || idTutor) === String(novoPet.id_tutor)) {
+            return;
+        }
+
+        setHistoricoPerfis(lista => [...lista, petVisualizado]);
+        setPetVisualizado(novoPet);
+    }
+    // volta para o perfil do pet anterior
+    function voltarPerfilPet() {
+        if (historicoPerfis.length === 0) return;
+
+        const anterior = historicoPerfis[historicoPerfis.length - 1];
+
+        setPetVisualizado(anterior);
+        setHistoricoPerfis(lista => lista.slice(0, -1));
+    }
+
 
     // abre o formulário de publicação
     function abrirPublicacao() {
@@ -226,10 +252,10 @@ export default function Comunidade() {
     async function selecionarFoto() {
         try {
             const resultado = await ImagePicker.launchImageLibraryAsync({
-                   mediaTypes: ["images"],
-                   allowsEditing: true,
-                   aspect: [4, 5],
-                   quality: 0.8,
+                mediaTypes: ["images"],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
             });
 
             if (!resultado.canceled && resultado.assets?.length) {
@@ -243,112 +269,112 @@ export default function Comunidade() {
 
     // salva a publicação
     async function publicar() {
-    if (salvando || !pet) return;
+        if (salvando || !pet) return;
 
-    if (!legenda.trim() && !foto) {
-        Alert.alert(
-            "Publicação vazia",
-            "Escreva uma legenda ou escolha uma foto."
-        );
-        return;
-    }
-
-    setSalvando(true);
-
-    const API_URL = "https://app-pai-de-pet.onrender.com";
-
-    try {
-        let imagemId = null;
-
-    // Enviar a foto de perfil do pet para o servidor
-    let fotoPetPublica = null;
-
-    if (pet.foto_perfil) {
-        const arquivoPet = new File(pet.foto_perfil);
-        const formDataPet = new FormData();
-
-        formDataPet.append("foto", arquivoPet);
-
-        const respostaPet = await fetch(`${API_URL}/upload-foto`, {
-            method: "POST",
-            body: formDataPet
-        });
-
-        if (!respostaPet.ok) {
-            throw new Error("Erro ao enviar foto de perfil do pet.");
+        if (!legenda.trim() && !foto) {
+            Alert.alert(
+                "Publicação vazia",
+                "Escreva uma legenda ou escolha uma foto."
+            );
+            return;
         }
 
-        const dadosPet = await respostaPet.json();
+        setSalvando(true);
 
-        fotoPetPublica = `${API_URL}/imagens/${dadosPet.imagem_id}`;
-    }
+        const API_URL = "https://app-pai-de-pet.onrender.com";
 
-        // Enviar imagem ao servidor
-        if (foto) {
-            const arquivo = new File(foto);
-            const formData = new FormData();
+        try {
+            let imagemId = null;
 
-            formData.append("foto", arquivo);
+            // Enviar a foto de perfil do pet para o servidor
+            let fotoPetPublica = null;
 
-            const respostaFoto = await fetch(`${API_URL}/upload-foto`, {
+            if (pet.foto_perfil) {
+                const arquivoPet = new File(pet.foto_perfil);
+                const formDataPet = new FormData();
+
+                formDataPet.append("foto", arquivoPet);
+
+                const respostaPet = await fetch(`${API_URL}/upload-foto`, {
+                    method: "POST",
+                    body: formDataPet
+                });
+
+                if (!respostaPet.ok) {
+                    throw new Error("Erro ao enviar foto de perfil do pet.");
+                }
+
+                const dadosPet = await respostaPet.json();
+
+                fotoPetPublica = `${API_URL}/imagens/${dadosPet.imagem_id}`;
+            }
+
+            // Enviar imagem ao servidor
+            if (foto) {
+                const arquivo = new File(foto);
+                const formData = new FormData();
+
+                formData.append("foto", arquivo);
+
+                const respostaFoto = await fetch(`${API_URL}/upload-foto`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!respostaFoto.ok) {
+                    throw new Error(`Erro ao enviar foto: ${respostaFoto.status}`);
+                }
+
+                const dadosFoto = await respostaFoto.json();
+                imagemId = dadosFoto.imagem_id;
+
+                if (!imagemId) {
+                    throw new Error("Servidor não retornou o ID da imagem.");
+                }
+            }
+
+            // Salvar publicação no PostgreSQL
+            const resposta = await fetch(`${API_URL}/publicacoes`, {
                 method: "POST",
-                body: formData
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id_pet: String(pet.id_pet),
+                    id_tutor: idTutor,
+                    nome_pet: pet.nome,
+                    foto_pet: fotoPetPublica,
+                    legenda: legenda.trim(),
+                    imagem_id: imagemId
+                })
             });
 
-            if (!respostaFoto.ok) {
-                throw new Error(`Erro ao enviar foto: ${respostaFoto.status}`);
+            if (!resposta.ok) {
+                throw new Error(`Erro ao publicar: ${resposta.status}`);
             }
 
-            const dadosFoto = await respostaFoto.json();
-            imagemId = dadosFoto.imagem_id;
+            // Atualizar publicações
+            const respostaFeed = await fetch(`${API_URL}/publicacoes`);
 
-            if (!imagemId) {
-                throw new Error("Servidor não retornou o ID da imagem.");
+            if (!respostaFeed.ok) {
+                throw new Error("Erro ao atualizar o feed.");
             }
+
+            setPublicacoes(await respostaFeed.json());
+
+            setLegenda("");
+            setFoto(null);
+            setModalAberto(false);
+
+            Alert.alert("Sucesso", "Publicação criada!");
+
+        } catch (erro) {
+            console.error("Erro ao publicar:", erro);
+            Alert.alert("Erro", "Não foi possível concluir a publicação.");
+        } finally {
+            setSalvando(false);
         }
-
-        // Salvar publicação no PostgreSQL
-        const resposta = await fetch(`${API_URL}/publicacoes`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                id_pet: String(pet.id_pet),
-                id_tutor: idTutor,
-                nome_pet: pet.nome,
-                foto_pet: fotoPetPublica,
-                legenda: legenda.trim(),
-                imagem_id: imagemId
-            })
-        });
-
-        if (!resposta.ok) {
-            throw new Error(`Erro ao publicar: ${resposta.status}`);
-        }
-
-        // Atualizar publicações
-        const respostaFeed = await fetch(`${API_URL}/publicacoes`);
-
-        if (!respostaFeed.ok) {
-            throw new Error("Erro ao atualizar o feed.");
-        }
-
-        setPublicacoes(await respostaFeed.json());
-
-        setLegenda("");
-        setFoto(null);
-        setModalAberto(false);
-
-        Alert.alert("Sucesso", "Publicação criada!");
-
-    } catch (erro) {
-        console.error("Erro ao publicar:", erro);
-        Alert.alert("Erro", "Não foi possível concluir a publicação.");
-    } finally {
-        setSalvando(false);
     }
-}
 
     // primeiro nome do pet para a barra de publicar
     const primeiroNome = pet?.nome?.split(' ')[0] || 'seu pet';
@@ -358,23 +384,18 @@ export default function Comunidade() {
         ? publicacoes.filter((post) => post.id_pet === String(pet?.id_pet) && post.id_tutor === idTutor)
         : publicacoes;
 
-    // texto das curtidas: "Curtido por você e mais 2 pessoas" ou "3 curtidas".
+    // texto das curtidas: só aparece se você curtiu junto com outras pessoas
+    // ex.: "Você e mais 2 usuários curtiram"
     function textoCurtidas(id) {
         const total = totalCurtidas[id] || 0;
 
-        if (total === 0) return '';
+        if (!curtidos[id] || total <= 1) return '';
 
-        if (curtidos[id]) {
-            const outros = total - 1;
+        const outros = total - 1;
 
-            if (outros === 0) return 'Curtido por você';
-
-            return `Curtido por você e mais ${outros} ${outros === 1 ? 'pessoa' : 'pessoas'}`;
-        }
-
-        return `${total} ${total === 1 ? 'curtida' : 'curtidas'}`;
+        return `Você e mais ${outros} ${outros === 1 ? 'usuário curtiram' : 'usuários curtiram'}`;
     }
-    
+
     // curtir/descurtir
     async function alternarCurtida(id) {
         if (!pet?.id_pet || !idTutor) {
@@ -442,7 +463,7 @@ export default function Comunidade() {
             curtidasEmAndamento.current.delete(id);
         }
     }
-    
+
     // toque duplo na foto curte o post apenas uma vez, mas continua aparecendo a animação(igual ao Insta)
     function tocarFoto(id) {
         const agora = Date.now();
@@ -519,8 +540,8 @@ export default function Comunidade() {
             // Buscar uma foto pública já enviada pelo pet
             let fotoPetPublica = publicacoes.find(
                 (post) => post.id_pet === String(pet.id_pet) &&
-                        post.id_tutor === idTutor &&
-                        post.foto_pet
+                    post.id_tutor === idTutor &&
+                    post.foto_pet
             )?.foto_pet || null;
 
             // Se ainda não existe foto pública, enviar ao servidor
@@ -589,12 +610,12 @@ export default function Comunidade() {
         ) return;
 
         Alert.alert(
-            "Opções do comentário",
-            "O que deseja fazer?",
+            "Excluir comentário",
+            "Deseja realmente excluir este comentário?",
             [
                 { text: "Cancelar", style: "cancel" },
                 {
-                    text: "Excluir comentário",
+                    text: "Excluir",
                     style: "destructive",
                     onPress: () => confirmarExclusaoComentario(comentario)
                 }
@@ -634,7 +655,7 @@ export default function Comunidade() {
                                 atual.filter((item) => item.id !== comentario.id)
                             );
 
-                            
+
                             setTotalComentarios((atual) => ({
                                 ...atual,
                                 [postComentario.id]: Math.max(0, (atual[postComentario.id] || 1) - 1)
@@ -699,14 +720,14 @@ export default function Comunidade() {
         try {
             const resposta = await fetch(
                 "https://app-pai-de-pet.onrender.com/publicacoes"
-           );
+            );
 
-             if (!resposta.ok) {
+            if (!resposta.ok) {
                 throw new Error("Erro ao atualizar o feed.");
             }
 
-             const lista = await resposta.json();
-             setPublicacoes(lista);
+            const lista = await resposta.json();
+            setPublicacoes(lista);
         } catch (erro) {
             console.error("Erro ao atualizar feed:", erro);
             Alert.alert("Ops!", "Não foi possível atualizar o feed.");
@@ -792,9 +813,22 @@ export default function Comunidade() {
                         >
 
                             <View style={styles.cabecalhoPost}>
+<<<<<<< HEAD
                                 <View style={styles.anelAvatar}>
-                                    <AvatarPet foto={post.foto_pet} tamanho={38} />
+                                    <AvatarPet foto={post.foto_pet} tamanho={35} />
                                 </View>
+=======
+
+                             {/* botão de abrir perfil do pet */}   
+                            <Pressable
+                                style={styles.anelAvatar}
+                                onPress={() => abrirPerfilPet(post)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Ver perfil de ${post.nome_pet}`}
+                            >
+                                <AvatarPet foto={post.foto_pet} tamanho={38} />
+                            </Pressable>
+>>>>>>> 6eb8a8bc30c14c8cb5985e9dc6ae1a5d9f101477
 
                                 <View style={styles.infoPost}>
                                     <Text style={styles.autorPost} numberOfLines={1}>
@@ -806,30 +840,30 @@ export default function Comunidade() {
                                 </View>
                                 {/* botão de excluir só aparece na aba "Minhas publicações" */}
                                 {abaAtiva === "meusPosts" && (
-                                <Pressable
-                                    onPress={() => confirmarExclusao(post)}
-                                    hitSlop={10}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Excluir publicação"
-                                    style={({ pressed }) => pressed && styles.pressionado}
-                                >
-                                    <Ionicons name="trash-outline" size={19} color="#D64545" />
-                                </Pressable>
-                            )}                   
+                                    <Pressable
+                                        onPress={() => confirmarExclusao(post)}
+                                        hitSlop={10}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Excluir publicação"
+                                        style={({ pressed }) => pressed && styles.pressionado}
+                                    >
+                                        <Ionicons name="trash-outline" size={19} color="#D64545" />
+                                    </Pressable>
+                                )}
                             </View>
 
                             {post.imagem_id ? (
                                 <Pressable onPress={() => tocarFoto(post.id)}>
                                     <Image
                                         source={{
-                                        uri: `https://app-pai-de-pet.onrender.com/imagens/${post.imagem_id}`
+                                            uri: `https://app-pai-de-pet.onrender.com/imagens/${post.imagem_id}`
                                         }}
                                         style={styles.imagemPost}
                                         resizeMode="cover"
                                     />
 
                                     {coracaoVisivel === post.id && (
-                                                                                             <Animated.View
+                                        <Animated.View
                                             style={[styles.coracaoGrande, { opacity: escalaCoracao, transform: [{ scale: escalaCoracao }] }]}
                                             pointerEvents="none"
                                         >
@@ -839,29 +873,33 @@ export default function Comunidade() {
                                 </Pressable>
                             ) : null}
 
-                            {!!post.legenda && (
-                                <Text style={styles.legendaPost}>
-                                    <Text style={styles.legendaNome}>{post.nome_pet} </Text>
-                                    {post.legenda}
-                                </Text>
-                            )}
+                        {/* post só de texto */}
+                        {!post.imagem_id && !!post.legenda && (
+                            <Text style={[styles.legendaPost, styles.legendaSoTexto]}>
+                                {post.legenda}
+                            </Text>
+                        )}
 
-                            <View style={styles.acoesPost}>
+                            <View style={[styles.acoesPost, !post.imagem_id && styles.acoesSoTexto]}>
                                 <Pressable
                                     onPress={() => alternarCurtida(post.id)}
                                     hitSlop={10}
                                     accessibilityRole="button"
                                     accessibilityLabel="Curtir"
-                                    style={({ pressed }) => pressed && styles.pressionado}
+                                    style={({ pressed }) => [styles.acaoComNumero, pressed && styles.pressionado]}
                                 >
                                     <Ionicons
                                         name={curtidos[post.id] ? 'heart' : 'heart-outline'}
-                                        size={26}
+                                        size={25}
                                         color={curtidos[post.id] ? cores.laranja : cores.marrom}
+                                        style={{ transform: [{ translateY: 1 }] }}
                                     />
+                                    {totalCurtidas[post.id] > 0 && (
+                                        <Text style={styles.numeroAcao}>{totalCurtidas[post.id]}</Text>
+                                    )}
                                 </Pressable>
 
-                                                                {/* abrir comentários da publicação */}
+                                {/* abrir comentários da publicação */}
                                 <Pressable
                                     onPress={() => abrirComentarios(post)}
                                     hitSlop={10}
@@ -869,7 +907,7 @@ export default function Comunidade() {
                                     accessibilityLabel="Ver comentários"
                                     style={({ pressed }) => [styles.acaoComNumero, pressed && styles.pressionado]}
                                 >
-                                    <Ionicons name="chatbubble-outline" size={25} color={cores.marrom} />
+                                    <Ionicons name="chatbubble-outline" size={24} color={cores.marrom} />
                                     {totalComentarios[post.id] > 0 && (
                                         <Text style={styles.numeroAcao}>{totalComentarios[post.id]}</Text>
                                     )}
@@ -877,12 +915,19 @@ export default function Comunidade() {
 
                             </View>
 
-                            {/* "Curtido por você e mais X pessoas" (igual ao Insta) */}
+                            {/* "Você e mais X usuários curtiram" */}
                             {textoCurtidas(post.id) ? (
                                 <Text style={styles.textoCurtida}>
                                     {textoCurtidas(post.id)}
                                 </Text>
                             ) : null}
+
+                            {!!post.imagem_id && !!post.legenda && (
+                                <Text style={styles.legendaPost}>
+                                    <Text style={styles.legendaNome}>{post.nome_pet} </Text>
+                                    {post.legenda}
+                                </Text>
+                            )}
 
                         </View>
                     ))
@@ -904,16 +949,28 @@ export default function Comunidade() {
                 </TouchableOpacity>
             )}
 
+
             <AbaPerfilPublico
-                pet={pet}
+                pet={petVisualizado || pet}
                 publicacoes={publicacoes}
                 onPublicar={abrirPublicacao}
                 deslocamento={deslocamentoAba}
+<<<<<<< HEAD
+                carregando={carregandoFeed}
+=======
+                perfilExterno={!!petVisualizado}
+                onVoltarPerfil={voltarPerfilPet}
+                podeVoltar={historicoPerfis.length > 0}
+                idTutorAtual={idTutor}
+>>>>>>> 6eb8a8bc30c14c8cb5985e9dc6ae1a5d9f101477
             />
+
 
             {/* Área de comentários estilo Instagram */}
             <Modal
                 visible={postComentario !== null}
+                statusBarTranslucent
+                navigationBarTranslucent
                 animationType="slide"
                 transparent
                 onRequestClose={() => setPostComentario(null)}
@@ -935,12 +992,6 @@ export default function Comunidade() {
                                 Comentários
                             </Text>
 
-                            <Pressable
-                                onPress={() => setPostComentario(null)}
-                                style={styles.fecharComentarios}
-                            >
-                                <Ionicons name="close" size={24} color={cores.marrom} />
-                            </Pressable>
                         </View>
 
                         {/* Lista dos comentários */}
@@ -966,34 +1017,33 @@ export default function Comunidade() {
                                         style={styles.itemComentario}
                                     >
 
-<AvatarPet                               foto={comentario.foto_pet} tamanho={38} />
+                                        <AvatarPet foto={comentario.foto_pet} tamanho={38} />
 
                                         <View style={styles.corpoComentario}>
                                             <Text style={styles.nomeComentario}>
-                                                {comentario.nome_pet}
+                                                {comentario.nome_pet}{"  "}
+                                                <Text style={styles.dataComentario}>
+                                                    {tempoRelativo(comentario.criado_em)}
+                                                </Text>
                                             </Text>
 
                                             <Text style={styles.textoComentario}>
                                                 {comentario.texto}
                                             </Text>
-
-                                            <Text style={styles.dataComentario}>
-                                                {tempoRelativo(comentario.criado_em)}
-                                            </Text>
                                         </View>
-                                    {/* Opções para excluir o próprio comentário */}
+                                        {/* Opções para excluir o próprio comentário */}
                                         {comentario.id_pet === String(pet?.id_pet) &&
-                                        comentario.id_tutor === idTutor && (
-                                            <Pressable
-                                                onPress={() => mostrarOpcoesComentario(comentario)}
-                                                hitSlop={10}
-                                                accessibilityRole="button"
-                                                accessibilityLabel="Opções do comentário"
-                                                style={styles.opcoesComentario}
-                                            >
-                                                <Ionicons name="ellipsis-horizontal" size={22} color={cores.marrom} />
-                                            </Pressable>
-                                        )}                
+                                            comentario.id_tutor === idTutor && (
+                                                <Pressable
+                                                    onPress={() => mostrarOpcoesComentario(comentario)}
+                                                    hitSlop={10}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel="Opções do comentário"
+                                                    style={styles.opcoesComentario}
+                                                >
+                                                    <Ionicons name="ellipsis-horizontal" size={18} color={cores.marrom} />
+                                                </Pressable>
+                                            )}
                                     </Pressable>
                                 ))
                             )}
@@ -1034,6 +1084,8 @@ export default function Comunidade() {
 
             <Modal
                 visible={modalAberto}
+                statusBarTranslucent
+                navigationBarTranslucent
                 animationType="slide"
                 transparent
                 onRequestClose={fecharPublicacao}
@@ -1043,7 +1095,7 @@ export default function Comunidade() {
                     {/* tocar fora fecha */}
                     <Pressable style={styles.preencherFundoComentarios} onPress={fecharPublicacao} />
 
-                    <View style={styles.modalConteudo}>
+                    <View style={[styles.modalConteudo, { paddingBottom: insets.bottom + 20 }]}>
 
                         <View style={styles.puxador} />
 
@@ -1091,7 +1143,7 @@ export default function Comunidade() {
                                 <>
                                     <Image
                                         source={{ uri: foto }}
-                                       style={styles.previaFoto}
+                                        style={styles.previaFoto}
                                         resizeMode="cover"
                                     />
                                     <View style={styles.trocarFoto}>
@@ -1166,6 +1218,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         overflow: 'hidden',
         marginBottom: 18,
+        paddingBottom: 4,
         ...sombra,
     },
 
@@ -1174,12 +1227,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
         paddingHorizontal: 14,
-        paddingVertical: 12,
+        paddingVertical: 10,
     },
 
     imagemPost: {
         width: '100%',
-        aspectRatio: 4 / 5,
+        aspectRatio: 1,
         backgroundColor: 'rgba(51, 39, 22, 0.06)',
     },
 
@@ -1189,7 +1242,6 @@ const styles = StyleSheet.create({
         lineHeight: 23,
         color: cores.marrom,
         paddingHorizontal: 14,
-        paddingTop: 10,
     },
 
     autorPost: {
@@ -1213,6 +1265,13 @@ const styles = StyleSheet.create({
 
     legendaNome: {
         fontFamily: fontes.negrito,
+    },
+    
+    legendaSoTexto: {
+        fontSize: 18,
+        lineHeight: 26,
+        includeFontPadding: false,
+        marginBottom: -4,
     },
 
     botaoFlutuante: {
@@ -1383,10 +1442,14 @@ const styles = StyleSheet.create({
     acoesPost: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: 12,
         paddingHorizontal: 14,
-        paddingTop: 10,
-        paddingBottom: 12,
+        paddingTop: 8,
+        paddingBottom: 6,
+    },
+
+    acoesSoTexto: {
+        paddingTop: 0,
     },
 
     textoCurtida: {
@@ -1395,8 +1458,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         color: cores.marromClaro,
         paddingHorizontal: 14,
-        marginTop: -4,
-        paddingBottom: 14,
+        marginBottom: 2,
     },
 
     acaoComNumero: {
@@ -1459,10 +1521,10 @@ const styles = StyleSheet.create({
     },
 
     abasComunidade: {
-    flexDirection: "row",
-    marginBottom: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E8DED1",
+        flexDirection: "row",
+        marginBottom: 18,
+        borderBottomWidth: 1,
+        borderBottomColor: "#E8DED1",
 
     },
     botaoAba: {
@@ -1516,24 +1578,16 @@ const styles = StyleSheet.create({
     },
 
     cabecalhoComentarios: {
-        flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        paddingBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: "#E8DED1",
+        paddingBottom: 4,
     },
 
     tituloComentarios: {
         fontFamily: fontes.negrito,
-        fontSize: 18,
+        fontSize: 20,
+        lineHeight: 40,
         color: cores.marrom,
-    },
-
-    fecharComentarios: {
-        position: "absolute",
-        right: 20,
-        top: 0,
+        paddingBottom: 2,
     },
 
     listaComentarios: {
@@ -1541,8 +1595,9 @@ const styles = StyleSheet.create({
     },
 
     conteudoListaComentarios: {
-        padding: 20,
-        gap: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        gap: 18,
     },
 
     textoCarregandoComentarios: {
@@ -1559,7 +1614,7 @@ const styles = StyleSheet.create({
 
     itemComentario: {
         flexDirection: "row",
-        gap: 10,
+        gap: 12,
         alignItems: "flex-start",
     },
 
@@ -1579,13 +1634,15 @@ const styles = StyleSheet.create({
     nomeComentario: {
         fontFamily: fontes.negrito,
         color: cores.marrom,
-        fontSize: 15,
+        fontSize: 16,
+        lineHeight: 22,
     },
 
     textoComentario: {
         fontFamily: fontes.regular,
         color: cores.marrom,
-        fontSize: 15,
+        fontSize: 16,
+        lineHeight: 28,
     },
 
     dataComentario: {
@@ -1610,14 +1667,22 @@ const styles = StyleSheet.create({
 
     inputComentario: {
         flex: 1,
-        backgroundColor: cores.branco,
+        borderWidth: 1,
+        borderColor: "#E8DED1",
         borderRadius: 22,
         paddingHorizontal: 15,
-        paddingVertical: 10,
+        paddingVertical: 8,
         fontFamily: fontes.regular,
+        fontSize: 15,
         color: cores.marrom,
         maxHeight: 100,
     },
 
-    preencherFundoComentarios: StyleSheet.absoluteFillObject,
+    preencherFundoComentarios: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
 });

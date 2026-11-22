@@ -76,7 +76,15 @@ export default function AbaPerfilPublico({
     pet,
     publicacoes = [],
     onPublicar,
-    deslocamento
+    deslocamento,
+<<<<<<< HEAD
+    carregando = false
+=======
+     perfilExterno = false,
+    onVoltarPerfil,
+    podeVoltar = false,
+    idTutorAtual
+>>>>>>> 6eb8a8bc30c14c8cb5985e9dc6ae1a5d9f101477
 }) {
     const db = useSQLiteContext();
 
@@ -86,7 +94,7 @@ export default function AbaPerfilPublico({
     const alturaExpandida = height * 0.75;
 
     // tamanho de cada foto da grade (3 por linha)
-    const tamanhoFoto = Math.floor((width - 28 - 16 - 32 - 16) / 3);
+    const tamanhoFoto = Math.floor((width - 16 - 32 - 8) / 3);
 
     const [aberto, setAberto] = useState(false);
     const [mostrarFundo, setMostrarFundo] = useState(false);
@@ -195,8 +203,14 @@ export default function AbaPerfilPublico({
         (publicacao) =>
             pet &&
             String(publicacao.id_pet) === String(pet.id_pet) &&
-            publicacao.foto_uri
+            (publicacao.imagem_id || publicacao.foto_uri)
     );
+
+    function enderecoFoto(publicacao) {
+        return publicacao.imagem_id
+            ? `https://app-pai-de-pet.onrender.com/imagens/${publicacao.imagem_id}`
+            : publicacao.foto_uri;
+    }
 
     const animacao = useRef(new Animated.Value(0)).current;
 
@@ -226,6 +240,19 @@ export default function AbaPerfilPublico({
             }
         });
     }
+
+    useEffect(() => {
+        if (perfilExterno) {
+            setMostrarFundo(true);
+            setAberto(true);
+
+            Animated.timing(animacao, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: false,
+            }).start();
+        }
+    }, [pet?.id_pet, pet?.id_tutor, perfilExterno, animacao]);
 
     // isso reconhece o gesto de arrastar.
     const gesto = useMemo(() => PanResponder.create({
@@ -268,7 +295,7 @@ export default function AbaPerfilPublico({
                     ]}
                 >
                     <Pressable
-                        style={StyleSheet.absoluteFillObject}
+                        style={StyleSheet.absoluteFill}
                         onPress={fecharPerfil}
                     />
                 </Animated.View>
@@ -286,10 +313,22 @@ export default function AbaPerfilPublico({
                     }
                 ]}
             >
+                {/* botão de voltar, só aparece quando o perfil é aberto a partir de outro perfil */}
+                {podeVoltar && (
+                    <Pressable
+                        style={[styles.voltarPet, { top: insets.top + 14 }]}
+                        onPress={onVoltarPerfil}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voltar ao perfil anterior"
+                        hitSlop={8}
+                    >
+                        <Ionicons name="arrow-back" size={22} color={COR.creme} />
+                    </Pressable>
+                )}
 
                 {/* patinha decorativa no canto */}
-                <View style={styles.patinha} pointerEvents="none">
-                    <Ionicons name="paw" size={84} color={COR.laranja} />
+                <View style={[styles.patinha, { top: insets.top + 12 }]} pointerEvents="none">
+                    <Ionicons name="paw" size={75} color={COR.laranja} />
                 </View>
 
                 {/* parte que o usuário toca ou puxa */}
@@ -325,7 +364,7 @@ export default function AbaPerfilPublico({
                                 numberOfLines={1}
                                 maxFontSizeMultiplier={1.15}
                             >
-                                {pet?.nome || "Nenhum pet selecionado"}
+                                {pet?.nome || (carregando ? "Carregando..." : "Nenhum pet selecionado")}
                             </Text>
 
                             <Text
@@ -370,7 +409,7 @@ export default function AbaPerfilPublico({
                                     {fotosPet.length}
                                 </Text>
                                 <Text style={styles.numeroLegenda}>
-                                    {fotosPet.length === 1 ? "foto" : "fotos"}
+                                    {fotosPet.length === 1 ? "mídia" : "mídias"}
                                 </Text>
                             </View>
                         </View>
@@ -417,18 +456,19 @@ export default function AbaPerfilPublico({
                                     </Text>
 
                                     <View style={styles.linhaBotoes}>
-                                        <Botao
-                                            titulo="Cancelar"
-                                            variante="contorno"
+                                        <Pressable
                                             onPress={cancelarBio}
-                                            style={styles.botaoMetade}
-                                        />
+                                            style={({ pressed }) => [styles.botaoPequeno, styles.botaoPequenoContorno, pressed && { opacity: 0.6 }]}
+                                        >
+                                            <Text style={styles.textoBotaoPequeno}>Cancelar</Text>
+                                        </Pressable>
 
-                                        <Botao
-                                            titulo="Salvar"
+                                        <Pressable
                                             onPress={salvarBio}
-                                            style={styles.botaoMetade}
-                                        />
+                                            style={({ pressed }) => [styles.botaoPequeno, pressed && { opacity: 0.6 }]}
+                                        >
+                                            <Text style={[styles.textoBotaoPequeno, { color: COR.fundo }]}>Salvar</Text>
+                                        </Pressable>
                                     </View>
                                 </View>
                             ) : bio ? (
@@ -459,33 +499,30 @@ export default function AbaPerfilPublico({
 
                         {tutorPublico && (
                             <Pressable
-                                style={styles.botaoTutorPublico}
+                                style={({ pressed }) => [styles.botaoTutorPublico, pressed && { opacity: 0.6 }]}
                                 onPress={() => setModalTutor(true)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Tutor: ${tutorPublico.nome}`}
                             >
                                 <View style={styles.bolinhaTutor}>
-                                    <Ionicons
-                                        name="person"
-                                        size={18}
-                                        color={COR.marrom}
-                                    />
+                                    <Ionicons name="person" size={16} color={COR.laranja} />
                                 </View>
 
-                                <Text style={styles.textoTutorPublico}>
-                                    Conheça o tutor
+                                <Text style={styles.textoTutorPublico} numberOfLines={1}>
+                                    Tutor:{" "}
+                                    <Text style={styles.nomeTutorDestaque}>
+                                        {tutorPublico.nome.trim().split(" ")[0]}
+                                    </Text>
                                 </Text>
-
-                                <Ionicons
-                                    name="chevron-forward"
-                                    size={19}
-                                    color={COR.marrom}
-                                />
                             </Pressable>
                         )}
 
                         {/* fotos publicadas */}
-                        <Text style={[styles.tituloSecao, styles.tituloFotos]}>
-                            Fotos
-                        </Text>
+                        <View style={styles.divisorMidia}>
+                            <View style={styles.linhaTracejada} />
+                            <Ionicons name="grid-outline" size={16} color={COR.terracota} />
+                            <View style={styles.linhaTracejada} />
+                        </View>
 
                         {fotosPet.length === 0 ? (
                             <View style={[styles.caixaVazia, styles.caixaFotos]}>
@@ -496,19 +533,19 @@ export default function AbaPerfilPublico({
                                 />
                                 <Text style={styles.textoCaixaVazia}>
                                     {pet
-                                        ? "Este pet ainda não tem fotos publicadas."
-                                        : "As fotos do pet aparecem aqui."}
+                                        ? "Este pet ainda não publicou nenhuma mídia."
+                                        : "As mídias do pet aparecem aqui."}
                                 </Text>
                             </View>
                         ) : (
                             <View style={styles.fotosContainer}>
                                 {fotosPet.map((publicacao) => (
-                                                                                        <Pressable
+                                    <Pressable
                                         key={String(publicacao.id)}
                                         onPress={() => setFotoAberta(publicacao)}
                                     >
                                         <Image
-                                            source={{ uri: publicacao.foto_uri }}
+                                            source={{ uri: enderecoFoto(publicacao) }}
                                             style={[styles.fotoPublicacao, { width: tamanhoFoto, height: tamanhoFoto }]}
                                         />
                                     </Pressable>
@@ -538,7 +575,7 @@ export default function AbaPerfilPublico({
                 <View style={styles.fundoModalTutor}>
 
                     <Pressable
-                        style={StyleSheet.absoluteFillObject}
+                        style={StyleSheet.absoluteFill}
                         onPress={() => setModalTutor(false)}
                     />
 
@@ -570,7 +607,7 @@ export default function AbaPerfilPublico({
 
                 </View>
             </Modal>
-            
+
             <Modal
                 visible={!!fotoAberta}
                 transparent
@@ -580,7 +617,7 @@ export default function AbaPerfilPublico({
             >
                 <Pressable style={styles.fundoFoto} onPress={() => setFotoAberta(null)}>
                     <Image
-                        source={{ uri: fotoAberta?.foto_uri }}
+                        source={{ uri: fotoAberta ? enderecoFoto(fotoAberta) : undefined }}
                         style={styles.fotoGrande}
                         resizeMode="contain"
                     />
@@ -614,7 +651,11 @@ const styles = StyleSheet.create({
     },
 
     fundoEscuro: {
-        ...StyleSheet.absoluteFillObject,
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         backgroundColor: "rgba(30, 23, 15, 0.55)",
     },
 
@@ -639,10 +680,9 @@ const styles = StyleSheet.create({
 
     patinha: {
         position: "absolute",
-        top: -8,
-        right: 44,
-        opacity: 0.12,
-        transform: [{ rotate: "-18deg" }],
+        right: 20,
+        opacity: 0.18,
+        transform: [{ rotate: "0deg" }],
     },
 
     cabecalho: {
@@ -719,8 +759,9 @@ const styles = StyleSheet.create({
 
     numeros: {
         flexDirection: "row",
-        gap: 10,
-        marginBottom: 18,
+        gap: 32,
+        marginBottom: 14,
+        paddingHorizontal: 4,
     },
 
     numero: {
@@ -729,26 +770,30 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         elevation: 3,
         borderRadius: 18,
-        paddingVertical: 10,
+        paddingVertical: 5,
     },
 
     numeroValor: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 22,
+        fontSize: 20,
+        paddingTop: 10,
+        lineHeight: 26,
         color: COR.marrom,
     },
 
     numeroLegenda: {
         fontFamily: "Ruwudu-Regular",
         fontSize: 14,
+        lineHeight: 18,
         color: COR.oliva,
     },
 
     linhaTitulo: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 6,
+        justifyContent: "flex-start",
+        gap: 8,
+        marginBottom: 4,
     },
 
     tituloSecao: {
@@ -757,18 +802,9 @@ const styles = StyleSheet.create({
         color: COR.marrom,
     },
 
-    tituloFotos: {
-        marginTop: 20,
-        marginBottom: 10,
-    },
-
     botaoLapis: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        backgroundColor: COR.laranja,
-        alignItems: "center",
-        justifyContent: "center",
+        padding: 0,
+        transform: [{ translateY: -2}],
     },
 
     biografia: {
@@ -799,8 +835,31 @@ const styles = StyleSheet.create({
 
     linhaBotoes: {
         flexDirection: "row",
-        gap: 10,
-        marginTop: 8,
+        justifyContent: "flex-end",
+        gap: 8,
+        marginTop: 6,
+    },
+
+    botaoPequeno: {
+        height: 34,
+        paddingHorizontal: 18,
+        borderRadius: 17,
+        backgroundColor: COR.marrom,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    botaoPequenoContorno: {
+        backgroundColor: "transparent",
+        borderWidth: 1.5,
+        borderColor: COR.marrom,
+    },
+
+    textoBotaoPequeno: {
+        fontFamily: "Ruwudu-Bold",
+        fontSize: 15,
+        lineHeight: 42,
+        color: COR.marrom,
     },
 
     botaoMetade: {
@@ -826,6 +885,7 @@ const styles = StyleSheet.create({
 
     caixaFotos: {
         flexDirection: "column",
+        borderWidth: 0,
         paddingVertical: 22,
     },
 
@@ -839,39 +899,61 @@ const styles = StyleSheet.create({
     botaoTutorPublico: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        elevation: 3,
-        padding: 10,
-        borderRadius: 18,
-        marginTop: 16,
-        gap: 10,
+        alignSelf: 'flex-start',
+        gap: 8,
+        marginTop: 12,
     },
 
     bolinhaTutor: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        backgroundColor: COR.laranja,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: COR.marrom,
         alignItems: "center",
         justifyContent: "center",
     },
 
     textoTutorPublico: {
-        flex: 1,
+        fontFamily: "Ruwudu-Regular",
+        fontSize: 15,
+        lineHeight: 28,
+        color: COR.oliva,
+        transform: [{ translateY: 2 }],
+    },
+
+    nomeTutorDestaque: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 17,
         color: COR.marrom,
     },
 
     fotosContainer: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 8,
+        gap: 4,
+        marginTop: 8,
     },
 
     fotoPublicacao: {
-        borderRadius: 16,
+        borderRadius: 3,
         backgroundColor: 'rgba(51, 39, 22, 0.06)',
+    },
+
+    divisorMidia: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginTop: 20,
+        marginBottom: 12,
+    },
+
+    linhaTracejada: {
+        flex: 1,
+        height: 1,
+        borderWidth: 1,
+        borderStyle: "dashed",
+        borderColor: COR.terracota,
+        borderRadius: 1,
+        opacity: 0.6,
     },
 
     fundoModalTutor: {
@@ -918,7 +1000,8 @@ const styles = StyleSheet.create({
     fecharTutor: {
         marginTop: 20,
     },
-    
+
+
     fundoFoto: {
         flex: 1,
         backgroundColor: "rgba(20, 15, 10, 0.94)",
@@ -949,6 +1032,18 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
         backgroundColor: "rgba(255, 253, 248, 0.15)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    voltarPet: {
+        position: "absolute",
+        right: 14,
+        zIndex: 30,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "rgba(255, 253, 248, 0.18)",
         alignItems: "center",
         justifyContent: "center",
     },
