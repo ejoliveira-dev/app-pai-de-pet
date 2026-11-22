@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Modal, Image } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 
 import { Ionicons } from '@expo/vector-icons';
@@ -14,12 +14,14 @@ import AvatarPet from '../componentes/AvatarPet';
 import CampoTexto from '../componentes/CampoTexto';
 import { cores, fontes, raio, sombra } from '../styles/tema';
 import logo from '../../assets/images/logo-ofc-png-empty1.0.png';
-
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const PERFIL_INICIAL = {
     nome: '',
     email: '',
     telefone: '',
+    fotoPerfil: null,
     tema: 'padrao',
     exibirNoPerfilPublico: false,
     notificacoes: false
@@ -109,6 +111,78 @@ export default function Tutor({ navigation }) {
         }
     }
 
+
+    // seleciona uma foto do celular e atualiza o perfil
+    async function escolherFotoTutor() {
+        try {
+            const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (!permissao.granted) {
+                Alert.alert('Permissão necessária', 'Permita o acesso às fotos do celular.');
+                return;
+            }
+
+            const resultado = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8
+            });
+
+            if (resultado.canceled) return;
+
+            const foto = resultado.assets[0];
+            const pasta = FileSystem.documentDirectory + 'perfil_tutor/';
+
+            await FileSystem.makeDirectoryAsync(pasta, { intermediates: true });
+
+            const destino = pasta + `foto_${Date.now()}.jpg`;
+            await FileSystem.copyAsync({ from: foto.uri, to: destino });
+
+            const sucesso = await atualizarPerfil({ fotoPerfil: destino });
+
+            if (!sucesso) {
+                await FileSystem.deleteAsync(destino, { idempotent: true });
+                return;
+            }
+
+            Alert.alert('Sucesso!', 'Foto de perfil atualizada.');
+        } catch (erro) {
+            console.error('Erro ao selecionar foto:', erro);
+            Alert.alert('Erro', 'Não foi possível atualizar a foto.');
+        }
+    }
+
+    // exclui a foto do perfil e remove o arquivo antigo
+    async function excluirFotoTutor() {
+        if (!perfil.fotoPerfil) return;
+
+        const fotoAntiga = perfil.fotoPerfil;
+        const sucesso = await atualizarPerfil({ fotoPerfil: null });
+
+        if (!sucesso) return;
+
+        try {
+            await FileSystem.deleteAsync(fotoAntiga, { idempotent: true });
+        } catch (erro) {
+            console.error('Erro ao excluir arquivo da foto:', erro);
+        }
+
+        Alert.alert('Sucesso!', 'Foto de perfil removida.');
+    }
+
+    function abrirOpcoesFoto() {
+        if (!perfil.fotoPerfil) {
+            escolherFotoTutor();
+            return;
+        }
+
+        Alert.alert('Foto de perfil', 'O que deseja fazer?', [
+            { text: 'Trocar foto', onPress: escolherFotoTutor },
+            { text: 'Excluir foto', style: 'destructive', onPress: excluirFotoTutor },
+            { text: 'Cancelar', style: 'cancel' }
+        ]);
+    }
 
     function abrirConfiguracoes() {
         setNomeEdicao(perfil.nome || '');
@@ -242,14 +316,30 @@ export default function Tutor({ navigation }) {
     return (
         <TelaComTopo
             centro={
-                <Pressable
-                    onPress={abrirConfiguracoes}
-                    accessibilityRole="button"
-                    accessibilityLabel="Editar perfil"
-                    style={({ pressed }) => [styles.avatarTopo, pressed && styles.pressionado]}
-                >
-                    <Ionicons name="person" size={40} color={cores.laranja} />
-                </Pressable>
+            // avatar do tutor, com ícone de editar
+            <Pressable
+                onPress={abrirOpcoesFoto}
+                accessibilityRole="button"
+                accessibilityLabel="Alterar foto do tutor"
+                style={({ pressed }) => [styles.avatarContainer, pressed && styles.pressionado]}
+            >
+                <View style={styles.avatarTopo}>
+                    {perfil.fotoPerfil ? (
+                        <Image source={{ uri: perfil.fotoPerfil }} style={styles.fotoTutor} />
+                    ) : (
+                        <Ionicons name="person" size={40} color={cores.laranja} />
+                    )}
+                </View>
+
+                <View style={styles.botaoEditarFoto}>
+                    <Ionicons
+                        name={perfil.fotoPerfil ? 'pencil' : 'add'}
+                        size={16}
+                        color={cores.branco}
+                    />
+                </View>
+            </Pressable>
+
             }
         >
 
@@ -693,13 +783,21 @@ const styles = StyleSheet.create({
     avatarTopo: {
         width: 95,
         height: 95,
-        borderRadius: 44,
+        borderRadius: 47.5,
         backgroundColor: cores.marrom,
         borderWidth: 4,
         borderColor: cores.fundo,
         justifyContent: 'center',
         alignItems: 'center',
         ...sombra,
+        overflow: 'hidden',
+    },
+
+    fotoTutor: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 47.5,
+        resizeMode: 'cover',
     },
 
     heroiTextos: {
@@ -1000,4 +1098,26 @@ const styles = StyleSheet.create({
     opcaoSelecionada: {
         borderColor: cores.laranja,
     },
+
+    avatarContainer: {
+        width: 100,
+        height: 100,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    botaoEditarFoto: {
+        position: 'absolute',
+        bottom: 2,
+        right: 0,
+        width: 29,
+        height: 29,
+        borderRadius: 15,
+        backgroundColor: 'rgba(51, 39, 22, 0.75)',
+        borderWidth: 2,
+        borderColor: cores.fundo,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
 });
