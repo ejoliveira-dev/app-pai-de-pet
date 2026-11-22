@@ -316,29 +316,29 @@ export default function Tutor({ navigation }) {
     return (
         <TelaComTopo
             centro={
-            // avatar do tutor, com ícone de editar
-            <Pressable
-                onPress={abrirOpcoesFoto}
-                accessibilityRole="button"
-                accessibilityLabel="Alterar foto do tutor"
-                style={({ pressed }) => [styles.avatarContainer, pressed && styles.pressionado]}
-            >
-                <View style={styles.avatarTopo}>
-                    {perfil.fotoPerfil ? (
-                        <Image source={{ uri: perfil.fotoPerfil }} style={styles.fotoTutor} />
-                    ) : (
-                        <Ionicons name="person" size={40} color={cores.laranja} />
-                    )}
-                </View>
+                // avatar do tutor, com ícone de editar
+                <Pressable
+                    onPress={abrirOpcoesFoto}
+                    accessibilityRole="button"
+                    accessibilityLabel="Alterar foto do tutor"
+                    style={({ pressed }) => [styles.avatarContainer, pressed && styles.pressionado]}
+                >
+                    <View style={styles.avatarTopo}>
+                        {perfil.fotoPerfil ? (
+                            <Image source={{ uri: perfil.fotoPerfil }} style={styles.fotoTutor} />
+                        ) : (
+                            <Ionicons name="person" size={40} color={cores.laranja} />
+                        )}
+                    </View>
 
-                <View style={styles.botaoEditarFoto}>
-                    <Ionicons
-                        name={perfil.fotoPerfil ? 'pencil' : 'add'}
-                        size={16}
-                        color={cores.branco}
-                    />
-                </View>
-            </Pressable>
+                    <View style={styles.botaoEditarFoto}>
+                        <Ionicons
+                            name={perfil.fotoPerfil ? 'pencil' : 'add'}
+                            size={16}
+                            color={cores.branco}
+                        />
+                    </View>
+                </Pressable>
 
             }
         >
@@ -589,154 +589,168 @@ export default function Tutor({ navigation }) {
             {/* JANELA DA ENGRENAGEM */}
             <Modal
                 visible={configVisivel}
+                transparent
+                statusBarTranslucent
+                navigationBarTranslucent
                 animationType="slide"
                 onRequestClose={() => setConfigVisivel(false)}
             >
-                <TelaComTopo
-                    titulo="Meu perfil"
-                    subtitulo="Informações e personalização"
-                    direita={
-                        <Pressable
-                            style={styles.engrenagemPerfil}
-                            onPress={() => setConfigVisivel(false)}
-                            accessibilityRole="button"
-                            accessibilityLabel="Voltar ao perfil"
-                        >
-                            <Ionicons name="close" size={26} color={cores.marrom} />
-                        </Pressable>
-                    }
-                >
+                <View style={styles.fundoPerfil}>
 
-                    {/* INFORMAÇÕES DO TUTOR */}
-                    <Cartao style={styles.card}>
+                    {/* tocar fora fecha */}
+                    <Pressable
+                        style={styles.preencherFundo}
+                        onPress={() => setConfigVisivel(false)}
+                    />
 
-                        <Text style={[styles.textoCard, styles.espacoTitulo]}>
-                            Informações do tutor
-                        </Text>
+                    <View style={styles.folhaPerfil}>
 
-                        <CampoTexto
-                            label="Nome"
-                            placeholder="Seu nome"
-                            value={nomeEdicao}
-                            onChangeText={setNomeEdicao}
-                            maxLength={60}
-                        />
+                        <View style={styles.topoFolha}>
+                            <View style={styles.circuloFolha} />
+                            <View style={styles.puxadorFolha} />
+                        </View>
 
-                        <CampoTexto
-                            label="E-mail"
-                            placeholder="exemplo@email.com"
-                            value={emailEdicao}
-                            onChangeText={setEmailEdicao}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                        />
+                        <View style={styles.corpoFolha}>
+                            <ScrollView
+                                contentContainerStyle={styles.conteudoFolha}
+                                showsVerticalScrollIndicator={false}
+                                keyboardShouldPersistTaps="handled"
+                            >
+                                <Text style={styles.tituloFolha}>Meu perfil</Text>
 
-                        <CampoTexto
-                            label="Telefone"
-                            placeholder="(00) 00000-0000"
-                            value={telefoneEdicao}
-                            onChangeText={setTelefoneEdicao}
-                            keyboardType="phone-pad"
-                            maxLength={16}
-                        />
+                                {/* INFORMAÇÕES DO TUTOR */}
+                                <Cartao style={styles.card}>
 
-                        <Botao
-                            titulo="Salvar informações"
-                            larga
-                            onPress={salvarDadosConta}
-                            style={styles.botaoSalvar}
-                        />
+                                    <Text style={[styles.textoCard, styles.espacoTitulo]}>
+                                        Informações do tutor
+                                    </Text>
 
-                        <Text style={styles.aviso}>
-                            Seu e-mail e telefone não serão
-                            exibidos no perfil público do pet.
-                        </Text>
+                                    <CampoTexto
+                                        label="Nome"
+                                        placeholder="Seu nome"
+                                        value={nomeEdicao}
+                                        onChangeText={setNomeEdicao}
+                                        maxLength={60}
+                                    />
 
-                    </Cartao>
+                                    <CampoTexto
+                                        label="E-mail"
+                                        placeholder="exemplo@email.com"
+                                        value={emailEdicao}
+                                        onChangeText={setEmailEdicao}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                    />
 
-                    {/* PERSONALIZAÇÃO */}
-                    <Cartao style={styles.card}>
+                                    <CampoTexto
+                                        label="Telefone"
+                                        placeholder="(00) 00000-0000"
+                                        value={telefoneEdicao}
+                                        onChangeText={setTelefoneEdicao}
+                                        keyboardType="phone-pad"
+                                        maxLength={16}
+                                    />
 
-                        <Text style={[styles.textoCard, styles.espacoTitulo]}>
-                            Personalização
-                        </Text>
+                                    <Botao
+                                        titulo="Salvar informações"
+                                        larga
+                                        onPress={salvarDadosConta}
+                                        style={styles.botaoSalvar}
+                                    />
 
-                        <Text style={styles.labelCampo}>
-                            Aparência do perfil
-                        </Text>
+                                    <Text style={styles.aviso}>
+                                        Seu e-mail e telefone não serão
+                                        exibidos no perfil público do pet.
+                                    </Text>
 
-                        {/* tema padrão */}
-                        <Pressable
-                            style={[
-                                styles.opcaoTema,
-                                perfil.tema === 'padrao' &&
-                                styles.opcaoSelecionada
-                            ]}
-                            onPress={() =>
-                                atualizarPerfil({ tema: 'padrao' })
-                            }
-                        >
-                            <Ionicons
-                                name="color-palette-outline"
-                                size={22}
-                                color={cores.marrom}
-                            />
+                                </Cartao>
 
-                            <Text style={styles.textoConfig}>
-                                Padrão Tutus
-                            </Text>
+                                {/* PERSONALIZAÇÃO */}
+                                <Cartao style={styles.card}>
 
-                            {perfil.tema === 'padrao' && (
-                                <Ionicons
-                                    name="checkmark-circle"
-                                    size={22}
-                                    color={cores.laranja}
-                                />
-                            )}
-                        </Pressable>
+                                    <Text style={[styles.textoCard, styles.espacoTitulo]}>
+                                        Personalização
+                                    </Text>
 
-                        {/* tema suave */}
-                        <Pressable
-                            style={[
-                                styles.opcaoTema,
-                                perfil.tema === 'suave' &&
-                                styles.opcaoSelecionada
-                            ]}
-                            onPress={() =>
-                                atualizarPerfil({ tema: 'suave' })
-                            }
-                        >
-                            <Ionicons
-                                name="color-fill-outline"
-                                size={22}
-                                color={cores.marrom}
-                            />
+                                    <Text style={styles.labelCampo}>
+                                        Aparência do perfil
+                                    </Text>
 
-                            <Text style={styles.textoConfig}>
-                                Tons suaves
-                            </Text>
+                                    {/* tema padrão */}
+                                    <Pressable
+                                        style={[
+                                            styles.opcaoTema,
+                                            perfil.tema === 'padrao' &&
+                                            styles.opcaoSelecionada
+                                        ]}
+                                        onPress={() =>
+                                            atualizarPerfil({ tema: 'padrao' })
+                                        }
+                                    >
+                                        <Ionicons
+                                            name="color-palette-outline"
+                                            size={22}
+                                            color={cores.marrom}
+                                        />
 
-                            {perfil.tema === 'suave' && (
-                                <Ionicons
-                                    name="checkmark-circle"
-                                    size={22}
-                                    color={cores.laranja}
-                                />
-                            )}
-                        </Pressable>
+                                        <Text style={styles.textoConfig}>
+                                            Padrão Tutus
+                                        </Text>
 
-                        <Text style={[styles.aviso, { marginTop: 12 }]}>
-                            Por enquanto, a personalização altera
-                            apenas a cor do cabeçalho do Perfil
-                            do Tutor. A personalização completa
-                            do aplicativo será desenvolvida depois.
-                        </Text>
+                                        {perfil.tema === 'padrao' && (
+                                            <Ionicons
+                                                name="checkmark-circle"
+                                                size={22}
+                                                color={cores.laranja}
+                                            />
+                                        )}
+                                    </Pressable>
 
-                    </Cartao>
+                                    {/* tema suave */}
+                                    <Pressable
+                                        style={[
+                                            styles.opcaoTema,
+                                            perfil.tema === 'suave' &&
+                                            styles.opcaoSelecionada
+                                        ]}
+                                        onPress={() =>
+                                            atualizarPerfil({ tema: 'suave' })
+                                        }
+                                    >
+                                        <Ionicons
+                                            name="color-fill-outline"
+                                            size={22}
+                                            color={cores.marrom}
+                                        />
 
-                </TelaComTopo>
-            </Modal>
+                                        <Text style={styles.textoConfig}>
+                                            Tons suaves
+                                        </Text>
+
+                                        {perfil.tema === 'suave' && (
+                                            <Ionicons
+                                                name="checkmark-circle"
+                                                size={22}
+                                                color={cores.laranja}
+                                            />
+                                        )}
+                                    </Pressable>
+
+                                    <Text style={[styles.aviso, { marginTop: 12 }]}>
+                                        Por enquanto, a personalização altera
+                                        apenas a cor do cabeçalho do Perfil
+                                        do Tutor. A personalização completa
+                                        do aplicativo será desenvolvida depois.
+                                    </Text>
+
+                                </Cartao>
+
+                            </ScrollView>
+                    </View>
+                            </View>
+                    </View>
+                </Modal>
 
         </TelaComTopo>
     );
@@ -1118,6 +1132,78 @@ const styles = StyleSheet.create({
         borderColor: cores.fundo,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+
+    fundoPerfil: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(30, 23, 15, 0.55)',
+    },
+
+    preencherFundo: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+
+    folhaPerfil: {
+        height: '92%',
+        backgroundColor: cores.fundo,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        overflow: 'hidden',
+    },
+
+    topoFolha: {
+        height: 115,
+        backgroundColor: cores.laranja,
+        alignItems: 'center',
+        paddingTop: 10,
+        overflow: 'hidden',
+    },
+
+    circuloFolha: {
+        position: 'absolute',
+        top: -70,
+        right: -40,
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+
+    puxadorFolha: {
+        width: 42,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: 'rgba(51, 39, 22, 0.25)',
+    },
+
+    corpoFolha: {
+        flex: 1,
+        marginTop: -24,
+        backgroundColor: cores.fundo,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        overflow: 'hidden',
+    },
+
+    conteudoFolha: {
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        paddingBottom: 60,
+    },
+
+    tituloFolha: {
+        fontFamily: fontes.negrito,
+        fontSize: 35,
+        lineHeight: 48,
+        color: cores.marrom,
+        textAlign: 'center',
+        paddingTop: 20,
+        marginBottom: 20,
     },
 
 });

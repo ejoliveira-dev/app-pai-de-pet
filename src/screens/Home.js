@@ -68,6 +68,51 @@ function calcularIdade(dataNascimento) {
   return `${anos} ${anos === 1 ? "ano" : "anos"} e ${meses} ${meses === 1 ? "mês" : "meses"}`;
 }
 
+function diasAteData(texto) {
+  if (!texto) return null;
+
+  const [dia, mes] = texto.split("/").map(Number);
+  if (!dia || !mes) return null;
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  let proxima = new Date(hoje.getFullYear(), mes - 1, dia);
+
+  if (proxima < hoje) {
+    proxima = new Date(hoje.getFullYear() + 1, mes - 1, dia);
+  }
+
+  return Math.round((proxima - hoje) / 86400000);
+}
+
+// aviso do aniversário (ou da data especial) nos próximos 7 dias
+function infoAniversario(pet) {
+  if (!pet) return null;
+
+  const nome = pet.nome?.split(" ")[0] || "seu pet";
+  const ehEspecial = !pet.data_nascimento && !!pet.data_especial;
+  const dias = diasAteData(pet.data_nascimento || pet.data_especial);
+
+  if (dias === null || dias > 7) return null;
+
+  if (dias === 0) {
+    return {
+      icone: "gift",
+      titulo: ehEspecial
+        ? `Hoje é o dia especial de ${nome}!`
+        : `Hoje é aniversário de ${nome}!`,
+      texto: "Que tal um mimo extra hoje? 🐾",
+    };
+  }
+
+  return {
+    icone: "gift-outline",
+    titulo: `Faltam ${dias} ${dias === 1 ? "dia" : "dias"} para ${ehEspecial ? "o dia especial" : "o aniversário"} de ${nome}`,
+    texto: "Já pode ir preparando a festa!",
+  };
+}
+
 export default function Home({ navigation, route }) {
   const db = useSQLiteContext();
 
@@ -151,6 +196,8 @@ export default function Home({ navigation, route }) {
 
   const primeiroNome = nomeTutor.trim().split(" ")[0];
 
+  const aviso = infoAniversario(pet);
+  
   const titulo = primeiroNome
     ? `Olá, ${primeiroNome}!`
     : "Olá, humano!";
@@ -213,6 +260,19 @@ export default function Home({ navigation, route }) {
             />
           </Cartao>
         )
+      )}
+
+      {aviso && (
+        <View style={styles.aniversario}>
+          <View style={styles.aniversarioIcone}>
+            <Ionicons name={aviso.icone} size={22} color={cores.marrom} />
+          </View>
+
+          <View style={styles.aniversarioTextos}>
+            <Text style={styles.aniversarioTitulo}>{aviso.titulo}</Text>
+            <Text style={styles.aniversarioTexto}>{aviso.texto}</Text>
+          </View>
+        </View>
       )}
 
       <PainelHome
@@ -313,6 +373,44 @@ const styles = StyleSheet.create({
 
   chipBranco: {
     backgroundColor: cores.branco,
+  },
+
+  aniversario: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: cores.marrom,
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 8,
+  },
+
+  aniversarioIcone: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: cores.laranja,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  aniversarioTextos: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  aniversarioTitulo: {
+    fontFamily: fontes.negrito,
+    fontSize: 17,
+    lineHeight: 24,
+    color: cores.laranjaClaro,
+  },
+
+  aniversarioTexto: {
+    fontFamily: fontes.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: 'rgba(255, 234, 200, 0.72)',
   },
 
 })
