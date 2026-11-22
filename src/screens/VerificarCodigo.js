@@ -161,8 +161,7 @@ const styles = StyleSheet.create({
   },
 
   caixa: {
-    flex: 1,
-    maxWidth: 48,
+    width: 44,
     height: 58,
     borderRadius: 16,
     borderWidth: 1.5,
@@ -189,7 +188,11 @@ const styles = StyleSheet.create({
   },
 
   campoInvisivel: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     opacity: 0,
   },
 

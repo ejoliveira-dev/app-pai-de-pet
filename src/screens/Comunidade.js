@@ -14,7 +14,7 @@ import Cartao from "../componentes/Cartao";
 import Botao from "../componentes/Botao";
 import AvatarPet from "../componentes/AvatarPet";
 import { cores, fontes, sombra } from "../styles/tema";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl, Alert as AlertNativo } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl, ActivityIndicator, Alert as AlertNativo } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -47,6 +47,8 @@ export default function Comunidade() {
     const [salvando, setSalvando] = useState(false);
     const [curtidos, setCurtidos] = useState({});
     const [totalCurtidas, setTotalCurtidas] = useState({});
+    const [totalComentarios, setTotalComentarios] = useState({});
+    const [carregandoFeed, setCarregandoFeed] = useState(true);
     const [postComentario, setPostComentario] = useState(null);
     const [comentarios, setComentarios] = useState([]);
     const [textoComentario, setTextoComentario] = useState("");
@@ -129,16 +131,41 @@ export default function Comunidade() {
 
                             const dados = await respostaCurtidas.json();
 
+                            // quantidade de comentários do post
+                            const respostaComentarios = await fetch(
+                                `https://app-pai-de-pet.onrender.com/comentarios/${post.id}`
+                            );
+
+                            const listaComentarios = respostaComentarios.ok
+                                ? await respostaComentarios.json()
+                                : [];
+
                             return {
                                 id: post.id,
                                 total: dados.total,
-                                curtiu: dados.curtiu
+                                curtiu: dados.curtiu,
+                                comentarios: Array.isArray(listaComentarios) ? listaComentarios.length : 0
                             };
                         })
                     );
 
                     const curtidasSalvas = {};
                     const totaisSalvos = {};
+                    const comentariosSalvos = {};
+
+                    resultadosCurtidas.forEach((item) => {
+                        curtidasSalvas[item.id] = item.curtiu;
+                        totaisSalvos[item.id] = item.total;
+                        comentariosSalvos[item.id] = item.comentarios;
+                    });
+
+                    if (ativo) {
+                        setPet(encontrado);
+                        setPublicacoes(listaPosts);
+                        setCurtidos(curtidasSalvas);
+                        setTotalCurtidas(totaisSalvos);
+                        setTotalComentarios(comentariosSalvos);
+                    }
 
                     resultadosCurtidas.forEach((item) => {
                         curtidasSalvas[item.id] = item.curtiu;
@@ -159,6 +186,8 @@ export default function Comunidade() {
                     );
 
                     if (ativo) setPet(null);
+                } finally {
+                    if (ativo) setCarregandoFeed(false);
                 }
             }
 
@@ -329,6 +358,23 @@ export default function Comunidade() {
         ? publicacoes.filter((post) => post.id_pet === String(pet?.id_pet) && post.id_tutor === idTutor)
         : publicacoes;
 
+    // texto das curtidas: "Curtido por você e mais 2 pessoas" ou "3 curtidas".
+    function textoCurtidas(id) {
+        const total = totalCurtidas[id] || 0;
+
+        if (total === 0) return '';
+
+        if (curtidos[id]) {
+            const outros = total - 1;
+
+            if (outros === 0) return 'Curtido por você';
+
+            return `Curtido por você e mais ${outros} ${outros === 1 ? 'pessoa' : 'pessoas'}`;
+        }
+
+        return `${total} ${total === 1 ? 'curtida' : 'curtidas'}`;
+    }
+    
     // curtir/descurtir
     async function alternarCurtida(id) {
         if (!pet?.id_pet || !idTutor) {
@@ -522,6 +568,11 @@ export default function Comunidade() {
             setComentarios((atual) => [...atual, novoComentario]);
             setTextoComentario("");
 
+            setTotalComentarios((atual) => ({
+                ...atual,
+                [postComentario.id]: (atual[postComentario.id] || 0) + 1
+            }));
+
         } catch (erro) {
             console.error("Erro ao comentar:", erro);
             Alert.alert("Erro", "Não foi possível enviar o comentário.");
@@ -537,7 +588,7 @@ export default function Comunidade() {
             comentario.id_tutor !== idTutor
         ) return;
 
-        AlertNativo.alert(
+        Alert.alert(
             "Opções do comentário",
             "O que deseja fazer?",
             [
@@ -553,7 +604,7 @@ export default function Comunidade() {
 
     // Confirmar e excluir comentário
     function confirmarExclusaoComentario(comentario) {
-        AlertNativo.alert(
+        Alert.alert(
             "Excluir comentário",
             "Deseja realmente excluir este comentário?",
             [
@@ -583,6 +634,12 @@ export default function Comunidade() {
                                 atual.filter((item) => item.id !== comentario.id)
                             );
 
+                            
+                            setTotalComentarios((atual) => ({
+                                ...atual,
+                                [postComentario.id]: Math.max(0, (atual[postComentario.id] || 1) - 1)
+                            }));
+
                             Alert.alert("Pronto!", "Comentário excluído com sucesso!");
                         } catch (erro) {
                             console.error("Erro ao excluir comentário:", erro);
@@ -596,7 +653,7 @@ export default function Comunidade() {
 
     // Confirmar e excluir publicação
     function confirmarExclusao(post) {
-        AlertNativo.alert(
+        Alert.alert(
             "Excluir publicação",
             "Deseja realmente excluir esta publicação?",
             [
@@ -716,7 +773,12 @@ export default function Comunidade() {
                 </View>
 
                 {/* publicações cadastradas */}
-                {publicacoesExibidas.length === 0 ? (
+                {carregandoFeed && publicacoes.length === 0 ? (
+                    <View style={styles.carregandoFeed}>
+                        <ActivityIndicator size="large" color={cores.laranja} />
+                        <Text style={styles.textoCarregandoFeed}>Carregando publicações...</Text>
+                    </View>
+                ) : publicacoesExibidas.length === 0 ? (
                     <View style={styles.vazio}>
                         <Text style={styles.textoVazio}>
                             Nenhuma publicação ainda.{'\n'}Toque no + para criar a primeira!
@@ -799,24 +861,28 @@ export default function Comunidade() {
                                     />
                                 </Pressable>
 
-                                {/* abrir comentários da publicação */}
+                                                                {/* abrir comentários da publicação */}
                                 <Pressable
                                     onPress={() => abrirComentarios(post)}
                                     hitSlop={10}
                                     accessibilityRole="button"
                                     accessibilityLabel="Ver comentários"
-                                    style={({ pressed }) => pressed && styles.pressionado}
+                                    style={({ pressed }) => [styles.acaoComNumero, pressed && styles.pressionado]}
                                 >
                                     <Ionicons name="chatbubble-outline" size={25} color={cores.marrom} />
+                                    {totalComentarios[post.id] > 0 && (
+                                        <Text style={styles.numeroAcao}>{totalComentarios[post.id]}</Text>
+                                    )}
                                 </Pressable>
 
-                                {/* exibe o total de curtidas e se o usuário curtiu */}
-                                <Text style={styles.textoCurtida}>
-                                    {totalCurtidas[post.id] || 0} curtidas
-                                    {curtidos[post.id] ? " • Você curtiu" : ""}
-                                </Text>
-
                             </View>
+
+                            {/* "Curtido por você e mais X pessoas" (igual ao Insta) */}
+                            {textoCurtidas(post.id) ? (
+                                <Text style={styles.textoCurtida}>
+                                    {textoCurtidas(post.id)}
+                                </Text>
+                            ) : null}
 
                         </View>
                     ))
@@ -1317,15 +1383,45 @@ const styles = StyleSheet.create({
     acoesPost: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 16,
         paddingHorizontal: 14,
         paddingTop: 10,
-        paddingBottom: 14,
+        paddingBottom: 12,
     },
 
     textoCurtida: {
         fontFamily: fontes.regular,
         fontSize: 14,
+        lineHeight: 20,
+        color: cores.marromClaro,
+        paddingHorizontal: 14,
+        marginTop: -4,
+        paddingBottom: 14,
+    },
+
+    acaoComNumero: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+
+    numeroAcao: {
+        fontFamily: fontes.negrito,
+        fontSize: 15,
+        lineHeight: 28,
+        color: cores.marrom,
+        transform: [{ translateY: 3 }],
+    },
+
+    carregandoFeed: {
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 40,
+    },
+
+    textoCarregandoFeed: {
+        fontFamily: fontes.regular,
+        fontSize: 15,
         color: cores.marromClaro,
     },
 
