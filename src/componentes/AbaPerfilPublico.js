@@ -76,7 +76,11 @@ export default function AbaPerfilPublico({
     pet,
     publicacoes = [],
     onPublicar,
-    deslocamento
+    deslocamento,
+     perfilExterno = false,
+    onVoltarPerfil,
+    podeVoltar = false,
+    idTutorAtual
 }) {
     const db = useSQLiteContext();
 
@@ -227,6 +231,19 @@ export default function AbaPerfilPublico({
         });
     }
 
+    useEffect(() => {
+        if (perfilExterno) {
+            setMostrarFundo(true);
+            setAberto(true);
+
+            Animated.timing(animacao, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: false,
+            }).start();
+        }
+    }, [pet?.id_pet, pet?.id_tutor, perfilExterno, animacao]);
+
     // isso reconhece o gesto de arrastar.
     const gesto = useMemo(() => PanResponder.create({
         onMoveShouldSetPanResponder: (_, movimento) => {
@@ -286,6 +303,18 @@ export default function AbaPerfilPublico({
                     }
                 ]}
             >
+                {/* botão de voltar, só aparece quando o perfil é aberto a partir de outro perfil */}
+                {podeVoltar && (
+                    <Pressable
+                        style={[styles.voltarPet, { top: insets.top + 14 }]}
+                        onPress={onVoltarPerfil}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voltar ao perfil anterior"
+                        hitSlop={8}
+                    >
+                        <Ionicons name="arrow-back" size={22} color={COR.creme} />
+                    </Pressable>
+                )}
 
                 {/* patinha decorativa no canto */}
                 <View style={styles.patinha} pointerEvents="none">
@@ -949,6 +978,18 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
         backgroundColor: "rgba(255, 253, 248, 0.15)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    voltarPet: {
+        position: "absolute",
+        right: 14,
+        zIndex: 30,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "rgba(255, 253, 248, 0.18)",
         alignItems: "center",
         justifyContent: "center",
     },

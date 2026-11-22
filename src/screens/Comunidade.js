@@ -39,6 +39,8 @@ export default function Comunidade() {
     const insets = useSafeAreaInsets();
 
     const [pet, setPet] = useState(null);
+    const [petVisualizado, setPetVisualizado] = useState(null);
+    const [historicoPerfis, setHistoricoPerfis] = useState([]);
     const [publicacoes, setPublicacoes] = useState([]);
     const [abaAtiva, setAbaAtiva] = useState("publicacoes");
     const [modalAberto, setModalAberto] = useState(false);
@@ -199,6 +201,39 @@ export default function Comunidade() {
 
         }, [db])
     );
+
+    // abre o perfil do pet de uma publicação
+    function abrirPerfilPet(post) {
+        if (!post?.id_pet || !post?.id_tutor) return;
+
+        const novoPet = {
+            id_pet: String(post.id_pet),
+            id_tutor: post.id_tutor,
+            nome: post.nome_pet,
+            foto_perfil: post.foto_pet || null
+        };
+
+        const atual = petVisualizado || pet;
+
+        if (atual &&
+            String(atual.id_pet) === novoPet.id_pet &&
+            String(petVisualizado?.id_tutor || idTutor) === String(novoPet.id_tutor)) {
+            return;
+        }
+
+        setHistoricoPerfis(lista => [...lista, petVisualizado]);
+        setPetVisualizado(novoPet);
+    }
+    // volta para o perfil do pet anterior
+    function voltarPerfilPet() {
+        if (historicoPerfis.length === 0) return;
+
+        const anterior = historicoPerfis[historicoPerfis.length - 1];
+
+        setPetVisualizado(anterior);
+        setHistoricoPerfis(lista => lista.slice(0, -1));
+    }
+
 
     // abre o formulário de publicação
     function abrirPublicacao() {
@@ -792,9 +827,16 @@ export default function Comunidade() {
                         >
 
                             <View style={styles.cabecalhoPost}>
-                                <View style={styles.anelAvatar}>
-                                    <AvatarPet foto={post.foto_pet} tamanho={38} />
-                                </View>
+
+                             {/* botão de abrir perfil do pet */}   
+                            <Pressable
+                                style={styles.anelAvatar}
+                                onPress={() => abrirPerfilPet(post)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Ver perfil de ${post.nome_pet}`}
+                            >
+                                <AvatarPet foto={post.foto_pet} tamanho={38} />
+                            </Pressable>
 
                                 <View style={styles.infoPost}>
                                     <Text style={styles.autorPost} numberOfLines={1}>
@@ -904,12 +946,18 @@ export default function Comunidade() {
                 </TouchableOpacity>
             )}
 
+
             <AbaPerfilPublico
-                pet={pet}
+                pet={petVisualizado || pet}
                 publicacoes={publicacoes}
                 onPublicar={abrirPublicacao}
                 deslocamento={deslocamentoAba}
+                perfilExterno={!!petVisualizado}
+                onVoltarPerfil={voltarPerfilPet}
+                podeVoltar={historicoPerfis.length > 0}
+                idTutorAtual={idTutor}
             />
+
 
             {/* Área de comentários estilo Instagram */}
             <Modal
