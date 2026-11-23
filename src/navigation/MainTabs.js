@@ -5,6 +5,7 @@ import Home from '../screens/Home';
 import Comunidade from '../screens/Comunidade';
 import PerfilPrivado from '../screens/PerfilPrivado';
 import Tutor from '../screens/Tutor';
+import Notificacoes from '../screens/Notificacoes';
 
 import { createBottomTabNavigator } from
     "@react-navigation/bottom-tabs";
@@ -67,6 +68,8 @@ export default function MainTabs() {
                         icone = focused ? "happy" : "happy-outline";
                     } else if (route.name === "PetPrivado") {
                         icone = focused ? "paw" : "paw-outline";
+                    } else if (route.name === "Notificacoes") {
+                        icone = focused ? "notifications" : "notifications-outline";   
                     } else if (route.name === "Tutor") {
                         icone = focused
                             ? "person-circle"
@@ -90,15 +93,21 @@ export default function MainTabs() {
             />
 
             <Tab.Screen
+                name="PetPrivado"
+                component={PerfilPrivado}
+                options={{ tabBarLabel: "Meu Pet" }}
+            />
+
+            <Tab.Screen
                 name="Comunidade"
                 component={Comunidade}
                 options={{ tabBarLabel: "Comunidade" }}
             />
 
             <Tab.Screen
-                name="PetPrivado"
-                component={PerfilPrivado}
-                options={{ tabBarLabel: "Meu Pet" }}
+                name="Notificacoes"
+                component={Notificacoes}
+                options={{ tabBarLabel: "Avisos" }}
             />
 
             <Tab.Screen
