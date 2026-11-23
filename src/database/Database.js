@@ -82,8 +82,21 @@ CREATE INDEX IF NOT EXISTS idx_cuidados_pet  ON cuidados (id_pet, tipo);
 
 export async function inicializarBanco(db) {
     await db.execAsync(ESQUEMA);
+    await adicionarColunaDataEspecial(db);
     await migrarDoAsyncStorage(db);
     await migrarCuidadosDoAsyncStorage(db);
+}
+
+async function adicionarColunaDataEspecial(db) {
+    try {
+        const colunas = await db.getAllAsync("PRAGMA table_info(pets)");
+
+        if (!colunas.some((coluna) => coluna.name === "data_especial")) {
+            await db.runAsync("ALTER TABLE pets ADD COLUMN data_especial TEXT");
+        }
+    } catch (erro) {
+        console.error("Erro ao criar coluna data_especial:", erro);
+    }
 }
 
 // ---------------------------------------------------------------
@@ -174,8 +187,8 @@ export async function inserirPet(db, pet) {
         `INSERT INTO pets (
             id_pet, id_usuario, nome, especie, raca,
             data_nascimento, idade_Aproximada, tipo_informacao_idade,
-            foto_perfil, observacoes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            foto_perfil, observacoes, data_especial
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             String(pet.id_pet),
             pet.id_usuario ?? 'usuario_demo',
@@ -187,6 +200,7 @@ export async function inserirPet(db, pet) {
             pet.tipo_informacao_idade ?? 'aproximada',
             pet.foto_perfil ?? null,
             pet.observacoes ?? '',
+            pet.data_especial ?? null,
         ]
     );
 }
@@ -201,7 +215,8 @@ export async function atualizarPet(db, pet) {
             idade_Aproximada = ?,
             tipo_informacao_idade = ?,
             foto_perfil = ?,
-            observacoes = ?
+            observacoes = ?,
+            data_especial = ?
         WHERE id_pet = ?`,
         [
             pet.nome,
@@ -212,6 +227,7 @@ export async function atualizarPet(db, pet) {
             pet.tipo_informacao_idade ?? 'aproximada',
             pet.foto_perfil ?? null,
             pet.observacoes ?? '',
+            pet.data_especial ?? null,
             String(pet.id_pet),
         ]
     );

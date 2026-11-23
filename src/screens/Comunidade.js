@@ -41,6 +41,7 @@ export default function Comunidade() {
     const [pet, setPet] = useState(null);
     const [petVisualizado, setPetVisualizado] = useState(null);
     const [historicoPerfis, setHistoricoPerfis] = useState([]);
+    const [pedidoAbrir, setPedidoAbrir] = useState(0);
     const [publicacoes, setPublicacoes] = useState([]);
     const [abaAtiva, setAbaAtiva] = useState("publicacoes");
     const [modalAberto, setModalAberto] = useState(false);
@@ -195,26 +196,40 @@ export default function Comunidade() {
 
     // abre o perfil do pet de uma publicação
     function abrirPerfilPet(post) {
-        if (!post?.id_pet || !post?.id_tutor) return;
+        if (!post?.id_pet) return;
 
-        const novoPet = {
-            id_pet: String(post.id_pet),
-            id_tutor: post.id_tutor,
-            nome: post.nome_pet,
-            foto_perfil: post.foto_pet || null
-        };
+        const ehMeuPet =
+            String(post.id_pet) === String(pet?.id_pet) &&
+            post.id_tutor === idTutor;
 
-        const atual = petVisualizado || pet;
+        if (ehMeuPet) {
+            // tocou no próprio pet: mostra o seu perfil
+            setPetVisualizado(null);
+            setHistoricoPerfis([]);
+        } else {
+            const novoPet = {
+                id_pet: String(post.id_pet),
+                id_tutor: post.id_tutor,
+                nome: post.nome_pet,
+                foto_perfil: post.foto_pet || null
+            };
 
-        if (atual &&
-            String(atual.id_pet) === novoPet.id_pet &&
-            String(petVisualizado?.id_tutor || idTutor) === String(novoPet.id_tutor)) {
-            return;
+            const mesmoPet =
+                petVisualizado &&
+                String(petVisualizado.id_pet) === novoPet.id_pet &&
+                petVisualizado.id_tutor === novoPet.id_tutor;
+
+            if (!mesmoPet) {
+                if (petVisualizado) {
+                    setHistoricoPerfis(lista => [...lista, petVisualizado]);
+                }
+                setPetVisualizado(novoPet);
+            }
         }
 
-        setHistoricoPerfis(lista => [...lista, petVisualizado]);
-        setPetVisualizado(novoPet);
+        setPedidoAbrir(n => n + 1);
     }
+
     // volta para o perfil do pet anterior
     function voltarPerfilPet() {
         if (historicoPerfis.length === 0) return;
@@ -953,6 +968,11 @@ export default function Comunidade() {
                 onVoltarPerfil={voltarPerfilPet}
                 podeVoltar={historicoPerfis.length > 0}
                 idTutorAtual={idTutor}
+                pedidoAbrir={pedidoAbrir}
+                onFechar={() => {
+                    setPetVisualizado(null);
+                    setHistoricoPerfis([]);
+                }}
             />
 
 

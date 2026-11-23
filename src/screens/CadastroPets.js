@@ -70,6 +70,8 @@ export default function CadastroPet({ navigation, route }) {
     // para o tutor informar a data ou uma estimativa
     const [modoIdade, setModoIdade] = useState("aproximada");
     const [dataNascimento, setDataNascimento] = useState("");
+    const [usarDataEspecial, setUsarDataEspecial] = useState(false);
+    const [dataEspecial, setDataEspecial] = useState("");
 
     function formatarData(texto) {
         const numeros = texto.replace(/\D/g, "").slice(0, 8);
@@ -119,6 +121,9 @@ export default function CadastroPet({ navigation, route }) {
         );
 
         setDataNascimento(petParaEditar.data_nascimento || "");
+
+        setDataEspecial(petParaEditar.data_especial || "");
+        setUsarDataEspecial(!!petParaEditar.data_especial);
 
         setIdadeAproximada(
             petParaEditar.idade_Aproximada || "Não sei a idade"
@@ -193,6 +198,18 @@ export default function CadastroPet({ navigation, route }) {
             return;
         }
 
+        if (
+            modoIdade === "aproximada" &&
+            usarDataEspecial &&
+            !dataValida(dataEspecial.trim())
+        ) {
+            Alert.alert(
+                "Data especial inválida",
+                "Informe a data no formato DD/MM/AAAA."
+            );
+            return;
+        }
+
         if (salvando) return;
 
         setSalvando(true);
@@ -245,6 +262,9 @@ export default function CadastroPet({ navigation, route }) {
                 tipo_informacao_idade: modoIdade,
                 foto_perfil: fotoSalva,
                 observacoes: observacoes.trim(),
+                data_especial: modoIdade === "aproximada" && usarDataEspecial
+                    ? dataEspecial.trim()
+                    : null,
             };
 
             // salva o pet diretamente no SQLite.
@@ -559,6 +579,42 @@ export default function CadastroPet({ navigation, route }) {
                                     color={cores.laranja}
                                 />
                             </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    style.opcaoModo,
+                                    usarDataEspecial && style.opcaoModoSelecionada,
+                                ]}
+                                onPress={() => setUsarDataEspecial((atual) => !atual)}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons
+                                    name={usarDataEspecial ? "checkbox" : "square-outline"}
+                                    size={24}
+                                    color={cores.laranja}
+                                />
+                                <Text style={style.textoOpcaoModo}>
+                                    Adicionar data especial?
+                                </Text>
+                            </TouchableOpacity>
+
+                            <Text style={style.textoAjuda}>
+                                Pode ser o dia em que ele chegou na sua casa ou
+                                outra data importante para vocês. Vamos te avisar
+                                quando ela estiver chegando!
+                            </Text>
+
+                            {usarDataEspecial && (
+                                <TextInput
+                                    style={style.input}
+                                    placeholder="DD/MM/AAAA"
+                                    placeholderTextColor={cores.placeholder}
+                                    value={dataEspecial}
+                                    onChangeText={(texto) => setDataEspecial(formatarData(texto))}
+                                    keyboardType="numeric"
+                                    maxLength={10}
+                                />
+                            )}
                         </>
                     )}
 

@@ -81,7 +81,9 @@ export default function AbaPerfilPublico({
     perfilExterno = false,
     onVoltarPerfil,
     podeVoltar = false,
-    idTutorAtual
+    idTutorAtual,
+    pedidoAbrir = 0,
+    onFechar
 }) {
     const db = useSQLiteContext();
 
@@ -147,7 +149,7 @@ export default function AbaPerfilPublico({
         setEditandoBio(false);
 
         async function carregarBio() {
-            if (!pet?.id_pet) return;
+            if (!pet?.id_pet || perfilExterno) return;
 
             try {
                 const salva = await obterBioPublica(db, pet.id_pet);
@@ -166,7 +168,7 @@ export default function AbaPerfilPublico({
         return () => {
             ativo = false;
         };
-    }, [db, pet?.id_pet]);
+    }, [db, pet?.id_pet, perfilExterno]);
 
     async function salvarBio() {
         if (!pet?.id_pet) return;
@@ -189,18 +191,22 @@ export default function AbaPerfilPublico({
         setEditandoBio(false);
     }
 
+    // e-mail do tutor do pet mostrado 
+    const tutorDoPet = pet?.id_tutor || idTutorAtual;
+
     // todas as publicações do pet (com ou sem foto)
     const publicacoesPet = publicacoes.filter(
         (publicacao) =>
             pet &&
-            String(publicacao.id_pet) === String(pet.id_pet)
+            String(publicacao.id_pet) === String(pet.id_pet) &&
+            (!tutorDoPet || publicacao.id_tutor === tutorDoPet)
     );
 
     const fotosPet = publicacoes.filter(
         (publicacao) =>
             pet &&
             String(publicacao.id_pet) === String(pet.id_pet) &&
-            (publicacao.imagem_id || publicacao.foto_uri)
+            (!tutorDoPet || publicacao.id_tutor === tutorDoPet)
     );
 
     function enderecoFoto(publicacao) {
@@ -234,22 +240,16 @@ export default function AbaPerfilPublico({
         }).start(({ finished }) => {
             if (finished) {
                 setMostrarFundo(false);
+                onFechar?.();
             }
         });
     }
 
-    useEffect(() => {
-        if (perfilExterno) {
-            setMostrarFundo(true);
-            setAberto(true);
-
-            Animated.timing(animacao, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: false,
-            }).start();
+       useEffect(() => {
+        if (pedidoAbrir > 0) {
+            abrirPerfil();
         }
-    }, [pet?.id_pet, pet?.id_tutor, perfilExterno, animacao]);
+    }, [pedidoAbrir]);
 
     // isso reconhece o gesto de arrastar.
     const gesto = useMemo(() => PanResponder.create({
@@ -370,7 +370,9 @@ export default function AbaPerfilPublico({
                                 maxFontSizeMultiplier={1.15}
                             >
                                 {pet
-                                    ? `${pet.especie} • ${calcularIdadePet(pet)}`
+                                    ? pet.especie
+                                        ? `${pet.especie} • ${calcularIdadePet(pet)}`
+                                        : "Pet da comunidade"
                                     : "Escolha um pet na lista"}
                             </Text>
                         </View>
@@ -417,7 +419,7 @@ export default function AbaPerfilPublico({
                                 Sobre
                             </Text>
 
-                            {pet && !editandoBio && !!bio && (
+                            {pet && !perfilExterno && !editandoBio && !!bio && (
                                 <Pressable
                                     style={styles.botaoLapis}
                                     onPress={() => setEditandoBio(true)}
@@ -472,6 +474,10 @@ export default function AbaPerfilPublico({
                                 <Text style={styles.biografia}>
                                     {bio}
                                 </Text>
+                            ) : perfilExterno ? (
+                                <Text style={styles.biografia}>
+                                   ...
+                                </Text>
                             ) : (
                                 <Pressable
                                     style={styles.caixaVazia}
@@ -494,7 +500,7 @@ export default function AbaPerfilPublico({
                             </Text>
                         )}
 
-                        {tutorPublico && (
+                        {tutorPublico && !perfilExterno && (
                             <Pressable
                                 style={({ pressed }) => [styles.botaoTutorPublico, pressed && { opacity: 0.6 }]}
                                 onPress={() => setModalTutor(true)}

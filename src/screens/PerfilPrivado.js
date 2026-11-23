@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator,  Pressable } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 
 import RegistrosPet from '../componentes/RegistrosPet';
@@ -161,10 +161,31 @@ export default function PerfilPrivado({ navigation }) {
 
                     </View>
 
-                    {pet.observacoes ? (
-                        <Text style={styles.observacoes}>
-                            {pet.observacoes}
-                        </Text>
+                    {pet.observacoes || (pet.data_especial && !pet.data_nascimento) ? (
+                        <View style={styles.detalhes}>
+
+                            {pet.data_especial && !pet.data_nascimento ? (
+                                <View style={styles.linhaDetalhe}>
+                                    <Ionicons name="gift-outline" size={16} color={cores.laranja} style={styles.iconeDetalhe} />
+                                    <Text style={styles.textoDetalhe}>
+                                        Dia especial:{' '}
+                                        <Text style={styles.textoDetalheForte}>
+                                            {pet.data_especial.slice(0, 5)}
+                                        </Text>
+                                    </Text>
+                                </View>
+                            ) : null}
+
+                            {pet.observacoes ? (
+                                <View style={styles.linhaDetalhe}>
+                                    <Ionicons name="document-text-outline" size={16} color={cores.laranja} style={styles.iconeDetalhe} />
+                                    <Text style={styles.textoDetalhe}>
+                                        {pet.observacoes}
+                                    </Text>
+                                </View>
+                            ) : null}
+
+                        </View>
                     ) : null}
 
                 </View>
@@ -367,6 +388,37 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         color: 'rgba(255, 234, 200, 0.72)',
         marginTop: 12,
+    },
+
+    detalhes: {
+        marginTop: 12,
+        backgroundColor: 'rgba(255, 234, 200, 0.08)',
+        borderRadius: 18,
+        padding: 12,
+        gap: 8,
+    },
+
+    linhaDetalhe: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+    },
+
+    iconeDetalhe: {
+        marginTop: 2,
+    },
+
+    textoDetalhe: {
+        flex: 1,
+        fontFamily: fontes.regular,
+        fontSize: 14,
+        lineHeight: 20,
+        color: 'rgba(255, 234, 200, 0.85)',
+    },
+
+    textoDetalheForte: {
+        fontFamily: fontes.negrito,
+        color: cores.laranjaClaro,
     },
 
     // sem pet
