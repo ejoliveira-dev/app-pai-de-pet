@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Modal, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Modal, Image, Platform} from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 
 import { Ionicons } from '@expo/vector-icons';
@@ -522,17 +522,18 @@ export default function Tutor({ navigation }) {
 
                     <View style={styles.textosSwitch}>
                         <Text style={styles.textoConfig}>Notificações</Text>
-                        <Text style={styles.aviso}>Em breve: lembretes no celular</Text>
+                        <Text style={styles.aviso}>Receber lembretes na central de notificações</Text>
                     </View>
 
+                
                     <Switch
                         value={perfil.notificacoes}
-                        onValueChange={(valor) =>
-                            atualizarPerfil({ notificacoes: valor })
-                        }
+                        onValueChange={(valor) => atualizarPerfil({ notificacoes: valor })}
                         trackColor={{ false: '#C9C5BE', true: cores.laranja }}
                         thumbColor="#FFFFFF"
                     />
+
+
                 </View>
 
             </View>

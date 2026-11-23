@@ -4,13 +4,17 @@ import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator } from
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSQLiteContext } from "expo-sqlite";
+import { verificarAvisosCuidados } from "../utils/avisosCuidados";
+import { verificarAvisosAlimentacao } from "../utils/avisosAlimentacao";
 
 import {
     listarNotificacoes,
-    adicionarNotificacao,
     marcarNotificacaoLida,
     marcarTodasLidas
 } from "../utils/notificacoesStorage";
+
+import { verificarAvisosVacinas } from "../utils/avisosVacinas";
 
 const COR = {
     fundo: "#FFFDF8",
@@ -40,22 +44,29 @@ function iconeNotificacao(tipo) {
     }
 }
 
-export default function Notificacoes() {
+export default function Notificacoes({ onAtualizarContador }) {
     const insets = useSafeAreaInsets();
+    const db = useSQLiteContext();
 
     const [notificacoes, setNotificacoes] = useState([]);
     const [carregando, setCarregando] = useState(true);
 
     const carregarNotificacoes = useCallback(async () => {
         try {
+            await verificarAvisosVacinas(db);
+            await verificarAvisosCuidados(db);
+            await verificarAvisosAlimentacao(db);
+
             const lista = await listarNotificacoes();
             setNotificacoes(lista);
+            await onAtualizarContador?.();
+
         } catch (erro) {
             console.error("Erro ao carregar notificações:", erro);
         } finally {
             setCarregando(false);
         }
-    }, []);
+    }, [db, onAtualizarContador]);
 
     useFocusEffect(
         useCallback(() => {
@@ -122,28 +133,6 @@ export default function Notificacoes() {
                     </Pressable>
                 )}
 
-                
-                <Pressable
-                    style={styles.botaoTeste}
-                    onPress={async () => {
-                        try {
-                            await adicionarNotificacao({
-                                tipo: "aviso",
-                                titulo: "Bem-vindo às notificações! 🔔",
-                                mensagem: "Esta é uma notificação de teste do Tutus."
-                            });
-
-                            await carregarNotificacoes();
-                        } catch (erro) {
-                            console.error("Erro ao testar notificação:", erro);
-                        }
-                    }}
-                >
-                    <Text style={styles.textoTeste}>
-                        Criar notificação de teste
-                    </Text>
-                </Pressable>
-               
                 {carregando ? (
                     <View style={styles.caixaVazia}>
                         <ActivityIndicator
@@ -364,19 +353,4 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: COR.laranja,
     },
-
-    botaoTeste: {
-        backgroundColor: COR.marrom,
-        borderRadius: 16,
-        padding: 14,
-        alignItems: "center",
-        marginBottom: 20,
-    },
-
-    textoTeste: {
-        fontFamily: "Ruwudu-Bold",
-        fontSize: 16,
-        color: COR.creme,
-    },
-
 });

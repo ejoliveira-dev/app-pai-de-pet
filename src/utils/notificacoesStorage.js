@@ -1,5 +1,6 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { obterPerfilTutor } from "../database/Database";
 
 async function chaveNotificacoes() {
     const email = await AsyncStorage.getItem("usuarioLogado");
@@ -16,13 +17,27 @@ export async function listarNotificacoes() {
     return dados ? JSON.parse(dados) : [];
 }
 
-export async function adicionarNotificacao(notificacao) {
+
+export async function adicionarNotificacao(notificacao, db) {
+    if (!db) {
+        throw new Error("Banco de dados não informado para a notificação.");
+    }
+
+    // Verifica se o tutor ativou as notificações
+    const perfil = await obterPerfilTutor(db);
+
+    if (perfil?.notificacoes !== true) {
+        return false;
+    }
+
     const chave = await chaveNotificacoes();
-    if (!chave) return;
+    if (!chave) return false;
 
     const lista = await listarNotificacoes();
 
-    if (notificacao.id && lista.some(item => item.id === notificacao.id)) return;
+    if (notificacao.id && lista.some(item => item.id === notificacao.id)) {
+        return false;
+    }
 
     const nova = {
         ...notificacao,
@@ -32,6 +47,8 @@ export async function adicionarNotificacao(notificacao) {
     };
 
     await AsyncStorage.setItem(chave, JSON.stringify([nova, ...lista]));
+
+    return true;
 }
 
 export async function marcarNotificacaoLida(id) {

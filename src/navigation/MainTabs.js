@@ -1,46 +1,48 @@
-import React from "react";
-import { View, Text } from "react-native";
 
-import Home from '../screens/Home';
-import Comunidade from '../screens/Comunidade';
-import PerfilPrivado from '../screens/PerfilPrivado';
-import Tutor from '../screens/Tutor';
-import Notificacoes from '../screens/Notificacoes';
+import React, { useState, useCallback, useEffect } from "react";
 
-import { createBottomTabNavigator } from
-    "@react-navigation/bottom-tabs";
+import Home from "../screens/Home";
+import Comunidade from "../screens/Comunidade";
+import PerfilPrivado from "../screens/PerfilPrivado";
+import Tutor from "../screens/Tutor";
+import Notificacoes from "../screens/Notificacoes";
 
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { useSQLiteContext } from "expo-sqlite";
+
+import { listarNotificacoes } from "../utils/notificacoesStorage";
+import { verificarAvisosVacinas } from "../utils/avisosVacinas";
+import { verificarAvisosCuidados } from "../utils/avisosCuidados";
+import { verificarAvisosAlimentacao } from "../utils/avisosAlimentacao";
 
 const Tab = createBottomTabNavigator();
 
-// Telas provisórias para testar a navegação
-function TelaProvisoria({ titulo }) {
-    return (
-        <View style={{
-            flex: 1,
-            backgroundColor: "#FFFDF8",
-            justifyContent: "center",
-            alignItems: "center",
-        }}>
-            <Text style={{
-                fontSize: 25,
-                color: "#332716",
-                fontWeight: "bold",
-            }}>
-                {titulo}
-            </Text>
-        </View>
-    );
-}
-
-
 export default function MainTabs() {
+    const db = useSQLiteContext();
+    const [naoLidas, setNaoLidas] = useState(0);
+
+    const atualizarContador = useCallback(async () => {
+        try {
+            await verificarAvisosVacinas(db);
+            await verificarAvisosCuidados(db);
+            await verificarAvisosAlimentacao(db);
+
+            const lista = await listarNotificacoes();
+            setNaoLidas(lista.filter(item => !item.lida).length);
+        } catch (erro) {
+            console.error("Erro ao atualizar contador:", erro);
+        }
+    }, [db]);
+
+    useEffect(() => {
+        atualizarContador();
+    }, [atualizarContador]);
+
     return (
         <Tab.Navigator
             initialRouteName="Inicio"
-
-            screenOptions={({ route }) => ({     
+            screenOptions={({ route }) => ({
                 headerShown: false,
 
                 tabBarActiveTintColor: "#FA9F2A",
@@ -55,11 +57,11 @@ export default function MainTabs() {
                 },
 
                 tabBarLabelStyle: {
-                    fontFamily: 'Ruwudu-Bold',
+                    fontFamily: "Ruwudu-Bold",
                     fontSize: 18,
                 },
 
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused, color }) => {
                     let icone;
 
                     if (route.name === "Inicio") {
@@ -69,11 +71,9 @@ export default function MainTabs() {
                     } else if (route.name === "PetPrivado") {
                         icone = focused ? "paw" : "paw-outline";
                     } else if (route.name === "Notificacoes") {
-                        icone = focused ? "notifications" : "notifications-outline";   
+                        icone = focused ? "notifications" : "notifications-outline";
                     } else if (route.name === "Tutor") {
-                        icone = focused
-                            ? "person-circle"
-                            : "person-circle-outline";
+                        icone = focused ? "person-circle" : "person-circle-outline";
                     }
 
                     return (
@@ -106,16 +106,29 @@ export default function MainTabs() {
 
             <Tab.Screen
                 name="Notificacoes"
-                component={Notificacoes}
-                options={{ tabBarLabel: "Avisos" }}
-            />
+                options={{
+                    tabBarLabel: "Avisos",
+                    tabBarBadge: naoLidas > 0 ? naoLidas : undefined,
+                    tabBarBadgeStyle: {
+                        backgroundColor: "#FA9F2A",
+                        color: "#332716",
+                        fontSize: 12,
+                    },
+                }}
+            >
+                {(props) => (
+                    <Notificacoes
+                        {...props}
+                        onAtualizarContador={atualizarContador}
+                    />
+                )}
+            </Tab.Screen>
 
             <Tab.Screen
                 name="Tutor"
                 component={Tutor}
                 options={{ tabBarLabel: "Tutor" }}
             />
-
         </Tab.Navigator>
     );
 }
