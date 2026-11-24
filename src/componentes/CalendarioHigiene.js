@@ -23,11 +23,11 @@ function obterIcone(nome) {
 
     if (cuidado.includes("banho")) return "shower-head";
     if (cuidado.includes("tosa")) return "content-cut";
-    if (cuidado.includes("unha")) return "hand-back-right-outline";
-    if (cuidado.includes("escovação")) return "brush";
+    if (cuidado.includes("unha")) return "paw";
+    if (cuidado.includes("escovação")) return "hair-dryer-outline";
     if (cuidado.includes("limpeza")) return "broom";
 
-    return "paw";
+    return "heart";
 }
 
 function converterData(texto) {

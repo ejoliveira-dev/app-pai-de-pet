@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, Pressable, ScrollView, FlatList, } from "react-native";
+import React, { useState, useCallback, useRef } from "react";
+import { View, Text, Image, TouchableOpacity, Pressable, ScrollView, FlatList, useWindowDimensions } from "react-native";
 import { Alert } from "../componentes/AlertaTutus";
 
 import { useSQLiteContext } from "expo-sqlite";
-import { listarPets, definirPetSelecionadoId } from "../database/Database";
+import { listarPets, definirPetSelecionadoId, obterPerfilTutor } from "../database/Database";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { Ionicons } from '@expo/vector-icons';
@@ -21,8 +21,13 @@ const cores = {
 export default function ListaPets({ navigation }) {
     const db = useSQLiteContext();
 
+    const { width } = useWindowDimensions();
+    const larguraCartao = width - 40;
+    const carrosselRef = useRef(null);
+
     const [pets, setPets] = useState([]);
     const [petSelecionado, setPetSelecionado] = useState(null);
+    const [nomeTutor, setNomeTutor] = useState("");
 
     const [carregando, setCarregando] = useState(true);
     // controla o carregamento dos dados
@@ -36,9 +41,13 @@ export default function ListaPets({ navigation }) {
                 setCarregando(true);
 
                 try {
-                    const lista = await listarPets(db);
+                    const [lista, perfilTutor] = await Promise.all([
+                        listarPets(db),
+                        obterPerfilTutor(db)
+                    ]);
 
                     if (ativo) {
+                        setNomeTutor(String(perfilTutor?.nome || "").trim().split(/\s+/)[0]);
                         const listaValida = Array.isArray(lista) ? lista : [];
 
                         setPets(listaValida);
@@ -108,79 +117,90 @@ export default function ListaPets({ navigation }) {
         navigation.navigate("CadastroPets");
     }
 
-    // cada pet aparece como um avatar circular na roleta.
-    function renderizarPet({ item }) {
-        const selecionado =
-            petSelecionado?.id_pet === item.id_pet;
+    const indiceAtual = Math.max(0, pets.findIndex(pet => pet.id_pet === petSelecionado?.id_pet));
 
+        function irParaPet(indice) {
+            if (indice < 0 || indice >= pets.length) return;
+
+            carrosselRef.current?.scrollToIndex({
+                index: indice,
+                animated: true
+            });
+
+            setPetSelecionado(pets[indice]);
+        }
+
+    function renderizarCartao({ item }) {
         return (
-            <TouchableOpacity
-                style={style.itemRoleta}
-                onPress={() => setPetSelecionado(item)}
-                activeOpacity={0.75}
-                accessibilityRole="button"
-                accessibilityLabel={`Selecionar ${item.nome}`}
-                accessibilityState={{ selected: selecionado }}
-            >
-                <View
-                    style={[
-                        style.avatarBorda,
-                        selecionado && style.avatarSelecionado,
-                    ]}
+            <View style={{ width: larguraCartao }}>
+                <TouchableOpacity
+                    style={style.cartaoDestaque}
+                    activeOpacity={0.9}
+                    onPress={() => abrirPet(item)}
                 >
+                    <View style={style.faixaDecorativa} />
+
+                    {pets.length > 1 && (
+                        <View style={style.setasCarrossel}>
+                            <Pressable
+                                style={[style.setaCarrossel, indiceAtual === 0 && { opacity: 0.3 }]}
+                                onPress={() => irParaPet(indiceAtual - 1)}
+                                disabled={indiceAtual === 0}
+                                accessibilityLabel="Pet anterior"
+                            >
+                                <Ionicons name="chevron-back" size={24} color={cores.marrom} />
+                            </Pressable>
+
+                            <Pressable
+                                style={[style.setaCarrossel, indiceAtual === pets.length - 1 && { opacity: 0.3 }]}
+                                onPress={() => irParaPet(indiceAtual + 1)}
+                                disabled={indiceAtual === pets.length - 1}
+                                accessibilityLabel="Próximo pet"
+                            >
+                                <Ionicons name="chevron-forward" size={24} color={cores.marrom} />
+                            </Pressable>
+                        </View>
+                    )}
+
                     {item.foto_perfil ? (
                         <Image
                             source={{ uri: item.foto_perfil }}
-                            style={style.avatarImagem}
+                            style={style.fotoDestaque}
                             resizeMode="cover"
                         />
                     ) : (
-                        <View style={style.avatarSemFoto}>
+                        <View style={style.fotoDestaqueSemFoto}>
                             <Ionicons
                                 name="paw"
-                                size={30}
+                                size={54}
                                 color={cores.laranja}
                             />
                         </View>
                     )}
-                </View>
 
-                <Text
-                    numberOfLines={1}
-                    style={[
-                        style.nomeRoleta,
-                        selecionado && style.nomeRoletaSelecionado,
-                    ]}
-                >
-                    {item.nome || "Meu pet"}
-                </Text>
+                    <Text style={style.nomeDestaque}>
+                        {item.nome || "Meu pet"}
+                    </Text>
 
-                {selecionado && (
-                    <View style={style.indicadorSelecionado} />
-                )}
-            </TouchableOpacity>
-        );
-    }
-
-    function renderizarBotaoAdicionar() {
-        return (
-            <TouchableOpacity
-                style={style.itemRoleta}
-                onPress={adicionarPet}
-                activeOpacity={0.7}
-            >
-                <View style={style.avatarAdicionar}>
-                    <Ionicons name="paw" size={28} color={cores.laranja} />
-
-                    <View style={style.iconeMais}>
-                        <Ionicons name="add" size={16} color={cores.fundo} />
+                    <View style={style.chipEspecie}>
+                        <Text style={style.especieDestaque}>
+                            {item.especie || "Pet"}
+                        </Text>
                     </View>
-                </View>
 
-                <Text style={style.nomeRoleta}>
-                    Adicionar
-                </Text>
-            </TouchableOpacity>
+                    <View style={style.botaoVerPerfil}>
+                        <Text style={style.textoVerPerfil}>
+                            Ver meu pet
+                        </Text>
+
+                        <Ionicons
+                            name="arrow-forward"
+                            size={20}
+                            color={cores.fundo}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </View>
         );
     }
 
@@ -188,9 +208,10 @@ export default function ListaPets({ navigation }) {
     return (
         <View style={style.container}>
             <View style={style.topoCirculo} />
+
             <View style={style.topoLaranja}>
                 <Text style={style.saudacao}>
-                    Olá, Tutor!
+                    Olá, {nomeTutor || "Tutor"}!
                 </Text>
             </View>
 
@@ -199,14 +220,8 @@ export default function ListaPets({ navigation }) {
                     style={style.scroll}
                     contentContainerStyle={style.conteudo}
                     showsVerticalScrollIndicator={false}
+                    scrollEnabled={false}
                 >
-                    <Text style={style.titulo}>
-                        De quem vamos cuidar hoje?
-                    </Text>
-
-                    <Text style={style.subtitulo}>
-                        Escolha seu companheiro:
-                    </Text>
 
                     {carregando ? (
                         <View style={style.estadoVazio}>
@@ -226,28 +241,17 @@ export default function ListaPets({ navigation }) {
                             <View style={style.secaoRoleta}>
                                 <View style={style.cabecalhoSecao}>
                                     <Text style={style.tituloSecao}>
-                                        Meus Pets
+                                        Seus companheiros
                                     </Text>
 
                                     {pets.length > 0 && (
                                         <View style={style.contador}>
                                             <Text style={style.textoContador}>
-                                                {pets.length}
+                                                {indiceAtual + 1} de {pets.length}
                                             </Text>
                                         </View>
                                     )}
                                 </View>
-
-                                <FlatList
-                                    data={pets}
-                                    horizontal
-                                    keyExtractor={(item, index) => String(item.id_pet ?? index)}
-                                    renderItem={renderizarPet}
-                                    showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={style.listaRoleta}
-                                    extraData={petSelecionado?.id_pet}
-                                    ListFooterComponent={renderizarBotaoAdicionar}
-                                />
                             </View>
 
                             {/* pet selecionado em destaque */}
@@ -266,60 +270,80 @@ export default function ListaPets({ navigation }) {
                                         Adicione seu primeiro companheiro!
                                     </Text>
                                 </View>
-                            ) : petSelecionado && (
-                                <TouchableOpacity
-                                    style={style.cartaoDestaque}
-                                    activeOpacity={0.9}
-                                    onPress={() => abrirPet(petSelecionado)}
-                                >
-                                    <View style={style.faixaDecorativa} />
-
-                                    {petSelecionado.foto_perfil ? (
-                                        <Image
-                                            source={{
-                                                uri: petSelecionado.foto_perfil,
-                                            }}
-                                            style={style.fotoDestaque}
-                                            resizeMode="cover"
-                                        />
-                                    ) : (
-                                        <View style={style.fotoDestaqueSemFoto}>
-                                            <Ionicons
-                                                name="paw"
-                                                size={54}
-                                                color={cores.laranja}
-                                            />
-                                        </View>
+                            ) : (
+                                <FlatList
+                                    ref={carrosselRef}
+                                    data={pets}
+                                    extraData={indiceAtual}
+                                    horizontal
+                                    pagingEnabled
+                                    style={{ flexGrow: 0 }}
+                                    showsHorizontalScrollIndicator={false}
+                                    keyExtractor={(item) => String(item.id_pet)}
+                                    renderItem={renderizarCartao}
+                                    initialNumToRender={1}
+                                    maxToRenderPerBatch={2}
+                                    windowSize={3}
+                                    getItemLayout={(_, index) => ({
+                                        length: larguraCartao,
+                                        offset: larguraCartao * index,
+                                        index
+                                    })}
+                                    initialScrollIndex={Math.max(
+                                        0,
+                                        pets.findIndex(pet => pet.id_pet === petSelecionado?.id_pet)
                                     )}
+                                    onMomentumScrollEnd={(event) => {
+                                        const indice = Math.round(
+                                            event.nativeEvent.contentOffset.x / larguraCartao
+                                        );
 
-                                    <Text style={style.etiquetaDestaque}>
-                                        SEU COMPANHEIRO
-                                    </Text>
-
-                                    <Text style={style.nomeDestaque}>
-                                        {petSelecionado.nome || "Meu pet"}
-                                    </Text>
-
-                                    <View style={style.chipEspecie}>
-                                        <Text style={style.especieDestaque}>
-                                            {petSelecionado.especie || "Pet"}
-                                        </Text>
-                                    </View>
-
-                                    <View style={style.botaoVerPerfil}>
-                                        <Text style={style.textoVerPerfil}>
-                                            Ver meu pet
-                                        </Text>
-
-                                        <Ionicons
-                                            name="arrow-forward"
-                                            size={20}
-                                            color={cores.fundo}
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-
+                                        if (pets[indice]) {
+                                            setPetSelecionado(pets[indice]);
+                                        }
+                                    }}
+                                />
                             )}
+
+                              {pets.length > 1 && (
+                                <View style={style.indicadoresCarrossel}>
+                                    {pets.map((pet, indice) => (
+                                        <Pressable
+                                            key={pet.id_pet}
+                                            onPress={() => irParaPet(indice)}
+                                            hitSlop={8}
+                                            accessibilityLabel={`Selecionar ${pet.nome}`}
+                                            accessibilityState={{ selected: indice === indiceAtual }}
+                                            style={[
+                                                style.bolinhaCarrossel,
+                                                indice === indiceAtual && style.bolinhaAtiva
+                                            ]}
+                                        />
+                                    ))}
+                                </View>
+                            )}  
+
+                            <TouchableOpacity
+                                style={style.adicionarContainer}
+                                onPress={adicionarPet}
+                                activeOpacity={0.75}
+                                accessibilityRole="button"
+                                accessibilityLabel="Adicionar companheiro"
+                            >
+                                <View style={style.botaoCircular}>
+                                    <Ionicons
+                                        name="add"
+                                        size={30}
+                                        color={cores.marrom}
+                                    />
+                                </View>
+
+                                <View style={style.textosAdicionar}>
+                                    <Text style={style.textoAdicionar}>
+                                        Adicionar companheiro
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
                         </>
                     )}
 
@@ -342,7 +366,7 @@ export default function ListaPets({ navigation }) {
                         </Pressable>
                     </View>
                 )}
-             </View>   
-        </View >
+            </View>
+        </View>
     )
 };

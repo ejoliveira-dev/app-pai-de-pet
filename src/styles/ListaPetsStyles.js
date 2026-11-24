@@ -326,37 +326,32 @@ export const style = StyleSheet.create({
     adicionarContainer: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         backgroundColor: cores.creme,
-        borderRadius: 30,
-        borderWidth: 2,
+        borderRadius: 27,
+        borderWidth: 1,
         borderStyle: "dashed",
         borderColor: cores.laranja,
-        paddingVertical: 16,
-        paddingHorizontal: 18,
-        marginTop: 4,
-        marginBottom: 10,
+        height: 54,
+        paddingHorizontal: 14,
+        marginTop: 0,
+        marginBottom: 8,
+        gap: 6,
     },
 
     botaoCircular: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: cores.laranja,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 4,
-        borderColor: cores.laranjaClaro,
     },
 
     textosAdicionar: {
-        flex: 1,
-        marginLeft: 16,
+        marginLeft: 0,
     },
 
     textoAdicionar: {
-        fontSize: 23,
+        fontSize: 18,
         fontFamily: "Ruwudu-Bold",
-        color: cores.marrom,
+        color: cores.marromMedio,
     },
 
     subtextoAdicionar: {
@@ -487,6 +482,46 @@ export const style = StyleSheet.create({
         justifyContent: "center",
         borderWidth: 2,
         borderColor: "#FFFDF8",
+    },
+
+    setasCarrossel: {
+        position: "absolute",
+        top: 20,
+        left: 16,
+        right: 16,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        zIndex: 5,
+    },
+
+    setaCarrossel: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: cores.branco,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    indicadoresCarrossel: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 18,
+        flexWrap: "wrap",
+    },
+
+    bolinhaCarrossel: {
+        width: 9,
+        height: 9,
+        borderRadius: 5,
+        backgroundColor: cores.bordaCreme,
+    },
+
+    bolinhaAtiva: {
+        width: 26,
+        backgroundColor: cores.laranja,
     },
 
 });
