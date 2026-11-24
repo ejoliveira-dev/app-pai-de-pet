@@ -246,9 +246,6 @@ export default function CuidadosPet({ tipo }) {
 
   return (
     <>
-      <Text style={styles.tituloSecao}>
-        {consulta ? 'Consultas' : 'Medicamentos'}
-      </Text>
 
       {/* formulário */}
       <View style={styles.card}>

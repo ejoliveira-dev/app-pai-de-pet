@@ -155,6 +155,16 @@ export async function salvarIntervaloAlimentacao(db, idPet, horas) {
     await salvarConfig(db, `intervaloAlimentacao:${idPet}`, horas);
 }
 
+// intervalo entre cuidados de higiene de cada pet (em dias)
+
+export async function obterIntervaloHigiene(db, idPet, cuidado) {
+    return obterConfig(db, `intervaloHigiene:${idPet}:${cuidado}`);
+}
+
+export async function salvarIntervaloHigiene(db, idPet, cuidado, dias) {
+    await salvarConfig(db, `intervaloHigiene:${idPet}:${cuidado}`, dias);
+}
+
 // biografia do perfil público de cada pet
 export async function obterBioPublica(db, idPet) {
     return obterConfig(db, `bioPublica:${idPet}`);

@@ -61,6 +61,7 @@ export default function VacinasPet() {
     const [data, setData] = useState('');
     const [carregando, setCarregando] = useState(true);
     const [salvando, setSalvando] = useState(false);
+    const [historicoAberto, setHistoricoAberto] = useState(false);
 
     // carrega as vacinas do pet 
     useFocusEffect(
@@ -242,8 +243,6 @@ export default function VacinasPet() {
 
     return (
         <>
-            <Text style={styles.tituloSecao}>Vacinas</Text>
-
             {/* formulário */}
             <View style={styles.card}>
 
@@ -279,11 +278,31 @@ export default function VacinasPet() {
                         <Ionicons name="add" size={20} color={cores.marrom} />
                         <Text style={styles.botaoTexto}>Adicionar</Text>
                     </Pressable>
+                    
                 </View>
 
-            </View>
+                <Pressable
+                    style={styles.botaoHistorico}
+                    onPress={() => setHistoricoAberto(anterior => !anterior)}
+                >
+                    <Ionicons name="time-outline" size={20} color="#9A8A75" />
 
-            {vacinas.map(vacina => {
+                    <Text style={styles.textoHistorico}>
+                        Histórico ({vacinas.length})
+                    </Text>
+
+                    <Ionicons
+                        name={historicoAberto ? 'chevron-up' : 'chevron-down'}
+                        size={20}
+                        color="#9A8A75"
+                    />
+                </Pressable>
+
+                {historicoAberto && vacinas.length === 0 && (
+                    <Text style={styles.vazio}>Nenhuma vacina registrada.</Text>
+                )}
+
+                {historicoAberto && vacinas.map(vacina => {
 
                     const s = situacao(vacina);
 
@@ -338,11 +357,13 @@ export default function VacinasPet() {
                     );
                 })}    
 
-            {vacinas.length > 0 ? (
+             {historicoAberto && vacinas.length > 0 ? (
                 <Text style={styles.dica}>
                     Toque na bolinha para marcar como aplicada
                 </Text>
             ) : null}
+
+            </View>
         </>
     );
 }
@@ -526,4 +547,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 6,
   },
+
+botaoHistorico: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    borderTopWidth: 1,
+    borderTopColor: '#E9E1D6',
+    paddingTop: 12,
+    gap: 8,
+    marginTop: 14,
+},
+
+textoHistorico: {
+    flex: 1,
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    color: '#9A8A75',
+},
+
 });

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Cartao from './Cartao';
 import Botao from './Botao';
 import { cores, fontes, raio, sombra, textos } from '../styles/tema';
+import CalendarioHigiene from './CalendarioHigiene';
 
 // Estrutura inicial do painel.
 const VAZIO = {
@@ -162,8 +163,7 @@ const CORES_BARRAS = [
   { fundo: cores.terracota || '#D18B5F', texto: cores.marrom },
   { fundo: cores.marromClaro, texto: cores.fundo }
 ];
-
-function Grafico({ alimentacao, peso }) {
+function Grafico({ alimentacao, peso, pet, agora, onAbrirCuidados }) {
 
   const [modo, setModo] = useState('alimentacao');
 
@@ -269,14 +269,22 @@ function Grafico({ alimentacao, peso }) {
 
   return (
     <>
-      <View style={styles.linhaTitulo}>
+      <View style={{ width: '100%', marginTop: 12, marginBottom: 8 }}>
 
-        <TituloSecao>Acompanhamento</TituloSecao>
+        <View style={[styles.seletor, {
+            width: '100%',
+            alignSelf: 'center',
+            backgroundColor: '#F0EBE3',
+            marginTop: 0,
+            marginBottom: 4,
+            elevation: 0,
+            shadowOpacity: 0,
+        }]}>
 
-        <View style={styles.seletor}>
           {[
             { id: 'alimentacao', nome: 'Alimentação' },
-            { id: 'peso', nome: 'Peso' }
+            { id: 'peso', nome: 'Peso' },
+            { id: 'higiene', nome: 'Higiene' }
           ].map(opcao => {
 
             const ativa = modo === opcao.id;
@@ -288,8 +296,14 @@ function Grafico({ alimentacao, peso }) {
                 onPress={() => setModo(opcao.id)}
                 accessibilityRole="button"
                 style={[
-                  styles.seletorOpcao,
-                  ativa && (dePeso ? styles.seletorOpcaoPeso : styles.seletorOpcaoAlimentacao)
+                    styles.seletorOpcao,
+                    {
+                        flex: 1,
+                        height: 36,
+                        paddingHorizontal: 0,
+                        borderRadius: 18,
+                    },
+                    ativa && (dePeso ? styles.seletorOpcaoPeso : styles.seletorOpcaoAlimentacao)
                 ]}
               >
                 <Text
@@ -306,6 +320,15 @@ function Grafico({ alimentacao, peso }) {
         </View>
 
       </View>
+
+      {modo === 'higiene' ? (
+    <CalendarioHigiene
+        key={pet.id_pet}
+        pet={pet}
+        agora={agora}
+        onAbrirCuidados={onAbrirCuidados}
+    />
+) : (
 
       <View style={[styles.capsulas, escuro && styles.capsulasEscuro]}>
 
@@ -372,6 +395,7 @@ function Grafico({ alimentacao, peso }) {
         )}
 
       </View>
+  )}
     </>
   );
 }
@@ -1153,9 +1177,12 @@ export default function PainelHome({
 
       {/* GRÁFICOS */}
       <Grafico
-        alimentacao={calculos.alimentacaoSemana}
-        peso={calculos.pesoHistorico}
-      />
+          alimentacao={calculos.alimentacaoSemana}
+          peso={calculos.pesoHistorico}
+          pet={pet}
+          agora={agora}
+          onAbrirCuidados={onAbrirCuidados}
+      />    
 
       <View style={styles.linhaTitulo}>
 

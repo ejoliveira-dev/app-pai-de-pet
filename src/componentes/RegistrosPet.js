@@ -44,17 +44,14 @@ function SecaoRegistro({
   desabilitado,
 }) {
 
+  const [historicoAberto, setHistoricoAberto] = useState(false);
+
   const ehAlimentacao = unidade === 'g';
 
   const atalhos = ehAlimentacao ? ['50', '100', '150', '200'] : [];
 
-  const ultimos = registros.slice(0, 5);
-  const restantes = registros.length - ultimos.length;
-
   return (
     <>
-      <Text style={styles.tituloSecao}>{titulo}</Text>
-
       {/* formulário */}
       <View style={styles.card}>
 
@@ -127,9 +124,36 @@ function SecaoRegistro({
           </View>
         ) : null}
 
-      </View>
+    <Pressable
+        style={styles.botaoHistorico}
+        onPress={() => setHistoricoAberto(anterior => !anterior)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: historicoAberto }}
+    >
+        <Ionicons
+            name="time-outline"
+            size={20}
+            color="#9A8A75"
+        />
 
-      {ultimos.map((registro) => (
+        <Text style={styles.textoHistorico}>
+            Histórico ({registros.length})
+        </Text>
+
+        <Ionicons
+            name={historicoAberto ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color="#9A8A75"
+        />
+    </Pressable>
+
+    {historicoAberto && registros.length === 0 && (
+        <Text style={styles.vazio}>
+            Nenhum registro encontrado.
+        </Text>
+    )}
+
+    {historicoAberto && registros.map((registro) => (
 
           <View key={registro.id} style={styles.item}>
 
@@ -157,17 +181,14 @@ function SecaoRegistro({
 
       ))}
 
-      {restantes > 0 ? (
-        <Text style={styles.informacaoCentro}>
-          + {restantes} {restantes === 1 ? 'registro anterior' : 'registros anteriores'}
-        </Text>
-      ) : null}
+      </View>
     </>
   );
 }
 
 // componente principal
-export default function RegistrosPet() {
+export default function RegistrosPet({ tipo }) {
+
   const db = useSQLiteContext();
 
   const [petId, setPetId] = useState(null);
@@ -383,35 +404,39 @@ export default function RegistrosPet() {
     );
   }
 
-  return (
+
+//separa alimentaçao de peso
+ return (
     <View>
 
-      {/* registros de alimentação */}
-      <SecaoRegistro
-        titulo="Alimentação"
-        unidade="g"
-        valor={alimentacao}
-        aoDigitar={setAlimentacao}
-        aoSalvar={() => salvarRegistro('alimentacao', alimentacao)}
-        registros={registros.alimentacao}
-        aoExcluir={(id) => confirmarExclusao('alimentacao', id)}
-        desabilitado={salvando}
-      />
+        {(!tipo || tipo === 'alimentacao') && (
+            <SecaoRegistro
+                titulo="Alimentação"
+                unidade="g"
+                valor={alimentacao}
+                aoDigitar={setAlimentacao}
+                aoSalvar={() => salvarRegistro('alimentacao', alimentacao)}
+                registros={registros.alimentacao}
+                aoExcluir={(id) => confirmarExclusao('alimentacao', id)}
+                desabilitado={salvando}
+            />
+        )}
 
-      {/* registros de peso */}
-      <SecaoRegistro
-        titulo="Peso"
-        unidade="kg"
-        valor={peso}
-        aoDigitar={setPeso}
-        aoSalvar={() => salvarRegistro('peso', peso)}
-        registros={registros.peso}
-        aoExcluir={(id) => confirmarExclusao('peso', id)}
-        desabilitado={salvando}
-      />
+        {(!tipo || tipo === 'peso') && (
+            <SecaoRegistro
+                titulo="Peso"
+                unidade="kg"
+                valor={peso}
+                aoDigitar={setPeso}
+                aoSalvar={() => salvarRegistro('peso', peso)}
+                registros={registros.peso}
+                aoExcluir={(id) => confirmarExclusao('peso', id)}
+                desabilitado={salvando}
+            />
+        )}
 
     </View>
-  );
+);
 }
 
 const styles = StyleSheet.create({
@@ -652,6 +677,24 @@ const styles = StyleSheet.create({
     color: cores.marromClaro,
     fontSize: 15,
     marginVertical: 15,
+  },
+
+  botaoHistorico: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      borderTopWidth: 1,
+      borderTopColor: '#E9E1D6',
+      paddingTop: 12,
+      gap: 8,
+      marginTop: 14,
+  },
+
+  textoHistorico: {
+      flex: 1,
+      fontFamily: fontes.regular,
+      fontSize: 15,
+      color: '#9A8A75',
   },
 
 });

@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 
 import RegistrosPet from '../componentes/RegistrosPet';
 import VacinasPet from '../componentes/VacinasPet';
 import CuidadosPet from '../componentes/CuidadosPet';
+import HigienePet from '../componentes/HigienePet';
 
 import TelaComTopo from '../componentes/TelaComTopo';
 import Cartao from '../componentes/Cartao';
@@ -12,17 +13,28 @@ import Botao from '../componentes/Botao';
 import Chip from '../componentes/Chip';
 import AvatarPet from '../componentes/AvatarPet';
 import { cores, fontes, sombra } from '../styles/tema';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useSQLiteContext } from 'expo-sqlite';
 import { buscarPet, obterPetSelecionadoId } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function PerfilPrivado({ navigation }) {
+
+    const CATEGORIAS = [
+        { id: 'alimentacao', nome: 'Alimentação', icone: 'bone'},
+        { id: 'peso', nome: 'Peso', icone: 'scale-bathroom' },
+        { id: 'vacinas', nome: 'Vacinas', icone: 'needle' },
+        { id: 'consulta', nome: 'Consultas', icone: 'calendar-outline' },
+        { id: 'medicamento', nome: 'Remédios', icone: 'pill' },
+        { id: 'higiene', nome: 'Higiene', icone: 'shower-head' },
+    ]; 
+
     const db = useSQLiteContext();
 
     const [pet, setPet] = useState(null);
     const [carregando, setCarregando] = useState(true);
+    const [categoria, setCategoria] = useState('alimentacao');
 
     useFocusEffect(
         useCallback(() => {
@@ -205,14 +217,80 @@ export default function PerfilPrivado({ navigation }) {
 
             )}
 
-            <RegistrosPet />
+            {pet && !carregando && (
+                <>
+                    {/* Menu horizontal de categorias */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ flexGrow: 0 }}
+                        contentContainerStyle={styles.menuCategorias}
+                    >
+                        {CATEGORIAS.map(item => {
 
-            <VacinasPet />
+                            const ativo = categoria === item.id;
 
-            <CuidadosPet tipo="consulta" />
+                            return (
+                                <Pressable
+                                    key={item.id}
+                                    onPress={() => setCategoria(item.id)}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: ativo }}
+                                    style={[
+                                        styles.categoria,
+                                        ativo && styles.categoriaAtiva
+                                    ]}
+                                >
+                                    <View style={styles.categoriaTopo}>
+                                        <MaterialCommunityIcons
+                                            name={item.icone}
+                                            size={28}
+                                            color={cores.marrom}
+                                        />
 
-            <CuidadosPet tipo="medicamento" />
+                                        {ativo && (
+                                            <Ionicons
+                                                name="checkmark-circle"
+                                                size={16}
+                                                color={cores.marrom}
+                                            />
+                                        )}
+                                    </View>
 
+                                    <Text style={styles.categoriaTexto}>
+                                        {item.nome}
+                                    </Text>
+
+                                </Pressable>
+                            );
+                        })}
+                    </ScrollView>
+
+                    {/* Exibe apenas a categoria selecionada */}
+                    {(categoria === 'alimentacao' || categoria === 'peso') && (
+                        <RegistrosPet
+                            key={`${pet.id_pet}-${categoria}`}
+                            tipo={categoria}
+                        />
+                    )}
+
+                    {categoria === 'vacinas' && (
+                        <VacinasPet key={pet.id_pet} />
+                    )}
+
+                    {categoria === 'consulta' && (
+                        <CuidadosPet key={`${pet.id_pet}-consulta`} tipo="consulta" />
+                    )}
+
+                    {categoria === 'medicamento' && (
+                        <CuidadosPet key={`${pet.id_pet}-medicamento`} tipo="medicamento" />
+                    )}
+
+                    {categoria === 'higiene' && (
+                        <HigienePet key={pet.id_pet} pet={pet} />
+                    )}
+                </>
+            )}
         </TelaComTopo>
     );
 }
@@ -443,4 +521,38 @@ const styles = StyleSheet.create({
         opacity: 0.7,
         transform: [{ scale: 0.95 }],
     },
+
+    menuCategorias: {
+        flexDirection: 'row',
+        gap: 10,
+        paddingVertical: 12,
+    },
+
+    categoria: {
+        width: 112,
+        height: 90,
+        backgroundColor: cores.branco,
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: '#E9DFD2',
+        padding: 12,
+        justifyContent: 'space-between',
+    },
+
+    categoriaAtiva: {
+        backgroundColor: cores.laranja,
+        borderColor: cores.laranja,
+    },
+
+    categoriaTopo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+
+    categoriaTexto: {
+        fontFamily: fontes.negrito,
+        fontSize: 15,
+        color: cores.marrom,
+    },   
 });

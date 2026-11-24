@@ -1,4 +1,3 @@
-
 import { listarPets, listarCuidados } from "../database/Database";
 import { adicionarNotificacao } from "./notificacoesStorage";
 
@@ -25,6 +24,12 @@ function converterData(valor) {
     return data;
 }
 
+const TIPOS = {
+    consulta: { nome: "Consulta", icone: "📅", antecedencia: 7 },
+    medicamento: { nome: "Medicamento", icone: "💊", antecedencia: 7 },
+    higiene: { nome: "Higiene", icone: "🫧", antecedencia: 1 }
+};
+
 export async function verificarAvisosCuidados(db) {
     const pets = await listarPets(db);
 
@@ -32,38 +37,44 @@ export async function verificarAvisosCuidados(db) {
     hoje.setHours(0, 0, 0, 0);
 
     for (const pet of pets) {
-        for (const tipo of ["consulta", "medicamento"]) {
+        for (const tipo of Object.keys(TIPOS)) {
             const cuidados = await listarCuidados(db, pet.id_pet, tipo);
+            const config = TIPOS[tipo];
 
             for (const cuidado of cuidados) {
+
+                // Não gera avisos para cuidados concluídos.
                 if (cuidado.concluido) continue;
 
                 const dataCuidado = converterData(cuidado.data);
+
                 if (!dataCuidado) continue;
 
                 const dias = Math.round((dataCuidado - hoje) / 86400000);
-                if (dias > 7) continue;
+
+                if (dias > config.antecedencia) continue;
 
                 let titulo;
                 let mensagem;
                 let situacao;
 
-                const nomeTipo = tipo === "consulta" ? "consulta" : "medicamento";
-
                 if (dias < 0) {
                     situacao = "atrasado";
-                    titulo = tipo === "consulta" ? "Consulta pendente 📅" : "Medicamento pendente 💊";
+                    titulo = `${config.nome}: cuidado pendente ${config.icone}`;
                     mensagem = `${pet.nome}: ${cuidado.nome} estava previsto para ${cuidado.data}.`;
+
                 } else if (dias === 0) {
                     situacao = "hoje";
-                    titulo = tipo === "consulta" ? "Consulta marcada para hoje! 📅" : "Medicamento previsto para hoje! 💊";
-                    mensagem = `${pet.nome} tem ${nomeTipo} (${cuidado.nome}) previsto para hoje.`;
+                    titulo = `${config.nome}: previsto para hoje! ${config.icone}`;
+                    mensagem = `${pet.nome} tem ${cuidado.nome} previsto para hoje.`;
+
                 } else {
                     situacao = "proximo";
-                    titulo = tipo === "consulta" ? "Consulta se aproximando 📅" : "Medicamento se aproximando 💊";
-                    mensagem = `${pet.nome} tem ${nomeTipo} (${cuidado.nome}) em ${dias} ${dias === 1 ? "dia" : "dias"}.`;
+                    titulo = `${config.nome}: lembrete ${config.icone}`;
+                    mensagem = `${pet.nome} tem ${cuidado.nome} em ${dias} ${dias === 1 ? "dia" : "dias"}.`;
                 }
 
+                // O ID identifica cada aviso para evitar notificações repetidas.
                 await adicionarNotificacao({
                     id: `${tipo}_${pet.id_pet}_${cuidado.id}_${situacao}_${cuidado.data}`,
                     tipo,
