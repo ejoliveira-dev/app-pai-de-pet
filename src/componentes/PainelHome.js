@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 
 import { useSQLiteContext } from 'expo-sqlite';
 
-import { carregarResumoPet, salvarIntervaloAlimentacao } from '../database/Database';
+import { carregarResumoPet, salvarIntervaloAlimentacao, obterIntervaloAgua, salvarIntervaloAgua } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -273,59 +273,50 @@ if (modo === 'alimentacao' || modo === 'agua') {
   );
 
   return (
-    <>
-      <View style={{ width: '100%', marginTop: 12, marginBottom: 8 }}>
+   <View style={[styles.capsulas, escuro && styles.capsulasEscuro]}>
 
-        <View style={[styles.seletor, {
-            width: '100%',
-            alignSelf: 'center',
-            backgroundColor: '#F0EBE3',
-            marginTop: 0,
-            marginBottom: 4,
-            elevation: 0,
-            shadowOpacity: 0,
-        }]}>
-
-          {[
+    <View style={{
+        flexDirection: 'row',
+        marginBottom: 10
+    }}>
+        {[
             { id: 'alimentacao', nome: 'Alimentação' },
             { id: 'agua', nome: 'Água' },
             { id: 'peso', nome: 'Peso' },
             { id: 'higiene', nome: 'Higiene' }
-              ].filter(opcao => categoriaPermitida(pet.especie, opcao.id)).map(opcao => {
+        ].filter(opcao => categoriaPermitida(pet.especie, opcao.id)).map(opcao => {
 
             const ativa = modo === opcao.id;
-            const dePeso = opcao.id === 'peso';
 
             return (
-              <Pressable
-                key={opcao.id}
-                onPress={() => setModo(opcao.id)}
-                accessibilityRole="button"
-                style={[
-                    styles.seletorOpcao,
-                    {
+                <Pressable
+                    key={opcao.id}
+                    onPress={() => setModo(opcao.id)}
+                    accessibilityRole="button"
+                    style={{
                         flex: 1,
-                        height: 36,
-                        paddingHorizontal: 0,
-                        borderRadius: 18,
-                    },
-                    ativa && (dePeso ? styles.seletorOpcaoPeso : styles.seletorOpcaoAlimentacao)
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.seletorTexto,
-                    ativa && (dePeso ? styles.seletorTextoPeso : styles.seletorTextoAlimentacao)
-                  ]}
+                        alignItems: 'center',
+                        paddingBottom: 6,
+                        borderBottomWidth: 3,
+                        borderBottomColor: ativa ? cores.laranja : 'transparent'
+                    }}
                 >
-                  {opcao.nome}
-                </Text>
-              </Pressable>
+                    <Text style={[
+                        styles.seletorTexto,
+                        {
+                            color: escuro
+                                ? cores.laranjaClaro
+                                : ativa
+                                    ? cores.marrom
+                                    : cores.marromClaro
+                        }
+                    ]}>
+                        {opcao.nome}
+                    </Text>
+                </Pressable>
             );
-          })}
-        </View>
-
-      </View>
+        })}
+    </View>
 
       {modo === 'higiene' ? (
     <CalendarioHigiene
@@ -336,8 +327,11 @@ if (modo === 'alimentacao' || modo === 'agua') {
     />
 ) : (
 
-      <View style={[styles.capsulas, escuro && styles.capsulasEscuro]}>
-
+      <View style={{
+          paddingTop: 14,
+          paddingBottom: 8
+      }}>
+        
         {temDados ? (
         <View style={styles.capsulasLinha}>
 
@@ -404,7 +398,7 @@ if (modo === 'alimentacao' || modo === 'agua') {
 
       </View>
   )}
-    </>
+  </View>
   );
 }
 
@@ -427,6 +421,13 @@ export default function PainelHome({
   const [horasTexto, setHorasTexto] = useState('');
 
   const [agora, setAgora] = useState(Date.now());
+
+  const [larguraCarrossel, setLarguraCarrossel] = useState(0);
+  const [paginaCarrossel, setPaginaCarrossel] = useState(0);
+  const carrosselRef = useRef(null);
+
+  const [intervaloAgua, setIntervaloAgua] = useState(null);
+  const [escolhendoIntervaloAgua, setEscolhendoIntervaloAgua] = useState(false);
 
   // atualiza o relógio a cada minuto.
   useEffect(() => {
@@ -452,6 +453,8 @@ export default function PainelHome({
 
         setDados(VAZIO);
         setIntervalo(null);
+        setIntervaloAgua(null);
+        setEscolhendoIntervaloAgua(false);
         setHorasTexto('');
         setCarregando(false);
 
@@ -467,13 +470,26 @@ export default function PainelHome({
 
         try {
 
-          const resumo = await carregarResumoPet(db, id);
+          const [resumo, horasAgua] = await Promise.all([
+              carregarResumoPet(db, id),
+              obterIntervaloAgua(db, id)
+          ]);
 
           const horas = resumo.intervalo;
 
           const intervaloSalvo = Number(horas);
 
           if (ativo) {
+
+            const valorAgua = Number(horasAgua);
+
+              setIntervaloAgua(
+                  Number.isInteger(valorAgua) && valorAgua >= 1 && valorAgua <= 24
+                      ? valorAgua
+                      : null
+              );
+
+              setEscolhendoIntervaloAgua(false);
 
             setDados({
 
@@ -875,6 +891,54 @@ export default function PainelHome({
 
   }, [dados, agora, intervalo]);
 
+async function escolherIntervaloAgua(horas) {
+    if (id == null) return;
+
+    try {
+        await salvarIntervaloAgua(db, id, String(horas));
+
+        setIntervaloAgua(horas);
+        setEscolhendoIntervaloAgua(false);
+
+    } catch (erro) {
+        Alert.alert('Erro', 'Não foi possível salvar o intervalo.');
+    }
+}
+
+const reposicaoAgua = useMemo(() => {
+    if (!intervaloAgua) return { estado: 'semIntervalo' };
+
+    const ultimoRegistro = (dados.agua || [])
+        .filter(item => dataRegistro(item.data) && Number(item.valor) > 0)
+        .sort((a, b) => new Date(b.data) - new Date(a.data))[0];
+
+    if (!ultimoRegistro) return { estado: 'semRegistro' };
+
+    const inicio = new Date(ultimoRegistro.data).getTime();
+    const duracao = intervaloAgua * 3600000;
+    const falta = inicio + duracao - agora;
+
+    const minutos = Math.max(0, Math.ceil(falta / 60000));
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+
+    const tempo = h && m
+        ? `${h}h ${m}min`
+        : h
+            ? `${h}h`
+            : `${m}min`;
+
+    return {
+        estado: falta <= 0 ? 'passou' : 'contando',
+        tempo,
+        fracao: Math.min(1, Math.max(0, (agora - inicio) / duracao)),
+        ultima: quando(new Date(inicio), agora),
+        prevista: quando(new Date(inicio + duracao), agora),
+    };
+}, [dados.agua, agora, intervaloAgua]);
+
+const definirIntervaloAgua = !intervaloAgua || escolhendoIntervaloAgua;
+
   const modoRefeicao = !intervalo || escolhendoIntervalo
     ? 'intervalo'
     : refeicao.estado === 'contando' && !refeicao.perto
@@ -909,6 +973,35 @@ export default function PainelHome({
       textoBotao: cores.marrom,
     };
 
+
+const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
+    ? {
+        fundo: cores.laranja,
+        texto: cores.marrom,
+        suave: 'rgba(51, 39, 22, 0.78)',
+        rotulo: cores.marrom,
+        anel: 'rgba(255, 234, 200, 0.28)',
+        bola: cores.laranjaClaro,
+        trilho: 'rgba(51, 39, 22, 0.16)',
+        barra: cores.marrom,
+        chip: 'rgba(255, 253, 248, 0.38)',
+        botao: cores.marrom,
+        textoBotao: cores.laranjaClaro,
+    }
+    : {
+        fundo: cores.marrom,
+        texto: cores.laranjaClaro,
+        suave: 'rgba(255, 234, 200, 0.72)',
+        rotulo: '#D18B5F',
+        anel: 'rgba(250, 159, 42, 0.13)',
+        bola: cores.laranja,
+        trilho: 'rgba(255, 234, 200, 0.16)',
+        barra: cores.laranja,
+        chip: 'rgba(255, 234, 200, 0.13)',
+        botao: cores.laranja,
+        textoBotao: cores.marrom,
+    };
+
   const nomePet = pet?.nome || 'Seu pet';
 
   const primeiroNomePet = nomePet.trim().split(' ')[0];
@@ -919,11 +1012,7 @@ export default function PainelHome({
       ? `Hora de comer, ${nomePet}!`
       : `${nomePet} come em ${refeicao.tempo}`;
 
-  const iconeRefeicao = modoRefeicao !== 'longe'
-    ? 'restaurant-outline'
-    : refeicao.deDia
-      ? 'sunny-outline'
-      : 'moon-outline';
+  const iconeRefeicao = 'restaurant-outline'; 
 
   const pesagens = calculos.pesoHistorico;
 
@@ -993,7 +1082,73 @@ export default function PainelHome({
         </Text>
       </View>
 
+      {categoriaPermitida(pet.especie, 'agua') && (
+        <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 10
+        }}>
+            {[0, 1].map(indice => (
+                <React.Fragment key={indice}>
+                    {indice === 1 && (
+                        <Text style={{
+                            fontFamily: fontes.regular,
+                            fontSize: 14,
+                            color: cores.marromClaro
+                        }}>
+                            {paginaCarrossel + 1} de 2
+                        </Text>
+                    )}
+
+                    <Pressable
+                        disabled={paginaCarrossel === indice}
+                        accessibilityRole="button"
+                        accessibilityLabel={indice === 0 ? 'Ver alimentação' : 'Ver água'}
+                        onPress={() => {
+                            carrosselRef.current?.scrollTo({
+                                x: indice * larguraCarrossel,
+                                animated: true
+                            });
+
+                            setPaginaCarrossel(indice);
+                        }}
+                        style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: cores.creme,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: paginaCarrossel === indice ? 0.35 : 1
+                        }}
+                    >
+                        <Ionicons
+                            name={indice === 0 ? 'chevron-back' : 'chevron-forward'}
+                            size={20}
+                            color={cores.marrom}
+                        />
+                    </Pressable>
+                </React.Fragment>
+            ))}
+        </View>
+    )}
+
       {/* HOJE: PRÓXIMA REFEIÇÃO */}
+
+      <View onLayout={event => setLarguraCarrossel(event.nativeEvent.layout.width)}>
+          {larguraCarrossel > 0 && (
+              <ScrollView
+                  ref={carrosselRef}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={event => {
+                      setPaginaCarrossel(Math.round(event.nativeEvent.contentOffset.x / larguraCarrossel));
+                  }}
+              >
+                  <View style={{ width: larguraCarrossel }}>
+
       <View style={[styles.refeicao, { backgroundColor: paleta.fundo }]}>
 
         <View style={[styles.refeicaoAnel, { backgroundColor: paleta.anel }]} />
@@ -1143,70 +1298,154 @@ export default function PainelHome({
           </>
         )}
 
+          </View>
+
+                      </View>
+
+  {categoriaPermitida(pet.especie, 'agua') && (
+      <View style={{ width: larguraCarrossel }}>
+          <View style={[styles.refeicao, {
+              backgroundColor: paletaAgua.fundo
+          }]}>
+
+              <View style={[styles.refeicaoAnel, {
+                  backgroundColor: paletaAgua.anel
+              }]} />
+
+              <View style={[styles.refeicaoBola, {
+                  backgroundColor: paletaAgua.bola
+              }]}>
+                  <Ionicons name="water-outline" size={35} color={cores.marrom} />
+              </View>
+
+              <View style={styles.refeicaoTextos}>
+
+                  <Text style={[styles.refeicaoRotulo, {
+                      color: paletaAgua.rotulo
+                  }]}>
+                      PRÓXIMA REPOSIÇÃO
+                  </Text>
+
+                  {definirIntervaloAgua ? (
+                      <Text style={[styles.refeicaoFrase, { color: paletaAgua.texto }]}>
+                          De quanto em quanto tempo?
+                      </Text>
+                  ) : reposicaoAgua.estado === 'contando' ? (
+                      <Text style={[styles.refeicaoTempo, { color: paletaAgua.texto }]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                      >
+                          <Text style={[styles.refeicaoEm, { color: paletaAgua.suave }]}>em </Text>
+                          {reposicaoAgua.tempo}
+                      </Text>
+                  ) : (
+                      <Text style={[styles.refeicaoFrase, { color: paletaAgua.texto }]}>
+                          {reposicaoAgua.estado === 'semRegistro'
+                              ? 'Registre a primeira reposição'
+                              : 'Hora de repor a água!'}
+                      </Text>
+                  )}
+
+              </View>
+
+              {definirIntervaloAgua ? (
+                  <View style={styles.opcoesIntervalo}>
+                      {OPCOES_INTERVALO.map(horas => (
+                          <Pressable
+                              key={horas}
+                              onPress={() => escolherIntervaloAgua(horas)}
+                              style={[styles.opcaoIntervalo, {
+                                  backgroundColor: intervaloAgua === horas
+                                      ? cores.laranja
+                                      : paletaAgua.chip
+                              }]}
+                          >
+                              <Text style={[styles.textoOpcaoIntervalo, {
+                                  color: intervaloAgua === horas
+                                      ? cores.marrom
+                                      : paletaAgua.texto
+                              }]}>
+                                  {horas}h
+                              </Text>
+                          </Pressable>
+                      ))}
+                  </View>
+              ) : (
+                  <>
+                      {reposicaoAgua.prevista && (
+                          <>
+                              <View style={[styles.barraFundo, {
+                                  backgroundColor: paletaAgua.trilho
+                              }]}>
+                                  <View style={[styles.barraCheia, {
+                                      backgroundColor: paletaAgua.barra,
+                                      width: `${Math.round(reposicaoAgua.fracao * 100)}%`
+                                  }]} />
+                              </View>
+
+                              <View style={styles.barraPontas}>
+                                  <Text style={[styles.refeicaoLegenda, {
+                                      color: paletaAgua.suave
+                                  }]}>
+                                      reposta {reposicaoAgua.ultima}
+                                  </Text>
+
+                                  <Text style={[styles.refeicaoLegenda, {
+                                      color: paletaAgua.suave
+                                  }]}>
+                                      prevista {reposicaoAgua.prevista}
+                                  </Text>
+                              </View>
+                          </>
+                      )}
+
+                      <View style={styles.refeicaoAcoes}>
+                          <Pressable
+                              onPress={() => setEscolhendoIntervaloAgua(true)}
+                              style={[styles.refeicaoChip, {
+                                  backgroundColor: paletaAgua.bola
+                              }]}
+                          >
+                              <Text style={[styles.refeicaoChipTexto, { color: cores.marrom }]}>
+                                  a cada {intervaloAgua}h
+                              </Text>
+
+                              <Ionicons name="pencil" size={13} color={cores.marrom} />
+                          </Pressable>
+
+                          <Pressable
+                              onPress={onAbrirCuidados}
+                              style={[styles.refeicaoBotao, {
+                                  backgroundColor: paletaAgua.botao
+                              }]}
+                          >
+                              <Ionicons name="add" size={18} color={paletaAgua.textoBotao} />
+
+                              <Text style={[styles.refeicaoBotaoTexto, {
+                                  color: paletaAgua.textoBotao
+                              }]}>
+                                  Repor água
+                              </Text>
+                          </Pressable>
+                      </View>
+                  </>
+              )}
+
+          </View>
       </View>
+  )}
 
-      <View style={styles.duasColunas}>
+          </ScrollView>
+      )}
 
-        {/* Alimentação */}
-        <Pressable
-          onPress={onAbrirCuidados}
-          accessibilityRole="button"
-          accessibilityLabel="Ver registros de alimentação"
-          style={({ pressed }) => [
-            styles.resumoBloco,
-            pressed && styles.pressionado
-          ]}
-        >
-          <View style={styles.resumoBola}>
-            <Ionicons name="restaurant-outline" size={20} color={cores.marrom} />
-          </View>
+</View>
 
-          <View style={styles.resumoTextos}>
-            {calculos.totalHoje > 0 ? (
-              <Text style={styles.resumoFrase} numberOfLines={3}>
-                {primeiroNomePet} comeu{' '}
-                <Text style={styles.resumoFraseDestaque}>
-                  {numeroBR(calculos.totalHoje)} g
-                </Text>
-                {' '}hoje!
-              </Text>
-            ) : (
-              <Text style={styles.resumoValor}>—</Text>
-            )}
-          </View>
-        </Pressable>
-
-        {/* Peso */}
-        {categoriaPermitida(pet.especie, 'peso') && (
-        <Pressable
-          onPress={onAbrirCuidados}
-          accessibilityRole="button"
-          accessibilityLabel="Ver registros de peso"
-          style={({ pressed }) => [
-            styles.resumoBloco,
-            pressed && styles.pressionado
-          ]}
-
-        >
-          <View style={[styles.resumoBola, styles.resumoBolaEscura]}>
-            <Ionicons name="scale-outline" size={20} color={cores.laranjaClaro} />
-          </View>
-
-          <View style={styles.resumoTextos}>
-            <Text style={styles.resumoValor} numberOfLines={1}>
-              {calculos.ultimoPeso
-                ? `${numeroBR(calculos.ultimoPeso.valor)} kg`
-                : '—'}
-            </Text>
-              {textoPeso ? (
-              <Text style={styles.resumoLegenda} numberOfLines={1}>
-                {textoPeso}
-            </Text>
-            ) : null}
-          </View>
-        </Pressable>
-        )}
-      </View>
+<View style={{
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: cores.bordaCreme,
+    marginTop: 4,
+    marginBottom: 16
+}} />
 
       {/* GRÁFICOS */}
       <Grafico

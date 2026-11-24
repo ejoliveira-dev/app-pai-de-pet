@@ -328,7 +328,7 @@ export const style = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: cores.creme,
-        borderRadius: 27,
+        borderRadius: 27          ,
         borderWidth: 1,
         borderStyle: "dashed",
         borderColor: cores.laranja,
