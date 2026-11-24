@@ -773,19 +773,17 @@ export default function Comunidade() {
                 ]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* feed */}
-                <Pressable
-                    onPress={abrirPublicacao}
-                    style={({ pressed }) => [styles.compor, pressed && styles.pressionado]}
-                >
-                    <AvatarPet foto={pet?.foto_perfil} tamanho={40} />
-                    <Text style={styles.comporTexto} numberOfLines={1}>
-                        O que {primeiroNome} está aprontando?
-                    </Text>
-                    <View style={styles.comporFoto}>
-                        <Ionicons name="image-outline" size={18} color={cores.marrom} />
-                    </View>
-                </Pressable>
+             {/* feed */}
+             <Pressable
+                onPress={abrirPublicacao}
+                style={({ pressed }) => [styles.compor, pressed && styles.pressionado]}
+            >
+                <Text style={styles.comporTexto} numberOfLines={1}>
+                    O que {primeiroNome} está aprontando?
+                </Text>
+
+                <Ionicons name="image-outline" size={24} color="#918B82" />
+            </Pressable>
 
                 {/* abas de Publicações e Meus posts */}
                 <View style={styles.abasComunidade}>
@@ -1413,31 +1411,23 @@ const styles = StyleSheet.create({
     },
 
     // barra "O que ... está aprontando?"
+
     compor: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        backgroundColor: cores.branco,
-        borderRadius: 25,
-        padding: 10,
-        marginBottom: 22,
-        ...sombra,
+        backgroundColor: '#F1EEE9',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 10,
     },
 
     comporTexto: {
         flex: 1,
         fontFamily: fontes.regular,
         fontSize: 16,
-        color: cores.marromClaro,
-    },
-
-    comporFoto: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: cores.laranja,
-        alignItems: 'center',
-        justifyContent: 'center',
+        color: '#918B82',
     },
 
     // anel laranja em volta do avatar do post
@@ -1532,15 +1522,15 @@ const styles = StyleSheet.create({
 
     abasComunidade: {
         flexDirection: "row",
-        marginBottom: 18,
+        marginBottom: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#E8DED1",
-
+        borderBottomColor: "#E5E1DC",
     },
+
     botaoAba: {
         flex: 1,
         alignItems: "center",
-        paddingVertical: 12,
+        paddingVertical: 8,
     },
 
     abaSelecionada: {
@@ -1551,12 +1541,12 @@ const styles = StyleSheet.create({
     textoAba: {
         fontFamily: fontes.regular,
         fontSize: 16,
-        color: cores.marromClaro,
+        color: "#A6A098",
     },
 
     textoAbaSelecionada: {
         fontFamily: fontes.negrito,
-        color: cores.marrom,
+        color: "#332716",
     },
 
     // Estilos da área de comentários (antes definidos diretamente no JSX)

@@ -100,20 +100,12 @@ export default function Notificacoes({ onAtualizarContador }) {
             <ScrollView
                 contentContainerStyle={[
                     styles.conteudo,
-                    { paddingTop: insets.top + 20 }
+                    { paddingTop: insets.top + 40 }
                 ]}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.cabecalho}>
                     <Text style={styles.titulo}>Notificações</Text>
-
-                    {naoLidas > 0 && (
-                        <View style={styles.contador}>
-                            <Text style={styles.textoContador}>
-                                {naoLidas}
-                            </Text>
-                        </View>
-                    )}
                 </View>
 
                 {naoLidas > 0 && (
@@ -221,7 +213,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 12,
-        marginBottom: 20,
+      
     },
 
     titulo: {
@@ -238,12 +230,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 6,
         alignItems: "center",
         justifyContent: "center",
-    },
-
-    textoContador: {
-        fontFamily: "Ruwudu-Bold",
-        fontSize: 15,
-        color: COR.marrom,
     },
 
     botaoMarcar: {

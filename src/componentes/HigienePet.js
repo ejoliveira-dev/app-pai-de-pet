@@ -104,6 +104,7 @@ export default function HigienePet({ pet }) {
 
     const [carregando, setCarregando] = useState(true);
     const [salvando, setSalvando] = useState(false);
+    const [historicoAberto, setHistoricoAberto] = useState(false);
 
     const [repetir, setRepetir] = useState(false);
     const [intervalo, setIntervalo] = useState("");
@@ -582,15 +583,30 @@ export default function HigienePet({ pet }) {
                     </Pressable>
                 )}
 
-            </View>
+            <Pressable
+                style={styles.botaoHistorico}
+                onPress={() => setHistoricoAberto(anterior => !anterior)}
+            >
+                <Ionicons name="time-outline" size={20} color="#9A8A75" />
 
-            {registros.length === 0 && (
+                <Text style={styles.textoHistorico}>
+                    Histórico ({registros.length})
+                </Text>
+
+                <Ionicons
+                    name={historicoAberto ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color="#9A8A75"
+                />
+            </Pressable>
+
+            {historicoAberto && registros.length === 0 && (
                 <Text style={styles.vazio}>
                     Nenhum cuidado de higiene registrado.
                 </Text>
             )}
 
-            {registros.map(item => {
+            {historicoAberto && registros.map(item => {
 
                 const dataCuidado = converterData(item.data);
 
@@ -684,9 +700,10 @@ export default function HigienePet({ pet }) {
                             />
                         </Pressable>
 
-                    </View>
-                );
-            })}
+                         </View>
+                     );
+                 })}
+            </View>
         </>
     );
 }
@@ -838,14 +855,12 @@ const styles = StyleSheet.create({
     },
 
     item: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        backgroundColor: cores.branco,
-        borderRadius: 22,
-        padding: 12,
-        marginBottom: 10,
-        ...sombra,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#F0EBE3',
     },
 
     bola: {
@@ -913,4 +928,21 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
 
+    botaoHistorico: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        borderTopWidth: 1,
+        borderTopColor: '#E9E1D6',
+        paddingTop: 12,
+        gap: 8,
+        marginTop: 14,
+    },
+
+    textoHistorico: {
+        flex: 1,
+        fontFamily: fontes.regular,
+        fontSize: 15,
+        color: '#9A8A75',
+    },
 });

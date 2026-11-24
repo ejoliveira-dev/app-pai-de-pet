@@ -88,7 +88,7 @@ export default function PerfilPrivado({ navigation }) {
                         accessibilityLabel="Editar foto e dados do pet"
                         style={({ pressed }) => [styles.fotoTopo, pressed && styles.pressionado]}
                     >
-                        <AvatarPet foto={pet.foto_perfil} tamanho={100} selecionado />
+                        <AvatarPet foto={pet.foto_perfil} tamanho={100}  />
 
                         <View style={styles.badgeFoto}>
                             <Ionicons name="camera" size={14} color={cores.fundo} />
@@ -330,10 +330,10 @@ const styles = StyleSheet.create({
     avatarTopo: {
         width: 95,
         height: 95,
-        borderRadius: 44,
+        borderRadius: 47.5,
         backgroundColor: cores.marrom,
         borderWidth: 4,
-        borderColor: cores.fundo,
+        borderColor: '#201604',
         justifyContent: 'center',
         alignItems: 'center',
         ...sombra,

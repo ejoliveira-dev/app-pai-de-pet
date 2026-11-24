@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import Botao from "./Botao";
 import AvatarPet from "./AvatarPet";
+import DecoracaoPerfil from "./DecoracaoPerfil/DecoracaoPerfil";
 
 // Paleta do Tutus usada neste painel
 const COR = {
@@ -26,7 +27,7 @@ const COR = {
 
 // Altura do cartão fechado e distância até o topo.
 // A Comunidade usa estes valores para o Feed começar logo abaixo do cartão.
-export const ALTURA_FECHADA = 125;
+export const ALTURA_FECHADA = 185;
 export const MARGEM_TOPO = 0;
 
 function calcularIdadePet(pet) {
@@ -104,7 +105,6 @@ export default function AbaPerfilPublico({
     // guarda a última bio salva, para o botão "Cancelar" desfazer a edição
     const bioSalva = useRef("");
 
-
     const [tutorPublico, setTutorPublico] = useState(null);
     const [modalTutor, setModalTutor] = useState(false);
     const [fotoAberta, setFotoAberta] = useState(null);
@@ -120,7 +120,7 @@ export default function AbaPerfilPublico({
                     if (ativo) {
                         setTutorPublico(
                             tutor?.exibirNoPerfilPublico &&
-                                tutor?.nome?.trim()
+                            tutor?.nome?.trim()
                                 ? tutor
                                 : null
                         );
@@ -139,7 +139,6 @@ export default function AbaPerfilPublico({
             };
         }, [db])
     );
-
 
     useEffect(() => {
         let ativo = true;
@@ -245,7 +244,7 @@ export default function AbaPerfilPublico({
         });
     }
 
-       useEffect(() => {
+    useEffect(() => {
         if (pedidoAbrir > 0) {
             abrirPerfil();
         }
@@ -276,8 +275,7 @@ export default function AbaPerfilPublico({
         inputRange: [0, 1],
         outputRange: [ALTURA_FECHADA + insets.top, alturaExpandida + insets.top],
     });
-
-    return (
+        return (
         <View
             style={styles.containerAba}
             pointerEvents="box-none"
@@ -323,13 +321,10 @@ export default function AbaPerfilPublico({
                     </Pressable>
                 )}
 
-                {/* patinha decorativa no canto */}
-                <View style={[styles.patinha, { top: insets.top + 12 }]} pointerEvents="none">
-                    <Ionicons name="paw" size={75} color={COR.laranja} />
-                </View>
-
                 {/* parte que o usuário toca ou puxa */}
-                <View {...gesto.panHandlers}>
+                <View {...gesto.panHandlers} style={styles.areaCabecalho}>
+
+                    <DecoracaoPerfil especie={pet?.especie} />
 
                     <Pressable
                         style={styles.cabecalho}
@@ -343,18 +338,11 @@ export default function AbaPerfilPublico({
                     >
                         <AvatarPet
                             foto={pet?.foto_perfil}
-                            tamanho={80}
+                            tamanho={70}
                             style={styles.fotoPet}
                         />
 
                         <View style={styles.infoPet}>
-                            <Text
-                                style={styles.rotulo}
-                                numberOfLines={1}
-                                maxFontSizeMultiplier={1.15}
-                            >
-                                PERFIL PÚBLICO
-                            </Text>
 
                             <Text
                                 style={styles.nomePet}
@@ -364,17 +352,20 @@ export default function AbaPerfilPublico({
                                 {pet?.nome || (carregando ? "Carregando..." : "Nenhum pet selecionado")}
                             </Text>
 
-                            <Text
-                                style={styles.dadosPet}
-                                numberOfLines={1}
-                                maxFontSizeMultiplier={1.15}
-                            >
-                                {pet
-                                    ? pet.especie
-                                        ? `${pet.especie} • ${calcularIdadePet(pet)}`
-                                        : "Pet da comunidade"
-                                    : "Escolha um pet na lista"}
-                            </Text>
+                            <View style={styles.capsulaDados}>
+                                <Text
+                                    style={styles.dadosPet}
+                                    numberOfLines={1}
+                                    maxFontSizeMultiplier={1.15}
+                                >
+                                    {pet
+                                        ? pet.especie
+                                            ? `${pet.especie} • ${calcularIdadePet(pet)}`
+                                            : "Pet da comunidade"
+                                        : "Escolha um pet na lista"}
+                                </Text>
+                            </View>
+
                         </View>
 
                     </Pressable>
@@ -476,7 +467,7 @@ export default function AbaPerfilPublico({
                                 </Text>
                             ) : perfilExterno ? (
                                 <Text style={styles.biografia}>
-                                   ...
+                                    ...
                                 </Text>
                             ) : (
                                 <Pressable
@@ -568,8 +559,7 @@ export default function AbaPerfilPublico({
                 </View>
 
             </Animated.View>
-
-            <Modal
+             <Modal
                 visible={modalTutor && !!tutorPublico}
                 transparent
                 animationType="fade"
@@ -639,8 +629,7 @@ export default function AbaPerfilPublico({
 
         </View>
     );
-}
-
+}           
 const styles = StyleSheet.create({
 
     containerAba: {
@@ -681,20 +670,21 @@ const styles = StyleSheet.create({
         zIndex: 12,
     },
 
-    patinha: {
-        position: "absolute",
-        right: 20,
-        opacity: 0.18,
-        transform: [{ rotate: "0deg" }],
+    areaCabecalho: {
+        position: "relative",
+        height: ALTURA_FECHADA - 20,
+        flexShrink: 0,
     },
 
     cabecalho: {
-        flexDirection: "row",
+        flex: 1,
+        flexDirection: "column",
         alignItems: "center",
-        gap: 12,
-        paddingHorizontal: 14,
-        paddingTop: 14,
-        paddingBottom: 6,
+        gap: 4,
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 4,
+        zIndex: 2,
     },
 
     fotoPet: {
@@ -704,36 +694,47 @@ const styles = StyleSheet.create({
     },
 
     infoPet: {
-        flex: 1,
-        minWidth: 0,
+        alignItems: "center",
+        width: "100%",
     },
 
     rotulo: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 12,
-        lineHeight: 16,
+        fontSize: 10,
+        lineHeight: 12,
         letterSpacing: 1.5,
         color: COR.terracota,
-        paddingBottom: 10,
     },
 
     nomePet: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 26,
-        lineHeight: 30,
+        fontSize: 30,
+        lineHeight: 36,
         color: COR.creme,
-        paddingBottom: 5,
+        textAlign: "center",
+    },
+
+    capsulaDados: {
+        backgroundColor: "rgba(250, 159, 42, 0.15)",
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 2,
+        maxWidth: "100%",
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     dadosPet: {
         fontFamily: "Ruwudu-Regular",
-        fontSize: 18,
-        lineHeight: 23,
-        color: 'rgba(255, 234, 200, 0.72)',
+        fontSize: 14,
+        lineHeight: 22,
+        color: "#E8C898",
+        textAlign: "center",
     },
 
     indicadorContainer: {
         height: 20,
+        flexShrink: 0,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -764,73 +765,64 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         gap: 32,
         marginBottom: 14,
-        paddingHorizontal: 4,
     },
 
     numero: {
         flex: 1,
         alignItems: "center",
-        backgroundColor: '#FFFFFF',
-        elevation: 3,
-        borderRadius: 18,
-        paddingVertical: 5,
+        justifyContent: "center",
     },
 
     numeroValor: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 20,
-        paddingTop: 10,
-        lineHeight: 26,
+        fontSize: 24,
+        lineHeight: 30,
         color: COR.marrom,
     },
 
     numeroLegenda: {
         fontFamily: "Ruwudu-Regular",
-        fontSize: 14,
-        lineHeight: 18,
+        fontSize: 15,
         color: COR.oliva,
+        textAlign: "center",
     },
 
     linhaTitulo: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "flex-start",
-        gap: 8,
-        marginBottom: 4,
+        justifyContent: "space-between",
+        marginBottom: 8,
     },
 
     tituloSecao: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 20,
+        fontSize: 21,
         color: COR.marrom,
     },
 
     botaoLapis: {
-        padding: 0,
-        transform: [{ translateY: -2}],
+        padding: 4,
     },
 
     biografia: {
         fontFamily: "Ruwudu-Regular",
         fontSize: 16,
-        lineHeight: 24,
-        color: COR.oliva,
+        lineHeight: 22,
+        color: COR.marrom,
     },
 
     campoBio: {
-        borderWidth: 1.5,
-        borderColor: COR.laranja,
-        backgroundColor: "#FFFFFF",
-        borderRadius: 15,
-        padding: 12,
-        minHeight: 90,
+        minHeight: 80,
+        borderWidth: 1,
+        borderColor: COR.terracota,
+        borderRadius: 14,
+        padding: 10,
         textAlignVertical: "top",
-        color: COR.marrom,
     },
 
     contador: {
         fontFamily: "Ruwudu-Regular",
-        fontSize: 13,
+        fontSize: 12,
         color: COR.oliva,
         textAlign: "right",
         marginTop: 4,
@@ -840,37 +832,26 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-end",
         gap: 8,
-        marginTop: 6,
+        marginTop: 8,
     },
 
     botaoPequeno: {
-        height: 34,
-        paddingHorizontal: 18,
-        borderRadius: 17,
         backgroundColor: COR.marrom,
-        alignItems: "center",
-        justifyContent: "center",
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 6,
     },
 
     botaoPequenoContorno: {
         backgroundColor: "transparent",
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor: COR.marrom,
     },
 
     textoBotaoPequeno: {
         fontFamily: "Ruwudu-Bold",
-        fontSize: 15,
-        lineHeight: 42,
+        fontSize: 14,
         color: COR.marrom,
-    },
-
-    botaoMetade: {
-        flex: 1,
-        minWidth: 0,
-        height: 46,
-        marginTop: 0,
-        paddingHorizontal: 10,
     },
 
     caixaVazia: {
@@ -878,40 +859,32 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderStyle: "dashed",
         borderColor: COR.terracota,
-        borderRadius: 18,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-    },
-
-    caixaFotos: {
-        flexDirection: "column",
-        borderWidth: 0,
-        paddingVertical: 22,
+        borderRadius: 14,
+        padding: 14,
     },
 
     textoCaixaVazia: {
         fontFamily: "Ruwudu-Regular",
-        fontSize: 16,
+        fontSize: 15,
         color: COR.oliva,
         textAlign: "center",
     },
 
     botaoTutorPublico: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        alignSelf: 'flex-start',
+        flexDirection: "row",
+        alignItems: "center",
         gap: 8,
-        marginTop: 12,
+        marginTop: 14,
     },
 
     bolinhaTutor: {
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: COR.marrom,
+        backgroundColor: COR.creme,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -919,9 +892,8 @@ const styles = StyleSheet.create({
     textoTutorPublico: {
         fontFamily: "Ruwudu-Regular",
         fontSize: 15,
-        lineHeight: 28,
-        color: COR.oliva,
-        transform: [{ translateY: 2 }],
+        color: COR.marrom,
+        flex: 1,
     },
 
     nomeTutorDestaque: {
@@ -929,24 +901,11 @@ const styles = StyleSheet.create({
         color: COR.marrom,
     },
 
-    fotosContainer: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 4,
-        marginTop: 8,
-    },
-
-    fotoPublicacao: {
-        borderRadius: 3,
-        backgroundColor: 'rgba(51, 39, 22, 0.06)',
-    },
-
     divisorMidia: {
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
-        marginTop: 20,
-        marginBottom: 12,
+        marginVertical: 18,
     },
 
     linhaTracejada: {
@@ -955,41 +914,56 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderStyle: "dashed",
         borderColor: COR.terracota,
-        borderRadius: 1,
-        opacity: 0.6,
+        opacity: 0.5,
+    },
+
+    caixaFotos: {
+        flexDirection: "column",
+        minHeight: 100,
+    },
+
+    fotosContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 4,
+    },
+
+    fotoPublicacao: {
+        borderRadius: 8,
+        backgroundColor: COR.creme,
     },
 
     fundoModalTutor: {
         flex: 1,
-        backgroundColor: 'rgba(30, 23, 15, 0.55)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 25,
+        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
     },
 
     cartaoTutorPublico: {
-        backgroundColor: COR.fundo,
-        borderRadius: 28,
-        padding: 28,
-        alignItems: 'center',
-        width: '100%',
+        width: "100%",
         maxWidth: 340,
+        backgroundColor: COR.fundo,
+        borderRadius: 24,
+        padding: 24,
+        alignItems: "center",
     },
 
     avatarTutorPublico: {
-        width: 84,
-        height: 84,
-        borderRadius: 42,
-        backgroundColor: COR.marrom,
+        width: 78,
+        height: 78,
+        borderRadius: 39,
+        backgroundColor: COR.creme,
         alignItems: "center",
         justifyContent: "center",
+        marginBottom: 10,
     },
 
     nomeTutorPublico: {
         fontFamily: "Ruwudu-Bold",
         fontSize: 24,
         color: COR.marrom,
-        marginTop: 12,
         textAlign: "center",
     },
 
@@ -997,17 +971,17 @@ const styles = StyleSheet.create({
         fontFamily: "Ruwudu-Regular",
         fontSize: 16,
         color: COR.oliva,
-        marginTop: 2,
+        textAlign: "center",
+        marginBottom: 18,
     },
 
     fecharTutor: {
-        marginTop: 20,
+        width: "100%",
     },
-
 
     fundoFoto: {
         flex: 1,
-        backgroundColor: "rgba(20, 15, 10, 0.94)",
+        backgroundColor: "rgba(0, 0, 0, 0.95)",
         alignItems: "center",
         justifyContent: "center",
         padding: 16,
@@ -1016,27 +990,20 @@ const styles = StyleSheet.create({
     fotoGrande: {
         width: "100%",
         height: "75%",
-        borderRadius: 20,
     },
 
     legendaFoto: {
         fontFamily: "Ruwudu-Regular",
         fontSize: 16,
-        lineHeight: 23,
-        color: COR.creme,
+        color: COR.fundo,
         textAlign: "center",
-        marginTop: 14,
+        marginTop: 12,
     },
 
     fecharFoto: {
         position: "absolute",
         right: 16,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "rgba(255, 253, 248, 0.15)",
-        alignItems: "center",
-        justifyContent: "center",
+        padding: 8,
     },
 
     voltarPet: {

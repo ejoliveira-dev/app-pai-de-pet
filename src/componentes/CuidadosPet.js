@@ -58,6 +58,7 @@ export default function CuidadosPet({ tipo }) {
   const [editando, setEditando] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [historicoAberto, setHistoricoAberto] = useState(false);
 
   function limparFormulario() {
     setNome('');
@@ -309,9 +310,28 @@ export default function CuidadosPet({ tipo }) {
           </Pressable>
         )}
 
-      </View>
+      <Pressable
+          style={styles.botaoHistorico}
+          onPress={() => setHistoricoAberto(anterior => !anterior)}
+      >
+          <Ionicons name="time-outline" size={20} color="#9A8A75" />
 
-      {registros.map(item => {
+          <Text style={styles.textoHistorico}>
+              Histórico ({registros.length})
+          </Text>
+
+          <Ionicons
+              name={historicoAberto ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color="#9A8A75"
+          />
+      </Pressable>
+
+      {historicoAberto && registros.length === 0 && (
+          <Text style={styles.vazio}>Nenhum registro encontrado.</Text>
+      )}
+
+      {historicoAberto && registros.map(item => {
 
         const feito = item.concluido;
 
@@ -379,12 +399,13 @@ export default function CuidadosPet({ tipo }) {
               <Ionicons name="trash-outline" size={19} color={cores.erro} />
             </Pressable>
 
-          </View>
-        );
-      })}
-    </>
-  );
-}
+            </View>
+          );
+        })}
+        </View>
+      </>
+    );
+  }
 
 const styles = StyleSheet.create({
     tituloSecao: {
@@ -451,13 +472,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: cores.branco,
-    borderRadius: 22,
-    paddingVertical: 11,
-    paddingLeft: 11,
-    paddingRight: 8,
-    marginBottom: 10,
-    ...sombra,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0EBE3',
   },
 
   bola: {
@@ -553,4 +570,23 @@ const styles = StyleSheet.create({
   statusAtivo: {
     color: cores.laranja,
   },
+
+  botaoHistorico: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    borderTopWidth: 1,
+    borderTopColor: '#E9E1D6',
+    paddingTop: 12,
+    gap: 8,
+    marginTop: 14,
+},
+
+textoHistorico: {
+    flex: 1,
+    fontFamily: fontes.regular,
+    fontSize: 15,
+    color: '#9A8A75',
+},
+
 });
