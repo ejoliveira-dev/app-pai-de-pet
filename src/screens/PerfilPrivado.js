@@ -6,6 +6,7 @@ import RegistrosPet from '../componentes/RegistrosPet';
 import VacinasPet from '../componentes/VacinasPet';
 import CuidadosPet from '../componentes/CuidadosPet';
 import HigienePet from '../componentes/HigienePet';
+import AguaPet from '../componentes/AguaPet';
 
 import TelaComTopo from '../componentes/TelaComTopo';
 import Cartao from '../componentes/Cartao';
@@ -18,11 +19,13 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
 import { buscarPet, obterPetSelecionadoId } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
+import { categoriaPermitida } from '../utils/categoriasPet';
 
 export default function PerfilPrivado({ navigation }) {
 
     const CATEGORIAS = [
         { id: 'alimentacao', nome: 'Alimentação', icone: 'bone'},
+        { id: 'agua', nome: 'Água', icone: 'water' },
         { id: 'peso', nome: 'Peso', icone: 'scale-bathroom' },
         { id: 'vacinas', nome: 'Vacinas', icone: 'needle' },
         { id: 'consulta', nome: 'Consultas', icone: 'calendar-outline' },
@@ -52,6 +55,13 @@ export default function PerfilPrivado({ navigation }) {
 
                     if (ativo) {
                         setPet(petEncontrado || null);
+
+                    setCategoria(anterior =>
+                        categoriaPermitida(petEncontrado?.especie, anterior)
+                            ? anterior
+                            : 'alimentacao'
+                    );
+
                     }
 
                 } catch (erro) {
@@ -226,8 +236,7 @@ export default function PerfilPrivado({ navigation }) {
                         style={{ flexGrow: 0 }}
                         contentContainerStyle={styles.menuCategorias}
                     >
-                        {CATEGORIAS.map(item => {
-
+                        {CATEGORIAS.filter(item => categoriaPermitida(pet.especie, item.id)).map(item => {
                             const ativo = categoria === item.id;
 
                             return (
@@ -272,6 +281,9 @@ export default function PerfilPrivado({ navigation }) {
                             key={`${pet.id_pet}-${categoria}`}
                             tipo={categoria}
                         />
+                    )}
+
+                    {categoria === 'agua' && categoriaPermitida(pet.especie, 'agua') && (                        <AguaPet key={pet.id_pet} />
                     )}
 
                     {categoria === 'vacinas' && (

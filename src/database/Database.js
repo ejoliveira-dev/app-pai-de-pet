@@ -155,6 +155,14 @@ export async function salvarIntervaloAlimentacao(db, idPet, horas) {
     await salvarConfig(db, `intervaloAlimentacao:${idPet}`, horas);
 }
 
+export async function obterIntervaloAgua(db, idPet) {
+    return obterConfig(db, `intervaloAgua:${idPet}`);
+}
+
+export async function salvarIntervaloAgua(db, idPet, horas) {
+    await salvarConfig(db, `intervaloAgua:${idPet}`, horas);
+}
+
 // intervalo entre cuidados de higiene de cada pet (em dias)
 
 export async function obterIntervaloHigiene(db, idPet, cuidado) {
@@ -252,8 +260,8 @@ export async function excluirPet(db, idPet) {
     await db.runAsync("DELETE FROM cuidados WHERE id_pet = ?", [id]);
     await db.runAsync("DELETE FROM publicacoes WHERE id_pet = ?", [id]);
     await db.runAsync(
-        "DELETE FROM configuracoes WHERE chave IN (?, ?)",
-        [`intervaloAlimentacao:${id}`, `bioPublica:${id}`]
+        "DELETE FROM configuracoes WHERE chave IN (?, ?, ?)",
+        [`intervaloAlimentacao:${id}`, `bioPublica:${id}`, `intervaloAgua:${id}`]
     );
     await db.runAsync("DELETE FROM pets WHERE id_pet = ?", [id]);
 
@@ -310,7 +318,7 @@ export async function listarRegistros(db, idPet) {
         [String(idPet)]
     );
 
-    const resultado = { alimentacao: [], peso: [] };
+    const resultado = { alimentacao: [], peso: [], agua: [] };
 
     for (const linha of linhas) {
         if (resultado[linha.tipo]) {
@@ -472,6 +480,7 @@ export async function carregarResumoPet(db, idPet) {
     return {
         alimentacao: registros.alimentacao,
         peso: registros.peso,
+        agua: registros.agua,
         vacinas,
         consultas,
         medicamentos,

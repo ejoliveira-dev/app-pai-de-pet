@@ -13,11 +13,13 @@ import Cartao from './Cartao';
 import Botao from './Botao';
 import { cores, fontes, raio, sombra, textos } from '../styles/tema';
 import CalendarioHigiene from './CalendarioHigiene';
+import { categoriaPermitida } from '../utils/categoriasPet';
 
 // Estrutura inicial do painel.
 const VAZIO = {
   alimentacao: [],
   peso: [],
+  agua: [],
   vacinas: [],
   consultas: [],
   medicamentos: []
@@ -163,7 +165,7 @@ const CORES_BARRAS = [
   { fundo: cores.terracota || '#D18B5F', texto: cores.marrom },
   { fundo: cores.marromClaro, texto: cores.fundo }
 ];
-function Grafico({ alimentacao, peso, pet, agora, onAbrirCuidados }) {
+function Grafico({ alimentacao, agua, peso, pet, agora, onAbrirCuidados }) {
 
   const [modo, setModo] = useState('alimentacao');
 
@@ -175,32 +177,35 @@ function Grafico({ alimentacao, peso, pet, agora, onAbrirCuidados }) {
   // colunas do modo escolhido
   let colunas;
 
-  if (modo === 'alimentacao') {
+if (modo === 'alimentacao' || modo === 'agua') {
+
+    const dadosGrafico = modo === 'agua' ? agua : alimentacao;
+    const unidade = modo === 'agua' ? 'ml' : 'g';
 
     const maximo = Math.max(
-      1,
-      ...alimentacao.map(item => item.valor)
+        1,
+        ...dadosGrafico.map(item => item.valor)
     );
 
-    colunas = alimentacao.map((item, indice) => {
+    colunas = dadosGrafico.map((item, indice) => {
 
-      const hoje = indice === alimentacao.length - 1;
+        const hoje = indice === dadosGrafico.length - 1;
 
-      const cor = hoje
-        ? { fundo: cores.laranja, texto: cores.marrom }
-        : CORES_BARRAS[indice % CORES_BARRAS.length];
+        const cor = hoje
+            ? { fundo: cores.laranja, texto: cores.marrom }
+            : CORES_BARRAS[indice % CORES_BARRAS.length];
 
-      return {
-        chave: `alimentacao-${indice}`,
-        rotulo: hoje ? 'hoje' : item.label,
-        texto: `${numeroBR(item.valor)}g`,
-        altura: item.valor > 0
-          ? BARRA_MINIMA + (item.valor / maximo) * (ALTURA_CAPSULA - BARRA_MINIMA)
-          : 0,
-        destaque: hoje,
-        fundo: cor.fundo,
-        corTexto: cor.texto
-      };
+        return {
+            chave: `${modo}-${indice}`,
+            rotulo: hoje ? 'hoje' : item.label,
+            texto: `${numeroBR(item.valor)}${unidade}`,
+            altura: item.valor > 0
+                ? BARRA_MINIMA + (item.valor / maximo) * (ALTURA_CAPSULA - BARRA_MINIMA)
+                : 0,
+            destaque: hoje,
+            fundo: cor.fundo,
+            corTexto: cor.texto
+        };
     });
 
   } else {
@@ -283,9 +288,10 @@ function Grafico({ alimentacao, peso, pet, agora, onAbrirCuidados }) {
 
           {[
             { id: 'alimentacao', nome: 'Alimentação' },
+            { id: 'agua', nome: 'Água' },
             { id: 'peso', nome: 'Peso' },
             { id: 'higiene', nome: 'Higiene' }
-          ].map(opcao => {
+              ].filter(opcao => categoriaPermitida(pet.especie, opcao.id)).map(opcao => {
 
             const ativa = modo === opcao.id;
             const dePeso = opcao.id === 'peso';
@@ -389,8 +395,10 @@ function Grafico({ alimentacao, peso, pet, agora, onAbrirCuidados }) {
         ) : (
           <Text style={[styles.capsulasNota, escuro && styles.capsulasNotaEscuro]}>
             {modo === 'alimentacao'
-              ? 'Sem refeições registradas no momento'
-              : 'Sem pesagens registradas no momento'}
+                ? 'Sem refeições registradas no momento'
+                : modo === 'agua'
+                ? 'Nenhum registro de água oferecida'
+                : 'Sem pesagens registradas no momento'}
           </Text>
         )}
 
@@ -472,6 +480,8 @@ export default function PainelHome({
               alimentacao: resumo.alimentacao,
 
               peso: resumo.peso,
+
+              agua: resumo.agua || [],
 
               vacinas: resumo.vacinas,
 
@@ -648,6 +658,26 @@ export default function PainelHome({
         };
       }
     );
+//grafico de agua.
+  const aguaSemana = Array.from({ length: 7 }, (_, indice) => {
+      const dia = new Date(hoje);
+
+      dia.setDate(hoje.getDate() - 6 + indice);
+
+      const total = (dados.agua || [])
+          .filter(item =>
+              dataRegistro(item.data) &&
+              Number.isFinite(Number(item.valor)) &&
+              Number(item.valor) > 0 &&
+              chaveDia(new Date(item.data)) === chaveDia(dia)
+          )
+          .reduce((soma, item) => soma + Number(item.valor), 0);
+
+      return {
+          label: dia.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''),
+          valor: total
+      };
+  });
 
     // Gráfico dos últimos 5 pesos registrados.
     const pesoHistorico = pesos.slice(-5).map(
@@ -769,6 +799,7 @@ export default function PainelHome({
       ultimoPeso,
       proximaRefeicao,
       alimentacaoSemana,
+      aguaSemana,
       pesoHistorico,
       proximos,
       atrasados,
@@ -1146,6 +1177,7 @@ export default function PainelHome({
         </Pressable>
 
         {/* Peso */}
+        {categoriaPermitida(pet.especie, 'peso') && (
         <Pressable
           onPress={onAbrirCuidados}
           accessibilityRole="button"
@@ -1154,6 +1186,7 @@ export default function PainelHome({
             styles.resumoBloco,
             pressed && styles.pressionado
           ]}
+
         >
           <View style={[styles.resumoBola, styles.resumoBolaEscura]}>
             <Ionicons name="scale-outline" size={20} color={cores.laranjaClaro} />
@@ -1172,12 +1205,14 @@ export default function PainelHome({
             ) : null}
           </View>
         </Pressable>
-
+        )}
       </View>
 
       {/* GRÁFICOS */}
       <Grafico
+          key={`${pet.id_pet}-${pet.especie}`}
           alimentacao={calculos.alimentacaoSemana}
+          agua={calculos.aguaSemana}
           peso={calculos.pesoHistorico}
           pet={pet}
           agora={agora}

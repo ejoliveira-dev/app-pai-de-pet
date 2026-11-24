@@ -51,10 +51,10 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         width: "100%",
-        height: "100%",
+        height: 165,
         overflow: "hidden",
         zIndex: 1,
-    },    
+    },
 
     circuloSuperior: {
         position: "absolute",
