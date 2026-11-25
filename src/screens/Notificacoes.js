@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
 import { verificarAvisosCuidados } from "../utils/avisosCuidados";
+import { verificarAvisosAgua } from "../utils/avisosAgua";
 import { verificarAvisosAlimentacao } from "../utils/avisosAlimentacao";
 
 import {
@@ -31,6 +32,8 @@ function iconeNotificacao(tipo) {
             return "heart";
         case "comentario":
             return "chatbubble";
+        case "agua":
+            return "water";
         case "alimentacao":
             return "restaurant";
         case "vacina":
@@ -54,6 +57,7 @@ export default function Notificacoes({ onAtualizarContador }) {
     const carregarNotificacoes = useCallback(async () => {
         try {
             await verificarAvisosVacinas(db);
+            await verificarAvisosAgua(db);
             await verificarAvisosCuidados(db);
             await verificarAvisosAlimentacao(db);
 

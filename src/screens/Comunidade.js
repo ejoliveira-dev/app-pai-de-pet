@@ -4,7 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { buscarPet, obterPetSelecionadoId, listarPublicacoes, inserirPublicacao } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";
 
@@ -64,10 +64,10 @@ export default function Comunidade() {
     const ultimoToque = useRef({});
     const escalaCoracao = useRef(new Animated.Value(0)).current;
 
-    // rolagem do feed: move a aba do perfil junto e decide quando mostrar o +
+    // rolagem do feed e movimentação da aba do perfil   
     const rolagem = useRef(new Animated.Value(0)).current;
-    const [mostrarBotao, setMostrarBotao] = useState(false);
-
+    const [menuAberto, setMenuAberto] = useState(false);
+    const animacaoMenu = useRef(new Animated.Value(0)).current;
     const deslocamentoAba = rolagem.interpolate({
         inputRange: [0, 1],
         outputRange: [0, -1],
@@ -76,14 +76,18 @@ export default function Comunidade() {
 
     const aoRolar = Animated.event(
         [{ nativeEvent: { contentOffset: { y: rolagem } } }],
-        {
-            useNativeDriver: false,
-            listener: (evento) => {
-                // o + aparece quando a barra "O que ... está aprontando?" sai da tela
-                setMostrarBotao(evento.nativeEvent.contentOffset.y > ALTURA_FECHADA + 70);
-            },
-        }
+        { useNativeDriver: false }
     );
+
+        function alternarMenu(abrir) {
+            setMenuAberto(abrir);
+
+            Animated.timing(animacaoMenu, {
+                toValue: abrir ? 1 : 0,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        }
 
     useFocusEffect(
         useCallback(() => {
@@ -398,6 +402,28 @@ export default function Comunidade() {
     const publicacoesExibidas = abaAtiva === "meusPosts"
         ? publicacoes.filter((post) => post.id_pet === String(pet?.id_pet) && post.id_tutor === idTutor)
         : publicacoes;
+
+            // ícone do botão de acordo com a espécie
+            const especie = (pet?.especie || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                const iconesEspecies = {
+                    gato: "cat",
+                    cachorro: "paw",
+                    coelho: "rabbit",
+                    hamster: "rodent",
+                    "porquinho-da-india": "rodent",
+                    tartaruga: "turtle",
+                    peixe: "fish",
+                    calopsita: "feather",
+                    periquito: "feather",
+                    canario: "feather",
+                    papagaio: "feather",
+                    furao: "paw",
+                    "outro tipo de passaro": "feather",
+                };
+
+
+    const iconeEspecie = iconesEspecies[especie] || "paw";
 
     // texto das curtidas: só aparece se você curtiu junto com outras pessoas
     // ex.: "Você e mais 2 usuários curtiram"
@@ -785,27 +811,6 @@ export default function Comunidade() {
                 <Ionicons name="image-outline" size={24} color="#918B82" />
             </Pressable>
 
-                {/* abas de Publicações e Meus posts */}
-                <View style={styles.abasComunidade}>
-                    <TouchableOpacity
-                        style={[styles.botaoAba, abaAtiva === "publicacoes" && styles.abaSelecionada]}
-                        onPress={() => setAbaAtiva("publicacoes")}
-                    >
-                        <Text style={[styles.textoAba, abaAtiva === "publicacoes" && styles.textoAbaSelecionada]}>
-                            Publicações
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.botaoAba, abaAtiva === "meusPosts" && styles.abaSelecionada]}
-                        onPress={() => setAbaAtiva("meusPosts")}
-                    >
-                        <Text style={[styles.textoAba, abaAtiva === "meusPosts" && styles.textoAbaSelecionada]}>
-                            Minhas publicações
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
                 {/* publicações cadastradas */}
                 {carregandoFeed && publicacoes.length === 0 ? (
                     <View style={styles.carregandoFeed}>
@@ -814,9 +819,13 @@ export default function Comunidade() {
                     </View>
                 ) : publicacoesExibidas.length === 0 ? (
                     <View style={styles.vazio}>
-                        <Text style={styles.textoVazio}>
-                            Nenhuma publicação ainda.{'\n'}Toque no + para criar a primeira!
-                        </Text>
+
+                 <Text style={styles.textoVazio}>
+                    {abaAtiva === "meusPosts"
+                        ? "Seu pet ainda não fez nenhuma publicação."
+                        : "Nenhuma publicação por enquanto."}
+                </Text>
+
                     </View>
                 ) : (
                     publicacoesExibidas.map((post) => (
@@ -940,20 +949,81 @@ export default function Comunidade() {
                 )}
 
             </Animated.ScrollView>
+            
+             {/* menu flutuante */}
+            <View style={styles.menuFlutuante} pointerEvents="box-none">
 
-            {/* botão flutuante de publicar */}
-            {mostrarBotao && (
+                <Animated.View
+                    pointerEvents={menuAberto ? "auto" : "none"}
+                    style={{
+                        position: "absolute",
+                        bottom: 132,
+                        opacity: animacaoMenu,
+                        transform: [
+                            { translateY: animacaoMenu.interpolate({ inputRange: [0, 1], outputRange: [126, 0] }) },
+                            { scale: animacaoMenu }
+                        ]
+                    }}
+                >
+                    <TouchableOpacity
+                        style={styles.botaoFlutuanteSecundario}
+                        onPress={() => {
+                            setAbaAtiva(abaAtiva === "publicacoes" ? "meusPosts" : "publicacoes");
+                            alternarMenu(false);
+                        }}
+                        accessibilityLabel={abaAtiva === "publicacoes" ? "Minhas publicações" : "Feed público"}
+                    >
+                        {abaAtiva === "publicacoes" ? (
+                            <Ionicons name="images-outline" size={25} color={cores.fundo} />
+                        ) : (
+                            <View style={{ alignItems: "center" }}>
+                                <MaterialCommunityIcons name="paw" size={17} color={cores.fundo} />
+                                <View style={{ flexDirection: "row", gap: 3 }}>
+                                    <MaterialCommunityIcons name="feather" size={15} color={cores.fundo} />
+                                    <MaterialCommunityIcons name="fish" size={15} color={cores.fundo} />
+                                </View>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </Animated.View>
+
+                <Animated.View
+                    pointerEvents={menuAberto ? "auto" : "none"}
+                    style={{
+                        position: "absolute",
+                        bottom: 72,
+                        opacity: animacaoMenu,
+                        transform: [
+                            { translateY: animacaoMenu.interpolate({ inputRange: [0, 1], outputRange: [66, 0] }) },
+                            { scale: animacaoMenu }
+                        ]
+                    }}
+                >
+                    <TouchableOpacity
+                        style={styles.botaoFlutuanteSecundario}
+                        onPress={() => {
+                            alternarMenu(false);
+                            abrirPublicacao();
+                        }}
+                        accessibilityLabel="Nova publicação"
+                    >
+                        <Ionicons name="add" size={30} color={cores.fundo} />
+                    </TouchableOpacity>
+                </Animated.View>
+
                 <TouchableOpacity
                     style={styles.botaoFlutuante}
-                    onPress={abrirPublicacao}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel="Nova publicação"
+                    onPress={() => alternarMenu(!menuAberto)}
+                    accessibilityLabel={menuAberto ? "Fechar menu" : "Abrir menu"}
                 >
-                    <Ionicons name="add" size={32} color="#332716" />
-
+                    {menuAberto ? (
+                        <Ionicons name="chevron-down" size={30} color={cores.fundo} />
+                    ) : (
+                        <MaterialCommunityIcons name={iconeEspecie} size={30} color={cores.fundo} />
+                    )}
                 </TouchableOpacity>
-            )}
+
+            </View>
 
 
             <AbaPerfilPublico
@@ -1212,13 +1282,13 @@ const styles = StyleSheet.create({
         ...sombra,
     },
 
-    textoVazio: {
+       textoVazio: {
         fontFamily: fontes.regular,
         fontSize: 16,
-        lineHeight: 23,
+        lineHeight: 25,
         color: cores.marromClaro,
         textAlign: 'center',
-        marginTop: 12,
+        width: '100%',
     },
 
     cardPublicacao: {
@@ -1282,14 +1352,26 @@ const styles = StyleSheet.create({
         marginBottom: -4,
     },
 
-    botaoFlutuante: {
+    modalFundo: {
+        flex: 1,
+        backgroundColor: 'rgba(30, 23, 15, 0.55)',
+        justifyContent: 'flex-end',
+    },
+
+        menuFlutuante: {
         position: 'absolute',
         right: 20,
         bottom: 20,
+        alignItems: 'center',
+        gap: 10,
+        zIndex: 10,
+    },
+
+    botaoFlutuante: {
         width: 62,
         height: 62,
         borderRadius: 31,
-        backgroundColor: cores.laranja,
+        backgroundColor: cores.marrom,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 6,
@@ -1299,10 +1381,14 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
     },
 
-    modalFundo: {
-        flex: 1,
-        backgroundColor: 'rgba(30, 23, 15, 0.55)',
-        justifyContent: 'flex-end',
+    botaoFlutuanteSecundario: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: cores.marrom,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 6,
     },
 
     modalConteudo: {
@@ -1430,14 +1516,10 @@ const styles = StyleSheet.create({
         color: '#918B82',
     },
 
-    // anel laranja em volta do avatar do post
     anelAvatar: {
-        padding: 2,
         borderRadius: 26,
-        borderWidth: 2,
-        borderColor: cores.laranja,
     },
-
+    
     // linha do coração
     acoesPost: {
         flexDirection: 'row',
@@ -1537,18 +1619,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 3,
         borderBottomColor: cores.laranja,
     },
-
-    textoAba: {
-        fontFamily: fontes.regular,
-        fontSize: 16,
-        color: "#A6A098",
-    },
-
-    textoAbaSelecionada: {
-        fontFamily: fontes.negrito,
-        color: "#332716",
-    },
-
+        
     // Estilos da área de comentários (antes definidos diretamente no JSX)
     rolagemFeed: {
         flex: 1,

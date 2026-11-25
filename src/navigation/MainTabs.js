@@ -14,6 +14,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { listarNotificacoes } from "../utils/notificacoesStorage";
 import { verificarAvisosVacinas } from "../utils/avisosVacinas";
 import { verificarAvisosCuidados } from "../utils/avisosCuidados";
+import { verificarAvisosAgua } from "../utils/avisosAgua";
 import { verificarAvisosAlimentacao } from "../utils/avisosAlimentacao";
 
 const Tab = createBottomTabNavigator();
@@ -26,6 +27,7 @@ export default function MainTabs() {
         try {
             await verificarAvisosVacinas(db);
             await verificarAvisosCuidados(db);
+            await verificarAvisosAgua(db);
             await verificarAvisosAlimentacao(db);
 
             const lista = await listarNotificacoes();
