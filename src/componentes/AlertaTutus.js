@@ -28,10 +28,10 @@ function escolherIcone(alerta, cores) {
     }
 
     if (/erro|inválid|ops|atenção|diferentes|vazia|selecione/i.test(alerta.titulo || "")) {
-        return { nome: "alert", fundo: cores.marrom, cor: cores.laranja };
+        return { nome: "alert", fundo: cores.marrom, cor: cores.laranjaClaro };
     }
 
-    return { nome: "paw", fundo: cores.laranja, cor: cores.marrom };
+    return { nome: "paw", fundo: cores.laranja, cor: cores.textoSobrePrincipal };
 }
 
 export default function AlertaTutus() {

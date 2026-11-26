@@ -72,9 +72,9 @@ export default function CadastroPet({ navigation, route }) {
     const [foto, setFoto] = useState(null);
 
     // para o tutor informar a data ou uma estimativa
-    const [modoIdade, setModoIdade] = useState("aproximada");
+    const [modoIdade, setModoIdade] = useState(null);
     const [dataNascimento, setDataNascimento] = useState("");
-    const [usarDataEspecial, setUsarDataEspecial] = useState(false);
+    const [usarDataEspecial, setUsarDataEspecial] = useState(null);
     const [dataEspecial, setDataEspecial] = useState("");
 
     function formatarData(texto) {
@@ -190,6 +190,22 @@ export default function CadastroPet({ navigation, route }) {
         }
 
         setErroEspecie(false);
+
+        if (modoIdade === null) {
+            Alert.alert(
+                "Atenção!",
+                "Informe se você sabe a data de nascimento do seu pet."
+            );
+            return;
+        }
+
+        if (modoIdade === "aproximada" && usarDataEspecial === null) {
+            Alert.alert(
+                "Atenção!",
+                "Informe se vocês têm uma data especial."
+            );
+            return;
+        }
 
         if (
             modoIdade === "data" &&
@@ -426,7 +442,7 @@ export default function CadastroPet({ navigation, route }) {
                                     color={cores.textoSobrePrincipal}
                                 />
                             </View>
-                            
+
                         </TouchableOpacity>
 
                     </View>
@@ -522,7 +538,7 @@ export default function CadastroPet({ navigation, route }) {
                             color={cores.laranja}
                         />
                         <Text style={style.textoOpcaoModo}>
-                            Sim, sei a data de nascimento!
+                            Sim, sei a data
                         </Text>
                     </TouchableOpacity>
 
@@ -541,14 +557,14 @@ export default function CadastroPet({ navigation, route }) {
                             color={cores.laranja}
                         />
                         <Text style={style.textoOpcaoModo}>
-                            Não sei a data exata
+                            Não sei
                         </Text>
 
                     </TouchableOpacity>
 
-                     {/* data exata */}
+                    {/* data exata */}
                     {modoIdade === "data" && (
-                        <>
+                        <View style={style.blocoResposta}>
                             <Text style={style.label}>
                                 Data de nascimento *
                             </Text>
@@ -562,76 +578,118 @@ export default function CadastroPet({ navigation, route }) {
                                 keyboardType="numeric"
                                 maxLength={10}
                             />
-                        </>
+                        </View>
                     )}
 
                     {/* Idade aproximada */}
                     {modoIdade === "aproximada" && (
-                        <>
-                            <Text style={style.label}>
-                                Idade aproximada
-                            </Text>
+                        <View style={style.blocoResposta}>
 
-                            <TouchableOpacity
-                                style={style.seletor}
-                                onPress={() => setModalTipo("idade")}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={style.textoSeletor}>
-                                    {idadeAproximada}
+                            <View style={style.perguntaInfo}>
+                                <Text style={style.textoPergunta}>
+                                    Vocês têm uma data especial?
                                 </Text>
-                                <Ionicons
-                                    name="chevron-down"
-                                    size={22}
-                                    color={cores.laranja}
-                                />
-                            </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[
-                                    style.opcaoModo,
-                                    { marginTop: 10 },
-                                    usarDataEspecial && style.opcaoModoSelecionada,
-                                ]}
-                                onPress={() => setUsarDataEspecial((atual) => !atual)}
-                                activeOpacity={0.8}
-                            >
-                                <Ionicons
-                                    name={usarDataEspecial ? "checkbox" : "square-outline"}
-                                    size={24}
-                                    color={cores.laranja}
-                                />
-                                <Text style={style.textoOpcaoModo}>
-                                    Adicionar data especial?
-                                </Text>
-                            </TouchableOpacity>
+                                <Pressable
+                                    hitSlop={10}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="O que é uma data especial?"
+                                    onPress={() => Alert.alert(
+                                        "Data especial",
+                                        "Pode ser o dia da adoção, o dia em que seu pet chegou em casa ou qualquer outra data importante para vocês."
+                                    )}
+                                >
+                                    <Ionicons
+                                        name="information-circle-outline"
+                                        size={21}
+                                        color={cores.marromClaro}
+                                    />
+                                </Pressable>
+                            </View>
 
-                            <Text style={style.textoAjuda}>
-                                Pode ser o dia em que ele chegou na sua casa ou
-                                outra data importante para vocês. Vamos te avisar
-                                quando ela estiver chegando!
-                            </Text>
+                            <View style={style.linhaRespostas}>
+                                <TouchableOpacity
+                                    style={[
+                                        style.botaoResposta,
+                                        usarDataEspecial === true && style.botaoRespostaAtivo,
+                                    ]}
+                                    onPress={() => setUsarDataEspecial(true)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[
+                                        style.textoResposta,
+                                        usarDataEspecial === true && style.textoRespostaAtivo,
+                                    ]}>
+                                        Sim
+                                    </Text>
+                                </TouchableOpacity>
 
-                            {usarDataEspecial && (
-                                <TextInput
-                                    style={style.input}
-                                    placeholder="DD/MM/AAAA"
-                                    placeholderTextColor={cores.placeholder}
-                                    value={dataEspecial}
-                                    onChangeText={(texto) => setDataEspecial(formatarData(texto))}
-                                    keyboardType="numeric"
-                                    maxLength={10}
-                                />
+                                <TouchableOpacity
+                                    style={[
+                                        style.botaoResposta,
+                                        usarDataEspecial === false && style.botaoRespostaAtivo,
+                                    ]}
+                                    onPress={() => setUsarDataEspecial(false)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[
+                                        style.textoResposta,
+                                        usarDataEspecial === false && style.textoRespostaAtivo,
+                                    ]}>
+                                        Não
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {usarDataEspecial === true && (
+                                <>
+                                    <Text style={style.label}>
+                                        Data especial *
+                                    </Text>
+
+                                    <TextInput
+                                        style={style.input}
+                                        placeholder="DD/MM/AAAA"
+                                        placeholderTextColor={cores.placeholder}
+                                        value={dataEspecial}
+                                        onChangeText={(texto) => setDataEspecial(formatarData(texto))}
+                                        keyboardType="numeric"
+                                        maxLength={10}
+                                    />
+                                </>
                             )}
-                        </>
+
+                            {usarDataEspecial === false && (
+                                <>
+                                    <Text style={style.label}>
+                                        Idade aproximada
+                                    </Text>
+
+                                    <TouchableOpacity
+                                        style={style.seletor}
+                                        onPress={() => setModalTipo("idade")}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={style.textoSeletor}>
+                                            {idadeAproximada}
+                                        </Text>
+                                        <Ionicons
+                                            name="chevron-down"
+                                            size={22}
+                                            color={cores.laranja}
+                                        />
+                                    </TouchableOpacity>
+                                </>
+                            )}
+
+                            {usarDataEspecial !== null && (
+                                <Text style={style.fraseIdade}>
+                                    Não tem problema não saber a idade do seu companheiro!
+                                </Text>
+                            )}
+                        </View>
                     )}
-
-                    <Text style={style.textoAjuda}>
-                        Não tem problema se você não souber a idade
-                        exata do seu companheiro!
-                    </Text>
-
-                    {/* seção: mais detalhes */}
+                                        {/* seção: mais detalhes */}
                     <View style={style.secao}>
                         <View style={style.barraSecao} />
                         <Text style={style.tituloSecao}>Mais detalhes</Text>
@@ -756,4 +814,4 @@ export default function CadastroPet({ navigation, route }) {
         </View>
     </KeyboardAvoidingView>
     );
-}                   
+}

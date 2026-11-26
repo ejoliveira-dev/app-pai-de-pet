@@ -177,7 +177,7 @@ return StyleSheet.create({
         marginRight: 10,
     },
 
-            mensagemErro: {
+    mensagemErro: {
         fontSize: 17,
         lineHeight: 22,
         fontFamily: "Ruwudu-Regular",
@@ -191,11 +191,15 @@ return StyleSheet.create({
 
     opcaoModo: {
         ...campo,
+        minHeight: 48,
+        borderRadius: 20,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "flex-start",
-        gap: 12,
-        marginBottom: 10,
+        gap: 10,
+        marginBottom: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
     },
 
     opcaoModoSelecionada: {
@@ -204,10 +208,71 @@ return StyleSheet.create({
 
     textoOpcaoModo: {
         ...textoCampo,
+        fontSize: 18,
         flex: 1,
     },
 
-    textoAjuda: {
+    blocoResposta: {
+        marginTop: 12,
+    },
+
+    perguntaInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        marginLeft: 8,
+        marginBottom: 10,
+    },
+
+    textoPergunta: {
+        fontSize: 19,
+        fontFamily: "Ruwudu-Bold",
+        color: cores.marromClaro,
+        flexShrink: 1,
+    },
+
+    linhaRespostas: {
+        flexDirection: "row",
+        gap: 10,
+    },
+
+    botaoResposta: {
+        flex: 1,
+        minHeight: 46,
+        backgroundColor: cores.branco,
+        borderWidth: 1.5,
+        borderColor: cores.bordaCreme,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    botaoRespostaAtivo: {
+        backgroundColor: cores.laranja,
+        borderColor: cores.laranja,
+    },
+
+    textoResposta: {
+        fontSize: 19,
+        fontFamily: "Ruwudu-Bold",
+        color: cores.marrom,
+    },
+
+    textoRespostaAtivo: {
+        color: cores.textoSobrePrincipal,
+    },
+
+    fraseIdade: {
+        fontSize: 16,
+        lineHeight: 21,
+        fontFamily: "Ruwudu-Regular",
+        color: cores.marromClaro,
+        textAlign: "center",
+        paddingHorizontal: 12,
+        marginTop: 14,
+    },
+
+        textoAjuda: {
         fontSize: 17,
         lineHeight: 23,
         fontFamily: "Ruwudu-Regular",
