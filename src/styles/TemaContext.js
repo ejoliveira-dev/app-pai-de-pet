@@ -46,7 +46,7 @@ export function TemaProvider({ children }) {
     laranja: paleta[2],
     terracota: paleta[3],
     laranjaClaro: tema === "escuro" ? "#E0E0E0" : paleta[4],
-    fundo: paleta[4],
+    fundo: "#FFFDF8",
     branco: tema === "escuro" ? "#242424" : "#FFFFFF",
     creme: tema === "escuro" ? "#303030" : paleta[4],
     bordaCreme: paleta[3],
