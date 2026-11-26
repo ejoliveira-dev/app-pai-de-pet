@@ -10,15 +10,8 @@ import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
 
-import { style } from "../styles/CadastroPetStyles";
-
-const cores = {
-    fundo: "#FFFDF8",
-    laranja: "#FA9F2A",
-    marrom: "#332716",
-    marromMedio: "#75571F",
-    placeholder: "#9A8A75",
-};
+import { criarStyle } from "../styles/CadastroPetStyles";
+import { useTema } from "../styles/TemaContext";
 
 const ESPECIES = [
     "Gato",
@@ -57,6 +50,17 @@ const OUTRA_ESPECIE = ESPECIES[ESPECIES.length - 1];
 
 export default function CadastroPet({ navigation, route }) {
     const db = useSQLiteContext();
+
+    const { cores: coresTema } = useTema();
+
+    const cores = {
+        ...coresTema,
+        marromMedio: coresTema.marromClaro,
+        placeholder: coresTema.marromClaro,
+    };
+
+    const style = criarStyle(cores);
+
     const petParaEditar = route.params?.petParaEditar;
     const modoEdicao = !!petParaEditar;
 
@@ -298,8 +302,7 @@ export default function CadastroPet({ navigation, route }) {
             setSalvando(false);
         }
     }
-
-    function confirmarExclusao() {
+        function confirmarExclusao() {
         Alert.alert(
             `Excluir ${petParaEditar.nome}?`,
             "Todos os registros, vacinas, consultas, medicamentos e publicações deste pet serão apagados. Isso não pode ser desfeito.",
@@ -418,9 +421,10 @@ export default function CadastroPet({ navigation, route }) {
                                 <Ionicons
                                     name="camera"
                                     size={18}
-                                    color={cores.fundo}
+                                    color={cores.textoSobrePrincipal}
                                 />
                             </View>
+                            
                         </TouchableOpacity>
 
                     </View>
@@ -537,9 +541,10 @@ export default function CadastroPet({ navigation, route }) {
                         <Text style={style.textoOpcaoModo}>
                             Não sei a data exata
                         </Text>
+
                     </TouchableOpacity>
 
-                    {/* data exata */}
+                     {/* data exata */}
                     {modoIdade === "data" && (
                         <>
                             <Text style={style.label}>
@@ -747,5 +752,5 @@ export default function CadastroPet({ navigation, route }) {
              </Modal>
         </View>
     </KeyboardAvoidingView>
-);
-}
+    );
+}                   

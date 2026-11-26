@@ -172,7 +172,7 @@ export const criarStyle = (cores) => StyleSheet.create({
         maxWidth: 88,
         fontSize: 18,
         fontFamily: "Ruwudu-Regular",
-        color: cores.marromMedio,
+        color: cores.marromClaro,
         marginTop: 8,
         textAlign: "center",
     },
@@ -441,7 +441,7 @@ export const criarStyle = (cores) => StyleSheet.create({
     saudacao: {
         fontSize: 45,
         fontFamily: "Ruwudu-Bold",
-        color: cores.laranja,
+        color: cores.textoSobrePrincipal,
         textAlign: "left",
     },
 
