@@ -14,7 +14,8 @@ import {
 } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { cores, fontes, sombra } from '../styles/tema';
+import { fontes, sombra } from '../styles/tema';
+import { useTema } from '../styles/TemaContext';
 
 // formata automaticamente a data
 function formatarData(texto) {
@@ -54,6 +55,9 @@ function validarData(valor) {
 
 export default function VacinasPet() {
     const db = useSQLiteContext();
+
+    const { cores } = useTema();
+    const styles = criarStyles(cores);
 
     const [petId, setPetId] = useState(null);
     const [vacinas, setVacinas] = useState([]);
@@ -368,7 +372,8 @@ export default function VacinasPet() {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
+
   tituloSecao: {
     fontFamily: fontes.negrito,
     fontSize: 24,

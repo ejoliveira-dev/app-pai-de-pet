@@ -16,15 +16,7 @@ import {
 } from "../utils/notificacoesStorage";
 
 import { verificarAvisosVacinas } from "../utils/avisosVacinas";
-
-const COR = {
-    fundo: "#FFFDF8",
-    branco: "#FFFFFF",
-    marrom: "#332716",
-    laranja: "#FA9F2A",
-    oliva: "#75571F",
-    creme: "#FFEAC8",
-};
+import { useTema } from "../styles/TemaContext";
 
 function iconeNotificacao(tipo) {
     switch (tipo) {
@@ -50,6 +42,19 @@ function iconeNotificacao(tipo) {
 export default function Notificacoes({ onAtualizarContador }) {
     const insets = useSafeAreaInsets();
     const db = useSQLiteContext();
+
+    const { cores } = useTema();
+
+    const COR = {
+        fundo: cores.fundo,
+        branco: cores.branco,
+        marrom: cores.marrom,
+        laranja: cores.laranja,
+        oliva: cores.marromClaro,
+        creme: cores.laranjaClaro,
+    };
+
+    const styles = criarStyles(COR);
 
     const [notificacoes, setNotificacoes] = useState([]);
     const [carregando, setCarregando] = useState(true);
@@ -201,7 +206,8 @@ export default function Notificacoes({ onAtualizarContador }) {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (COR) => StyleSheet.create({
+    
     container: {
         flex: 1,
         backgroundColor: COR.fundo,

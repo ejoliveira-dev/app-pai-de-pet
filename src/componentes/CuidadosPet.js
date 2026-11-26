@@ -13,7 +13,8 @@ import {
 } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { cores, fontes, sombra } from '../styles/tema';
+import { fontes, sombra } from '../styles/tema';
+import { useTema } from '../styles/TemaContext';
 
 // coloca as barras automaticamente na data
 function formatarData(texto) {
@@ -48,6 +49,8 @@ function dataValida(texto) {
 
 export default function CuidadosPet({ tipo }) {
   const db = useSQLiteContext();
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
   const consulta = tipo === 'consulta';
 
   const [petId, setPetId] = useState(null);
@@ -407,7 +410,8 @@ export default function CuidadosPet({ tipo }) {
     );
   }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
+
     tituloSecao: {
     fontFamily: fontes.negrito,
     fontSize: 24,

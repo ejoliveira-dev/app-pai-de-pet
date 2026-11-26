@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { cores } from "../styles/tema";
-
+import { useTema } from "../styles/TemaContext";
 // Foto redonda do pet com borda.
 
 // Se o pet não tem foto, mostra a patinha.
@@ -13,6 +12,7 @@ import { cores } from "../styles/tema";
 
 export default function AvatarPet({ foto, tamanho = 74, selecionado = false, style }) {
   const raio = tamanho / 2;
+  const { cores } = useTema();
 
   return (
     <View

@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { SQLiteProvider } from 'expo-sqlite';
+import { TemaProvider } from './src/styles/TemaContext';
 
 import Splash from './src/screens/Splash';
 import Welcome from './src/screens/Welcome';
@@ -58,6 +59,8 @@ export default function App() {
       databaseName="tutus.db"
       onInit={inicializarBanco}
     >
+
+       <TemaProvider>
 
       <NavigationContainer>
         {/* controla a navegação do app.*/}
@@ -124,6 +127,8 @@ export default function App() {
       </NavigationContainer>
 
       <AlertaTutus />
+
+      </TemaProvider>
 
     </SQLiteProvider >
   )

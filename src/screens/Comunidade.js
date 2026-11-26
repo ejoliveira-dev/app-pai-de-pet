@@ -13,7 +13,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Cartao from "../componentes/Cartao";
 import Botao from "../componentes/Botao";
 import AvatarPet from "../componentes/AvatarPet";
-import { cores, fontes, sombra } from "../styles/tema";
+import { fontes, sombra } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl, ActivityIndicator, Alert as AlertNativo } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -37,6 +38,8 @@ function tempoRelativo(texto) {
 export default function Comunidade() {
     const db = useSQLiteContext();
     const insets = useSafeAreaInsets();
+    const { cores } = useTema();
+    const styles = criarStyles(cores);
 
     const [pet, setPet] = useState(null);
     const [petVisualizado, setPetVisualizado] = useState(null);
@@ -808,8 +811,9 @@ export default function Comunidade() {
                     O que {primeiroNome} está aprontando?
                 </Text>
 
-                <Ionicons name="image-outline" size={24} color="#918B82" />
-            </Pressable>
+                <Ionicons name="image-outline" size={24} color={cores.laranja} />           
+                
+                 </Pressable>
 
                 {/* publicações cadastradas */}
                 {carregandoFeed && publicacoes.length === 0 ? (
@@ -1134,7 +1138,7 @@ export default function Comunidade() {
                             <TextInput
                                 style={styles.inputComentario}
                                 placeholder="Adicione um comentário..."
-                                placeholderTextColor="#A89A82"
+                                placeholderTextColor={cores.marromClaro}
                                 value={textoComentario}
                                 onChangeText={setTextoComentario}
                                 maxLength={500}
@@ -1201,7 +1205,7 @@ export default function Comunidade() {
                         <TextInput
                             style={styles.campoLegenda}
                             placeholder="O que seu pet está aprontando?"
-                            placeholderTextColor="#A89A82"
+                            placeholderTextColor={cores.marromClaro}
                             value={legenda}
                             onChangeText={setLegenda}
                             multiline
@@ -1253,7 +1257,7 @@ export default function Comunidade() {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
 
     container: {
         flex: 1,
@@ -1292,11 +1296,13 @@ const styles = StyleSheet.create({
     },
 
     cardPublicacao: {
-        backgroundColor: cores.branco,
+        backgroundColor: cores.laranjaClaro,
         borderRadius: 25,
         overflow: 'hidden',
         marginBottom: 18,
         paddingBottom: 4,
+        borderWidth: 1,
+        borderColor: cores.bordaCartao,
         ...sombra,
     },
 
@@ -1311,7 +1317,7 @@ const styles = StyleSheet.create({
     imagemPost: {
         width: '100%',
         aspectRatio: 1,
-        backgroundColor: 'rgba(51, 39, 22, 0.06)',
+        backgroundColor: cores.marrom + '0F',
     },
 
     legendaPost: {
@@ -1405,7 +1411,7 @@ const styles = StyleSheet.create({
         width: 42,
         height: 5,
         borderRadius: 3,
-        backgroundColor: 'rgba(51, 39, 22, 0.15)',
+        backgroundColor: cores.marrom + '26',
     },
 
     topoModal: {
@@ -1446,7 +1452,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         borderWidth: 2,
         borderStyle: 'dashed',
-        borderColor: cores.laranja,
+        borderColor: cores.marrom + '14',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
@@ -1498,11 +1504,13 @@ const styles = StyleSheet.create({
 
     // barra "O que ... está aprontando?"
 
-    compor: {
+   compor: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        backgroundColor: '#F1EEE9',
+        backgroundColor: cores.branco,
+        borderWidth: 1.5,
+        borderColor: cores.laranja,
         borderRadius: 16,
         paddingHorizontal: 16,
         paddingVertical: 12,
@@ -1513,7 +1521,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontFamily: fontes.regular,
         fontSize: 16,
-        color: '#918B82',
+        color: cores.marromClaro,
     },
 
     anelAvatar: {
@@ -1606,7 +1614,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         marginBottom: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#E5E1DC",
+        borderBottomColor: cores.bordaCreme,
     },
 
     botaoAba: {
@@ -1643,7 +1651,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 5,
         borderRadius: 5,
-        backgroundColor: "#D4C9BB",
+        backgroundColor: cores.borda,
         alignSelf: "center",
         marginBottom: 15,
     },
@@ -1693,7 +1701,7 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: "#FFE7C2",
+        backgroundColor: cores.laranjaClaro,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -1732,14 +1740,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         padding: 15,
         borderTopWidth: 1,
-        borderTopColor: "#E8DED1",
+        borderTopColor: cores.bordaCreme,
         gap: 10,
     },
 
     inputComentario: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#E8DED1",
+        borderColor: cores.bordaCreme,
         borderRadius: 22,
         paddingHorizontal: 15,
         paddingVertical: 8,

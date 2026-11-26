@@ -15,12 +15,14 @@ import { listarNotificacoes } from "../utils/notificacoesStorage";
 import { verificarAvisosVacinas } from "../utils/avisosVacinas";
 import { verificarAvisosCuidados } from "../utils/avisosCuidados";
 import { verificarAvisosAgua } from "../utils/avisosAgua";
+import { useTema } from "../styles/TemaContext";
 import { verificarAvisosAlimentacao } from "../utils/avisosAlimentacao";
 
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
     const db = useSQLiteContext();
+    const { cores } = useTema();
     const [naoLidas, setNaoLidas] = useState(0);
 
     const atualizarContador = useCallback(async () => {
@@ -46,13 +48,13 @@ export default function MainTabs() {
             initialRouteName="Inicio"
             screenOptions={({ route }) => ({
                 headerShown: false,
-
-                tabBarActiveTintColor: "#FA9F2A",
-                tabBarInactiveTintColor: "#332716",
+                                
+                tabBarActiveTintColor: cores.laranja,
+                tabBarInactiveTintColor: cores.marrom,
 
                 tabBarStyle: {
-                    backgroundColor: "#FFFDF8",
-                    borderTopColor: "#FFEAC8",
+                    backgroundColor: cores.fundo,
+                    borderTopColor: cores.laranjaClaro,
                     borderTopWidth: 0.5,
                     paddingTop: 8,
                     height: 75,
@@ -112,8 +114,8 @@ export default function MainTabs() {
                     tabBarLabel: "Avisos",
                     tabBarBadge: naoLidas > 0 ? naoLidas : undefined,
                     tabBarBadgeStyle: {
-                        backgroundColor: "#FA9F2A",
-                        color: "#332716",
+                        backgroundColor: cores.laranja,
+                        color: cores.marrom,
                         fontSize: 12,
                     },
                 }}

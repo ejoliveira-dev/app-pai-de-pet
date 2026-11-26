@@ -1,19 +1,7 @@
 import { StyleSheet } from "react-native";
 
-// paleta do Tutus 
-const cores = {
-    fundo: "#FFFDF8",
-    branco: "#FFFFFF",
-    laranja: "#FA9F2A",
-    laranjaClaro: "#FFEAC8",
-    creme: "#FFF1DC",
-    bordaCreme: "#F2DFC4",
-    bordaCartao: "#F5D7A8",
-    marrom: "#332716",
-    marromMedio: "#75571F",
-};
+export const criarStyle = (cores) => StyleSheet.create({
 
-export const style = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: cores.laranja,
@@ -125,7 +113,7 @@ export const style = StyleSheet.create({
     textoContador: {
         fontSize: 17,
         fontFamily: "Ruwudu-Bold",
-        color: cores.marromMedio,
+        color: cores.marromClaro,
     },
 
     listaRoleta: {
@@ -443,7 +431,7 @@ export const style = StyleSheet.create({
 
     painelBranco: {
         flex: 1,
-        backgroundColor: "#FFFDF8",
+        backgroundColor: cores.fundo,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
         marginTop: -28,
@@ -453,7 +441,7 @@ export const style = StyleSheet.create({
     saudacao: {
         fontSize: 45,
         fontFamily: "Ruwudu-Bold",
-        color: "#332716",
+        color: cores.laranja,
         textAlign: "left",
     },
 
@@ -464,7 +452,7 @@ export const style = StyleSheet.create({
         borderWidth: 2,
         borderColor: "#FA9F2A",
         borderStyle: "dashed",
-        backgroundColor: "#FFF1DC",
+        backgroundColor: cores.creme,
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
@@ -477,11 +465,11 @@ export const style = StyleSheet.create({
         width: 23,
         height: 23,
         borderRadius: 12,
-        backgroundColor: "#FA9F2A",
+        backgroundColor: cores.laranja,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 2,
-        borderColor: "#FFFDF8",
+        borderColor: cores.fundo,
     },
 
     setasCarrossel: {

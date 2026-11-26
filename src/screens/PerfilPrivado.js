@@ -13,7 +13,8 @@ import Cartao from '../componentes/Cartao';
 import Botao from '../componentes/Botao';
 import Chip from '../componentes/Chip';
 import AvatarPet from '../componentes/AvatarPet';
-import { cores, fontes, sombra } from '../styles/tema';
+import { fontes, sombra } from '../styles/tema';
+import { useTema } from '../styles/TemaContext';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useSQLiteContext } from 'expo-sqlite';
@@ -22,6 +23,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { categoriaPermitida } from '../utils/categoriasPet';
 
 export default function PerfilPrivado({ navigation }) {
+
+    const { cores } = useTema();
+    const styles = criarStyles(cores);
 
     const CATEGORIAS = [
         { id: 'alimentacao', nome: 'Alimentação', icone: 'bone'},
@@ -307,7 +311,8 @@ export default function PerfilPrivado({ navigation }) {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
+
     tituloTela: {
         fontFamily: fontes.negrito,
         fontSize: 34,
@@ -345,7 +350,7 @@ const styles = StyleSheet.create({
         borderRadius: 47.5,
         backgroundColor: cores.marrom,
         borderWidth: 4,
-        borderColor: '#201604',
+        borderColor: cores.marrom,
         justifyContent: 'center',
         alignItems: 'center',
         ...sombra,
@@ -378,7 +383,7 @@ const styles = StyleSheet.create({
         width: 180,
         height: 180,
         borderRadius: 90,
-        backgroundColor: 'rgba(250, 159, 42, 0.13)',
+        backgroundColor: cores.laranja + '21',
     },
 
     heroiLinha: {
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
         fontFamily: fontes.regular,
         fontSize: 15,
         lineHeight: 21,
-        color: 'rgba(255, 234, 200, 0.72)',
+        color: cores.laranjaClaro + 'B8',
     },
 
     botaoTrocar: {
@@ -476,13 +481,13 @@ const styles = StyleSheet.create({
         fontFamily: fontes.regular,
         fontSize: 14,
         lineHeight: 20,
-        color: 'rgba(255, 234, 200, 0.72)',
+        color: cores.laranjaClaro + 'B8',
         marginTop: 12,
     },
 
     detalhes: {
         marginTop: 12,
-        backgroundColor: 'rgba(255, 234, 200, 0.08)',
+        backgroundColor: cores.laranjaClaro + '14',
         borderRadius: 18,
         padding: 12,
         gap: 8,
@@ -503,7 +508,7 @@ const styles = StyleSheet.create({
         fontFamily: fontes.regular,
         fontSize: 14,
         lineHeight: 20,
-        color: 'rgba(255, 234, 200, 0.85)',
+        color: cores.laranjaClaro + 'D9',
     },
 
     textoDetalheForte: {
@@ -546,7 +551,7 @@ const styles = StyleSheet.create({
         backgroundColor: cores.branco,
         borderRadius: 22,
         borderWidth: 1,
-        borderColor: '#E9DFD2',
+        borderColor: cores.bordaCreme,
         padding: 12,
         justifyContent: 'space-between',
     },

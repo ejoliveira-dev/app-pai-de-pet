@@ -4,8 +4,8 @@ import { Alert } from "./AlertaTutus";
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { cores, fontes, sombra } from '../styles/tema';
-
+import { fontes, sombra } from '../styles/tema';
+import { useTema } from '../styles/TemaContext';
 import { obterPetSelecionadoId, listarRegistros, inserirRegistro, removerRegistro } from '../database/Database';
 
 function quandoRegistro(texto) {
@@ -20,6 +20,9 @@ function quandoRegistro(texto) {
 
 export default function AguaPet() {
     const db = useSQLiteContext();
+
+    const { cores } = useTema();
+    const styles = criarStyles(cores); 
 
     const [petId, setPetId] = useState(null);
     const [registros, setRegistros] = useState([]);
@@ -256,7 +259,7 @@ export default function AguaPet() {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
 
     card: {
         backgroundColor: cores.branco,
@@ -267,7 +270,7 @@ const styles = StyleSheet.create({
     },
 
     resumo: {
-        backgroundColor: 'rgba(250, 159, 42, 0.10)',
+        backgroundColor: cores.laranja + '1A',
         borderRadius: 18,
         padding: 14,
         marginBottom: 14,
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 16,
         paddingVertical: 4,
-        backgroundColor: 'rgba(51, 39, 22, 0.06)',
+        backgroundColor: cores.marrom + '0F',
     },
 
     atalhoAtivo: {
@@ -369,7 +372,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
         borderTopWidth: 1,
-        borderTopColor: '#E9E1D6',
+        borderTopColor: cores.bordaCreme,
         paddingTop: 12,
         gap: 8,
         marginTop: 14,
@@ -379,7 +382,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontFamily: fontes.regular,
         fontSize: 15,
-        color: '#9A8A75',
+        color: 	cores.marromClaro,
     },
 
     item: {
@@ -389,7 +392,7 @@ const styles = StyleSheet.create({
         paddingVertical: 11,
         paddingHorizontal: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#E9E1D6',
+        borderBottomColor: 	cores.bordaCreme,
     },
 
     textos: {

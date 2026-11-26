@@ -12,8 +12,10 @@ import Cartao from '../componentes/Cartao';
 import Botao from '../componentes/Botao';
 import AvatarPet from '../componentes/AvatarPet';
 import CampoTexto from '../componentes/CampoTexto';
-import { cores, fontes, raio, sombra } from '../styles/tema';
+import { fontes, raio, sombra } from '../styles/tema';
 import logo from '../../assets/images/logo-ofc-png-empty1.0.png';
+import { useTema } from '../styles/TemaContext';
+import { paletas } from '../styles/tema';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 
@@ -29,6 +31,8 @@ const PERFIL_INICIAL = {
 
 // Uma linha de configuração (ícone + texto + seta). "perigo" deixa em vermelho.
 function LinhaConfig({ icone, texto, onPress, perigo }) {
+    const { cores } = useTema();
+    const styles = criarStyles(cores);
     const cor = perigo ? cores.erro : cores.marrom;
     return (
         <Pressable style={styles.linhaConfig} onPress={onPress}>
@@ -44,7 +48,9 @@ function LinhaConfig({ icone, texto, onPress, perigo }) {
 
 export default function Tutor({ navigation }) {
     const db = useSQLiteContext();
+    const { tema, cores, temaEscolhido, alterarTema, personalizacaoAtiva, alternarPersonalizacao } = useTema();
 
+    const styles = criarStyles(cores);
     const [perfil, setPerfil] = useState(PERFIL_INICIAL);
     const [pets, setPets] = useState([]);
 
@@ -536,6 +542,60 @@ export default function Tutor({ navigation }) {
 
                 </View>
 
+                <View style={styles.divisor} />
+
+                <View style={styles.linhaSwitch}>
+                    <View style={styles.bolinha}>
+                        <Ionicons name="color-palette-outline" size={20} color={cores.marrom} />
+                    </View>
+
+                    <View style={styles.textosSwitch}>
+                        <Text style={styles.textoConfig}>Personalizar aparência</Text>
+                        <Text style={styles.aviso}>Alterar as cores do Tutus</Text>
+                    </View>
+
+                    <Switch
+                        value={personalizacaoAtiva}
+                        onValueChange={alternarPersonalizacao}
+                        trackColor={{ false: '#C9C5BE', true: cores.laranja }}
+                        thumbColor="#FFFFFF"
+                    />
+                </View>
+
+                {personalizacaoAtiva && (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.listaPaletas}
+                    >
+                        {Object.entries(paletas).map(([nome, paleta]) => (
+                            <Pressable
+                                key={nome}
+                                style={styles.opcaoPaleta}
+                                onPress={() => alterarTema(nome)}
+                            >
+                                <View style={[
+                                    styles.circuloPaleta,
+                                    { backgroundColor: nome === 'claro' || nome === 'escuro' ? paleta[4] : paleta[2] },
+                                    temaEscolhido === nome && styles.paletaSelecionada
+                                ]}>
+                                    {temaEscolhido === nome && (
+                                        <Ionicons
+                                            name="checkmark"
+                                            size={22}
+                                            color={['escuro', 'azul', 'roxo'].includes(nome) ? '#FFFFFF' : '#332716'}
+                                        />
+                                    )}
+                                </View>
+
+                                <Text style={styles.nomePaleta}>
+                                    {nome.charAt(0).toUpperCase() + nome.slice(1)}
+                                </Text>
+                            </Pressable>
+                        ))}
+                    </ScrollView>
+                )}
+
             </View>
 
             {/* CONTA */}
@@ -667,86 +727,6 @@ export default function Tutor({ navigation }) {
 
                                 </Cartao>
 
-                                {/* PERSONALIZAÇÃO */}
-                                <Cartao style={styles.card}>
-
-                                    <Text style={[styles.textoCard, styles.espacoTitulo]}>
-                                        Personalização
-                                    </Text>
-
-                                    <Text style={styles.labelCampo}>
-                                        Aparência do perfil
-                                    </Text>
-
-                                    {/* tema padrão */}
-                                    <Pressable
-                                        style={[
-                                            styles.opcaoTema,
-                                            perfil.tema === 'padrao' &&
-                                            styles.opcaoSelecionada
-                                        ]}
-                                        onPress={() =>
-                                            atualizarPerfil({ tema: 'padrao' })
-                                        }
-                                    >
-                                        <Ionicons
-                                            name="color-palette-outline"
-                                            size={22}
-                                            color={cores.marrom}
-                                        />
-
-                                        <Text style={styles.textoConfig}>
-                                            Padrão Tutus
-                                        </Text>
-
-                                        {perfil.tema === 'padrao' && (
-                                            <Ionicons
-                                                name="checkmark-circle"
-                                                size={22}
-                                                color={cores.laranja}
-                                            />
-                                        )}
-                                    </Pressable>
-
-                                    {/* tema suave */}
-                                    <Pressable
-                                        style={[
-                                            styles.opcaoTema,
-                                            perfil.tema === 'suave' &&
-                                            styles.opcaoSelecionada
-                                        ]}
-                                        onPress={() =>
-                                            atualizarPerfil({ tema: 'suave' })
-                                        }
-                                    >
-                                        <Ionicons
-                                            name="color-fill-outline"
-                                            size={22}
-                                            color={cores.marrom}
-                                        />
-
-                                        <Text style={styles.textoConfig}>
-                                            Tons suaves
-                                        </Text>
-
-                                        {perfil.tema === 'suave' && (
-                                            <Ionicons
-                                                name="checkmark-circle"
-                                                size={22}
-                                                color={cores.laranja}
-                                            />
-                                        )}
-                                    </Pressable>
-
-                                    <Text style={[styles.aviso, { marginTop: 12 }]}>
-                                        Por enquanto, a personalização altera
-                                        apenas a cor do cabeçalho do Perfil
-                                        do Tutor. A personalização completa
-                                        do aplicativo será desenvolvida depois.
-                                    </Text>
-
-                                </Cartao>
-
                             </ScrollView>
                     </View>
                             </View>
@@ -757,7 +737,7 @@ export default function Tutor({ navigation }) {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
     tituloTela: {
         fontFamily: fontes.negrito,
         fontSize: 34,
@@ -1098,20 +1078,37 @@ const styles = StyleSheet.create({
         color: cores.marrom,
     },
 
-    opcaoTema: {
+    listaPaletas: {
         flexDirection: 'row',
-        alignItems: 'center',
         gap: 12,
-        backgroundColor: cores.branco,
-        borderWidth: 1.5,
-        borderColor: 'rgba(51, 39, 22, 0.1)',
-        padding: 14,
-        borderRadius: raio.campo,
-        marginTop: 10,
+        paddingVertical: 8,
     },
 
-    opcaoSelecionada: {
-        borderColor: cores.laranja,
+    opcaoPaleta: {
+        width: 65,
+        alignItems: 'center',
+        gap: 5,
+    },
+
+    circuloPaleta: {
+        width: 36,
+        height: 36,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: cores.borda,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    paletaSelecionada: {
+        borderWidth: 3,
+        borderColor: cores.marromClaro,
+    },
+
+    nomePaleta: {
+        fontFamily: fontes.regular,
+        fontSize: 12,
+        color: cores.marrom,
     },
 
     avatarContainer: {

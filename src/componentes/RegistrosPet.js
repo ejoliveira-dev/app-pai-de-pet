@@ -13,7 +13,8 @@ import {
 } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { cores, fontes, sombra } from '../styles/tema';
+import { fontes, sombra } from '../styles/tema';
+import { useTema } from '../styles/TemaContext';
 
 // est inicial dos registros do pet
 const REGISTROS_VAZIOS = {
@@ -34,6 +35,7 @@ function quandoRegistro(texto) {
 
 // componente reutilizável para alimentação e peso
 function SecaoRegistro({
+
   titulo,
   unidade,
   valor,
@@ -43,6 +45,9 @@ function SecaoRegistro({
   aoExcluir,
   desabilitado,
 }) {
+
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
 
   const [historicoAberto, setHistoricoAberto] = useState(false);
 
@@ -190,6 +195,9 @@ function SecaoRegistro({
 export default function RegistrosPet({ tipo }) {
 
   const db = useSQLiteContext();
+
+  const { cores } = useTema();
+  const styles = criarStyles(cores); 
 
   const [petId, setPetId] = useState(null);
 
@@ -438,8 +446,8 @@ export default function RegistrosPet({ tipo }) {
     </View>
 );
 }
+const criarStyles = (cores) => StyleSheet.create({
 
-const styles = StyleSheet.create({
     tituloSecao: {
     fontFamily: fontes.negrito,
     fontSize: 24,

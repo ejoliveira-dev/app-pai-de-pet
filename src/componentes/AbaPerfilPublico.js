@@ -15,15 +15,7 @@ import Botao from "./Botao";
 import AvatarPet from "./AvatarPet";
 import DecoracaoPerfil from "./DecoracaoPerfil/DecoracaoPerfil";
 
-// Paleta do Tutus usada neste painel
-const COR = {
-    fundo: "#FFFDF8",
-    creme: "#FFEAC8",
-    marrom: "#332716",
-    laranja: "#FA9F2A",
-    terracota: "#D18B5F",
-    oliva: "#75571F",
-};
+import { useTema } from "../styles/TemaContext";
 
 // Altura do cartão fechado e distância até o topo.
 // A Comunidade usa estes valores para o Feed começar logo abaixo do cartão.
@@ -87,6 +79,19 @@ export default function AbaPerfilPublico({
     onFechar
 }) {
     const db = useSQLiteContext();
+
+    const { cores } = useTema();
+
+    const COR = {
+        fundo: cores.fundo,
+        creme: cores.laranjaClaro,
+        marrom: cores.marrom,
+        laranja: cores.laranja,
+        terracota: cores.terracota,
+        oliva: cores.marromClaro,
+    };
+
+    const styles = criarStyles(COR);
 
     const { width, height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
@@ -630,7 +635,7 @@ export default function AbaPerfilPublico({
         </View>
     );
 }           
-const styles = StyleSheet.create({
+const criarStyles = (COR) => StyleSheet.create({
 
     containerAba: {
         position: 'absolute',
@@ -715,7 +720,7 @@ const styles = StyleSheet.create({
     },
 
     capsulaDados: {
-        backgroundColor: "rgba(250, 159, 42, 0.15)",
+        backgroundColor: COR.laranja + "26",
         borderRadius: 20,
         paddingHorizontal: 16,
         paddingVertical: 2,
@@ -728,7 +733,7 @@ const styles = StyleSheet.create({
         fontFamily: "Ruwudu-Regular",
         fontSize: 14,
         lineHeight: 22,
-        color: "#E8C898",
+        color: COR.creme,
         textAlign: "center",
     },
 
@@ -1013,7 +1018,7 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: "rgba(255, 253, 248, 0.18)",
+        backgroundColor: COR.fundo + "2E",
         alignItems: "center",
         justifyContent: "center",
     },

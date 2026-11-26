@@ -1,14 +1,18 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { cores, raio, espaco, sombra } from "../styles/tema";
+import { raio, espaco, sombra } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 
-// Cartão branco padrão.
+// Cartão padrão.
 
 export default function Cartao({ children, style }) {
+  const { cores } = useTema();
+  const estilos = criarEstilos(cores);
+
   return <View style={[estilos.cartao, style]}>{children}</View>;
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (cores) => StyleSheet.create({
   cartao: {
     backgroundColor: cores.branco,
     borderRadius: raio.cartao,
@@ -16,5 +20,6 @@ const estilos = StyleSheet.create({
     borderColor: cores.bordaCartao,
     padding: espaco.md,
     ...sombra,
+    shadowColor: cores.marrom,
   },
 });

@@ -8,18 +8,16 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { style } from "../../src/styles/ListaPetsStyles";
+import { criarStyle } from "../styles/ListaPetsStyles";
+import { useTema } from "../styles/TemaContext";
 
 import logo from "../../assets/images/logo-ofc-png-empty2.png";
 
-const cores = {
-    fundo: "#FFFDF8",
-    laranja: "#FA9F2A",
-    marrom: "#332716",
-};
-
 export default function ListaPets({ navigation }) {
     const db = useSQLiteContext();
+
+    const { cores } = useTema();
+    const style = criarStyle(cores);
 
     const { width } = useWindowDimensions();
     const larguraCartao = width - 40;

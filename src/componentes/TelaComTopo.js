@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { cores, fontes } from "../styles/tema";
-
+import { fontes } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 
 const ALTURA_TOPO_BAIXO = 92; // altura da parte laranja no modo com logo
 const TAMANHO_LOGO = 120;      // largura e altura da logo
@@ -12,6 +12,8 @@ const MOLDURA_LOGO = "quadrado";
 const SOBREPOSICAO = 28;
 export default function TelaComTopo({ titulo, subtitulo, direita, children, rolagem = true, logo, centro, }) {
   const insets = useSafeAreaInsets();
+  const { cores } = useTema();
+  const estilos = criarEstilos(cores);
   const comLogo = !!logo || !!centro;
 
   const linha = insets.top + ALTURA_TOPO_BAIXO - SOBREPOSICAO;
@@ -114,7 +116,7 @@ export default function TelaComTopo({ titulo, subtitulo, direita, children, rola
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (cores) => StyleSheet.create({
   tela: {
     flex: 1,
     backgroundColor: cores.laranja,

@@ -11,7 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Cartao from './Cartao';
 import Botao from './Botao';
-import { cores, fontes, raio, sombra, textos } from '../styles/tema';
+import { fontes, raio, sombra, textos } from '../styles/tema';
+import { useTema } from '../styles/TemaContext';
 import CalendarioHigiene from './CalendarioHigiene';
 import { categoriaPermitida } from '../utils/categoriasPet';
 
@@ -103,10 +104,18 @@ function quando(data, agora) {
 }
 
 function TituloSecao({ children, style }) {
+
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
+  
   return <Text style={[styles.tituloSecao, style]}>{children}</Text>;
 }
 
 function Bolinha({ nome, tamanho = 40 }) {
+
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
+
   return (
     <View
       style={[
@@ -120,6 +129,10 @@ function Bolinha({ nome, tamanho = 40 }) {
 }
 
 function Vazio({ icone, texto, acao, onAcao }) {
+
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
+
   return (
     <View style={styles.vazio}>
       <Bolinha nome={icone} tamanho={48} />
@@ -137,6 +150,10 @@ function Vazio({ icone, texto, acao, onAcao }) {
 }
 
 function ItemLista({ icone, titulo, detalhe, atrasado, ultimo }) {
+  
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
+
   return (
     <View style={[styles.itemLista, !ultimo && styles.itemDivisor]}>
       <Bolinha nome={icone} />
@@ -160,12 +177,15 @@ const ALTURA_CAPSULA = 132;
 const BARRA_MINIMA = 36;
 
 
-const CORES_BARRAS = [
-  { fundo: cores.marrom, texto: cores.laranjaClaro },
-  { fundo: cores.terracota || '#D18B5F', texto: cores.marrom },
-  { fundo: cores.marromClaro, texto: cores.fundo }
-];
 function Grafico({ alimentacao, agua, peso, pet, agora, onAbrirCuidados }) {
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
+
+  const CORES_BARRAS = [
+    { fundo: cores.marrom, texto: cores.laranjaClaro },
+    { fundo: cores.terracota, texto: cores.marrom },
+    { fundo: cores.marromClaro, texto: cores.fundo }
+  ];
 
   const [modo, setModo] = useState('alimentacao');
 
@@ -192,7 +212,7 @@ if (modo === 'alimentacao' || modo === 'agua') {
         const hoje = indice === dadosGrafico.length - 1;
 
         const cor = hoje
-            ? { fundo: cores.laranja, texto: cores.marrom }
+            ? { fundo: cores.laranja, texto: cores.textoSobrePrincipal }
             : CORES_BARRAS[indice % CORES_BARRAS.length];
 
         return {
@@ -229,7 +249,7 @@ if (modo === 'alimentacao' || modo === 'agua') {
             ((item.valor - menor) / (maior - menor)) * ALTURA_CAPSULA * 0.55,
         destaque: ultimo,
         fundo: ultimo ? cores.laranja : cores.laranjaClaro,
-        corTexto: cores.marrom
+        corTexto: ultimo ? cores.textoSobrePrincipal : cores.marrom
       };
     });
 
@@ -409,6 +429,9 @@ export default function PainelHome({
 }) {
 
   const db = useSQLiteContext();
+
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
 
   const id = pet?.id_pet;
 
@@ -948,9 +971,9 @@ const definirIntervaloAgua = !intervaloAgua || escolhendoIntervaloAgua;
   const paleta = modoRefeicao === 'acao'
     ? {
       fundo: cores.laranja,
-      texto: cores.marrom,
-      suave: 'rgba(51, 39, 22, 0.78)',
-      rotulo: 'rgba(51, 39, 22, 0.72)',
+      texto: cores.textoSobrePrincipal,
+      suave: cores.textoSobrePrincipal,
+      rotulo: cores.textoSobrePrincipal,
       anel: 'rgba(255, 234, 200, 0.28)',
       bola: cores.laranjaClaro,
       trilho: 'rgba(51, 39, 22, 0.16)',
@@ -970,16 +993,16 @@ const definirIntervaloAgua = !intervaloAgua || escolhendoIntervaloAgua;
       barra: cores.laranja,
       chip: 'rgba(255, 234, 200, 0.13)',
       botao: cores.laranja,
-      textoBotao: cores.marrom,
+      textoBotao: cores.textoSobrePrincipal,
     };
 
 
 const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
     ? {
         fundo: cores.laranja,
-        texto: cores.marrom,
-        suave: 'rgba(51, 39, 22, 0.78)',
-        rotulo: cores.marrom,
+        texto: cores.textoSobrePrincipal,
+        suave: cores.textoSobrePrincipal,
+        rotulo: cores.textoSobrePrincipal,
         anel: 'rgba(255, 234, 200, 0.28)',
         bola: cores.laranjaClaro,
         trilho: 'rgba(51, 39, 22, 0.16)',
@@ -999,8 +1022,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
         barra: cores.laranja,
         chip: 'rgba(255, 234, 200, 0.13)',
         botao: cores.laranja,
-        textoBotao: cores.marrom,
-    };
+        textoBotao: cores.textoSobrePrincipal,    };
 
   const nomePet = pet?.nome || 'Seu pet';
 
@@ -1219,8 +1241,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
                 <Text
                   style={[
                     styles.textoOpcaoIntervalo,
-                    { color: intervalo === horas ? cores.marrom : paleta.texto }
-                  ]}
+                    { color: intervalo === horas ? cores.textoSobrePrincipal : paleta.texto }                  ]}
                 >
                   {horas}h
                 </Text>
@@ -1362,7 +1383,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
                           >
                               <Text style={[styles.textoOpcaoIntervalo, {
                                   color: intervaloAgua === horas
-                                      ? cores.marrom
+                                      ? cores.textoSobrePrincipal
                                       : paletaAgua.texto
                               }]}>
                                   {horas}h
@@ -1590,7 +1611,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
   );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
 
   painel: {
     marginTop: 5,
@@ -1885,13 +1906,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: ALTURA_CAPSULA,
     borderRadius: 19,
-    backgroundColor: 'rgba(51, 39, 22, 0.06)',
+    backgroundColor: 	cores.marrom + '0F',
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
 
   capsulaTrilhoEscuro: {
-    backgroundColor: 'rgba(255, 234, 200, 0.12)',
+    backgroundColor: 	cores.laranjaClaro + '1F',
   },
 
   capsulaBarra: {
@@ -1917,7 +1938,7 @@ const styles = StyleSheet.create({
   },
 
   capsulaRotuloEscuro: {
-    color: 'rgba(255, 234, 200, 0.75)',
+    color: cores.laranjaClaro + 'BF',
   },
 
   capsulaRotuloHoje: {
@@ -1939,11 +1960,12 @@ const styles = StyleSheet.create({
   },
 
   capsulasNotaEscuro: {
-    color: 'rgba(255, 234, 200, 0.75)',
+    color: cores.laranjaClaro + 'BF',
   },
 
   tituloSecao: {
     ...textos.tituloSecao,
+    color: cores.marrom,
     fontSize: 25,
     marginTop: 24,
     marginBottom: 12,
@@ -2224,7 +2246,7 @@ const styles = StyleSheet.create({
   },
 
   seloDepois: {
-    backgroundColor: 'rgba(51, 39, 22, 0.06)',
+    backgroundColor: cores.marrom + '0F',
   },
 
   textoSelo: {

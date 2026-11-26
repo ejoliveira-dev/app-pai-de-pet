@@ -19,7 +19,8 @@ import AvatarPet from '../componentes/AvatarPet';
 import Cartao from '../componentes/Cartao';
 import Chip from '../componentes/Chip';
 import Botao from '../componentes/Botao';
-import { cores, fontes, textos } from '../styles/tema';
+import { fontes, textos } from '../styles/tema';
+import { useTema } from '../styles/TemaContext';
 import logo from "../../assets/images/logo-ofc-png-empty1.0.png";
 
 function calcularIdade(dataNascimento) {
@@ -115,6 +116,8 @@ function infoAniversario(pet) {
 
 export default function Home({ navigation, route }) {
   const db = useSQLiteContext();
+  const { cores } = useTema();
+  const styles = criarStyles(cores);
 
   const petRecebido = route.params?.petSelecionado;
   const [pet, setPet] = useState(petRecebido || null);
@@ -223,11 +226,14 @@ export default function Home({ navigation, route }) {
           </View>
 
           <View style={styles.infoPet}>
-            <Text style={textos.etiqueta}>SEU COMPANHEIRO</Text>
 
-            <Text style={styles.nomePet} numberOfLines={1}>
-              {pet.nome || "Meu pet"}
-            </Text>
+              <Text style={[textos.etiqueta, { color: cores.laranja }]}>
+                SEU COMPANHEIRO
+              </Text>          
+              
+              <Text style={styles.nomePet} numberOfLines={1}>
+                {pet.nome || "Meu pet"}
+               </Text>
 
             <View style={styles.chips}>
               <Chip pequeno texto={pet.especie || "Pet"} icone="paw" />
@@ -283,7 +289,8 @@ export default function Home({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({  
+  
   petCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -317,7 +324,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFEAC8',
+    backgroundColor: cores.laranjaClaro,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -410,7 +417,6 @@ const styles = StyleSheet.create({
     fontFamily: fontes.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: 'rgba(255, 234, 200, 0.72)',
-  },
+    color: cores.laranjaClaro,  },
 
 })

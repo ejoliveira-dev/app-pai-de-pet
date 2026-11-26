@@ -1,11 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { cores, fontes, raio } from "../styles/tema";
-
-// Etiqueta creme.
+import { fontes, raio } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 
 export default function Chip({ texto, icone, style, pequeno = false }) {
+  const { cores } = useTema();
+  const estilos = criarEstilos(cores);
+
   return (
     <View style={[estilos.chip, pequeno && estilos.chipPequeno, style]}>
       {icone ? (
@@ -16,7 +18,7 @@ export default function Chip({ texto, icone, style, pequeno = false }) {
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (cores) => StyleSheet.create({
   chip: {
     flexDirection: "row",
     alignItems: "center",
@@ -42,8 +44,8 @@ const estilos = StyleSheet.create({
     paddingHorizontal: 10,
   },
 
-  textoPequeno: { 
-    fontSize: 14, 
-    lineHeight: 20, 
+  textoPequeno: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

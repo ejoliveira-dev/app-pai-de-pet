@@ -1,14 +1,14 @@
 import React from "react";
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { cores, fontes, raio } from "../styles/tema";
-
+import { fontes, raio } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 // Botão em pílula (tipo "Entrar" ou "Começar").
 // variante: "primario" (marrom), "secundario" (laranja), "contorno" ou "perigo".
 
 // larga: true -> ocupa a largura toda.
 
-const variantes = {
+const criarVariantes = (cores) => ({
   primario: { botao: { backgroundColor: cores.marrom }, texto: { color: cores.fundo } },
   secundario: { botao: { backgroundColor: cores.laranja }, texto: { color: cores.marrom } },
   contorno: {
@@ -19,7 +19,7 @@ const variantes = {
     botao: { backgroundColor: "transparent", borderWidth: 1, borderColor: cores.erro },
     texto: { color: cores.erro },
   },
-};
+});
 
 export default function Botao({
   titulo,
@@ -31,8 +31,9 @@ export default function Botao({
   icone,
   style,
 }) {
-  const v = variantes[variante] || variantes.primario;
-  const bloqueado = carregando || desabilitado;
+const { cores } = useTema();
+const variantes = criarVariantes(cores);
+const v = variantes[variante] || variantes.primario;  const bloqueado = carregando || desabilitado;
 
   return (
     <TouchableOpacity

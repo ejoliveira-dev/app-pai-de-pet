@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { cores, fontes, raio } from "../styles/tema";
+import { fontes, raio } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 
 // Campo padrão do app. Props úteis:
 
@@ -13,7 +14,8 @@ import { cores, fontes, raio } from "../styles/tema";
 
 export default function CampoTexto({ label, senha = false, erro, style, inputStyle, ...props }) {
   const [mostrar, setMostrar] = useState(false);
-
+  const { cores } = useTema();
+  const estilos = criarEstilos(cores);
   return (
     <View style={[estilos.grupo, style]}>
       {label ? <Text style={estilos.label}>{label}</Text> : null}
@@ -21,8 +23,7 @@ export default function CampoTexto({ label, senha = false, erro, style, inputSty
       <View style={[estilos.campo, erro ? estilos.campoErro : null]}>
         <TextInput
           style={[estilos.input, inputStyle]}
-          placeholderTextColor="#A89A82"
-          secureTextEntry={senha && !mostrar}
+          placeholderTextColor={cores.marromClaro}          secureTextEntry={senha && !mostrar}
           autoCapitalize={senha ? "none" : "sentences"}
           {...props}
         />
@@ -46,8 +47,7 @@ export default function CampoTexto({ label, senha = false, erro, style, inputSty
   );
 }
 
-const estilos = StyleSheet.create({
-  grupo: { marginBottom: 20 },
+const criarEstilos = (cores) => StyleSheet.create({  grupo: { marginBottom: 20 },
   label: {
     fontFamily: fontes.negrito,
     fontSize: 17,

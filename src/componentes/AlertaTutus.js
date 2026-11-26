@@ -3,7 +3,8 @@ import { Modal, View, Text, StyleSheet, Alert as AlertNativo } from "react-nativ
 import { Ionicons } from "@expo/vector-icons";
 
 import Botao from "./Botao";
-import { cores, fontes, sombra } from "../styles/tema";
+import { fontes, sombra } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 
 let mostrarNaTela = null;
 
@@ -21,7 +22,7 @@ function alertar(titulo, mensagem, botoes) {
 export const Alert = { alert: alertar };
 
 // escolhe o ícone do topo pelo tipo de alerta
-function escolherIcone(alerta) {
+function escolherIcone(alerta, cores) {
     if (alerta.botoes.some((botao) => botao.style === "destructive")) {
         return { nome: "trash-outline", fundo: cores.erro, cor: cores.branco };
     }
@@ -34,6 +35,8 @@ function escolherIcone(alerta) {
 }
 
 export default function AlertaTutus() {
+    const { cores } = useTema();
+    const estilos = criarEstilos(cores);
     // fila: se um alerta abrir outro, eles aparecem um depois do outro
     const [fila, setFila] = useState([]);
 
@@ -49,8 +52,7 @@ export default function AlertaTutus() {
 
     if (!alerta) return null;
 
-    const icone = escolherIcone(alerta);
-    const emColuna = alerta.botoes.length > 2;
+    const icone = escolherIcone(alerta, cores);    const emColuna = alerta.botoes.length > 2;
 
     function tocar(botao) {
         setFila((atual) => atual.slice(1));
@@ -105,8 +107,7 @@ export default function AlertaTutus() {
     );
 }
 
-const estilos = StyleSheet.create({
-    fundo: {
+const criarEstilos = (cores) => StyleSheet.create({    fundo: {
         flex: 1,
         backgroundColor: "rgba(30, 23, 15, 0.55)",
         alignItems: "center",

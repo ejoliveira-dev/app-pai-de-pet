@@ -5,17 +5,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { listarCuidados } from "../database/Database";
-import { cores, fontes, sombra } from "../styles/tema";
+import { fontes, sombra } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 
 // Dias da semana na ordem em que aparecem no calendário.
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-
-// Cores de fundo para cada status do cuidado.
-const CORES_STATUS = {
-    agendado: "#FA9F2A",
-    realizado: "#E6DCCE",
-    atrasado: "#F8D7D7",
-};
 
 // Define um ícone para cada tipo de higiene.
 function obterIcone(nome) {
@@ -76,6 +70,16 @@ function obterStatus(item, hoje) {
 }
 
 export default function CalendarioHigiene({ pet, onAbrirCuidados, agora }) {
+    
+    const { cores } = useTema();
+    const styles = criarStyles(cores);
+
+    const CORES_STATUS = {
+        agendado: cores.laranja,
+        realizado: cores.bordaCreme,
+        atrasado: "#F8D7D7",
+    };
+
     const db = useSQLiteContext();
 
     const [registros, setRegistros] = useState([]);
@@ -456,7 +460,7 @@ export default function CalendarioHigiene({ pet, onAbrirCuidados, agora }) {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
 
     tituloSecao: {
         fontFamily: fontes.negrito,
@@ -522,7 +526,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#FFF1DC",
+        backgroundColor: cores.creme,
     },
 
     periodo: {
@@ -545,13 +549,13 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         backgroundColor: cores.fundo,
         borderWidth: 1,
-        borderColor: "#F2DFC4",
+        borderColor: cores.bordaCreme,
         alignItems: "center",
         paddingVertical: 7,
     },
 
     colunaAtiva: {
-        backgroundColor: "#FFF1DC",
+        backgroundColor: cores.creme,
         borderColor: cores.laranja,
     },
 
@@ -604,7 +608,7 @@ const styles = StyleSheet.create({
 
     semCuidado: {
         fontSize: 18,
-        color: "#B9AA96",
+        color: cores.marromClaro,
         marginTop: 5,
     },
 
@@ -643,7 +647,7 @@ const styles = StyleSheet.create({
 
     divisor: {
         height: 1,
-        backgroundColor: "#F2DFC4",
+        backgroundColor: cores.bordaCreme,
         marginBottom: 12,
     },
 

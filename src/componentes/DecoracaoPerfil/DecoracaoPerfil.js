@@ -1,8 +1,11 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import IconesEspecies from "./IconesEspecies";
+import { useTema } from "../../styles/TemaContext";
 
 export default function DecoracaoPerfil({ especie }) {
+    const { cores } = useTema();
+    const styles = criarStyles(cores);
 
     const ehTartaruga = especie?.toLowerCase().trim() === "tartaruga";
 
@@ -36,6 +39,7 @@ export default function DecoracaoPerfil({ especie }) {
                     <IconesEspecies
                         especie={especie}
                         tamanho={tamanho}
+                        cor={cores.laranja}
                     />
                 </View>
             ))}
@@ -44,7 +48,7 @@ export default function DecoracaoPerfil({ especie }) {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
 
     container: {
         position: "absolute",
@@ -63,7 +67,7 @@ const styles = StyleSheet.create({
         borderRadius: 90,
         top: -90,
         right: -80,
-        backgroundColor: "rgba(250, 159, 42, 0.12)",
+        backgroundColor: cores.laranja + "1F",
     },
 
     circuloInferior: {
@@ -73,7 +77,7 @@ const styles = StyleSheet.create({
         borderRadius: 80,
         bottom: -80,
         left: -80,
-        backgroundColor: "rgba(250, 159, 42, 0.08)",
+        backgroundColor: cores.laranja + "14",
     },
 
     icone: {

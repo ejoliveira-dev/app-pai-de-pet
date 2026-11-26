@@ -4,7 +4,8 @@ import { Alert } from "./AlertaTutus";
 import { useSQLiteContext } from "expo-sqlite";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { cores, fontes, sombra } from "../styles/tema";
+import { fontes, sombra } from "../styles/tema";
+import { useTema } from "../styles/TemaContext";
 
 import { listarCuidados, inserirCuidado, atualizarCuidado, removerCuidado, alterarStatusCuidado, obterIntervaloHigiene, salvarIntervaloHigiene } from "../database/Database";
 
@@ -92,6 +93,9 @@ function intervaloValido(dias) {
 
 export default function HigienePet({ pet }) {
     const db = useSQLiteContext();
+
+    const { cores } = useTema();
+    const styles = criarStyles(cores);
 
     const opcoes = [...(HIGIENE_POR_ESPECIE[pet.especie] || []), "Outro cuidado"];
 
@@ -481,7 +485,7 @@ export default function HigienePet({ pet }) {
                         value={realizado}
                         onValueChange={setRealizado}
                         disabled={salvando}
-                        trackColor={{ false: "#D8D0C4", true: "#FFEAC8" }}
+                        trackColor={{ false: "#D8D0C4", true: cores.laranjaClaro }}                       
                         thumbColor={realizado ? cores.laranja : "#FFFFFF"}
                     />
 
@@ -500,7 +504,7 @@ export default function HigienePet({ pet }) {
                                 value={repetir}
                                 onValueChange={setRepetir}
                                 disabled={salvando || carregandoIntervalo}
-                                trackColor={{ false: "#D8D0C4", true: "#FFEAC8" }}
+                                trackColor={{ false: "#D8D0C4", true: cores.laranjaClaro }}                              
                                 thumbColor={repetir ? cores.laranja : "#FFFFFF"}
                             />
 
@@ -708,7 +712,7 @@ export default function HigienePet({ pet }) {
     );
 }
 
-const styles = StyleSheet.create({
+const criarStyles = (cores) => StyleSheet.create({
 
     tituloSecao: {
         fontFamily: fontes.negrito,
@@ -742,10 +746,10 @@ const styles = StyleSheet.create({
     },
 
     opcao: {
-        backgroundColor: "#FFF1DC",
+        backgroundColor: cores.creme,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: "#F2DFC4",
+        borderColor: cores.bordaCreme,
         paddingVertical: 8,
         paddingHorizontal: 14,
     },
@@ -791,7 +795,7 @@ const styles = StyleSheet.create({
     repeticao: {
         marginBottom: 14,
         padding: 12,
-        backgroundColor: "#FFF1DC",
+        backgroundColor: cores.creme,
         borderRadius: 18,
     },
 
@@ -860,7 +864,7 @@ const styles = StyleSheet.create({
         gap: 12,
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#F0EBE3',
+        borderTopColor: cores.bordaCreme,
     },
 
     bola: {
@@ -873,7 +877,7 @@ const styles = StyleSheet.create({
     },
 
     bolaFeita: {
-        backgroundColor: "rgba(51, 39, 22, 0.08)",
+        backgroundColor: cores.marrom + "14",
     },
 
     textos: {
@@ -933,7 +937,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
         borderTopWidth: 1,
-        borderTopColor: '#E9E1D6',
+        borderTopColor: cores.bordaCreme,
         paddingTop: 12,
         gap: 8,
         marginTop: 14,
@@ -943,6 +947,6 @@ const styles = StyleSheet.create({
         flex: 1,
         fontFamily: fontes.regular,
         fontSize: 15,
-        color: '#9A8A75',
+        color: cores.marromClaro,
     },
 });
