@@ -127,6 +127,7 @@ export default function Notificacoes({ onAtualizarContador }) {
                             name="checkmark-done-outline"
                             size={19}
                             color={COR.laranja}
+                            style={{ transform: [{ translateY: -2 }] }}
                         />
 
                         <Text style={styles.textoMarcar}>
@@ -231,6 +232,7 @@ const criarStyles = (COR) => StyleSheet.create({
         fontFamily: "Ruwudu-Bold",
         fontSize: 32,
         color: COR.marrom,
+        lineHeight: 46,
     },
 
     contador: {
@@ -248,7 +250,8 @@ const criarStyles = (COR) => StyleSheet.create({
         alignItems: "center",
         alignSelf: "flex-end",
         gap: 6,
-        marginBottom: 18,
+        marginBottom: 15,
+        marginTop: -6,
     },
 
     textoMarcar: {

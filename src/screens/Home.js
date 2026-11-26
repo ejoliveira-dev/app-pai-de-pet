@@ -283,7 +283,7 @@ export default function Home({ navigation, route }) {
 
       <PainelHome
         pet={pet}
-        onAbrirCuidados={() => navigation.navigate("PetPrivado")}
+        onAbrirCuidados={(aba) => navigation.navigate("PetPrivado", { aba, quando: Date.now() })}
       />
     </TelaComTopo>
   );

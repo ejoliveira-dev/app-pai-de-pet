@@ -971,7 +971,7 @@ const definirIntervaloAgua = !intervaloAgua || escolhendoIntervaloAgua;
   const paleta = modoRefeicao === 'acao'
     ? {
       fundo: cores.laranja,
-      texto: cores.textoSobrePrincipal,
+      texto: '#FFFF',
       suave: cores.textoSobrePrincipal,
       rotulo: cores.textoSobrePrincipal,
       anel: 'rgba(255, 234, 200, 0.28)',
@@ -984,7 +984,7 @@ const definirIntervaloAgua = !intervaloAgua || escolhendoIntervaloAgua;
     }
     : {
       fundo: cores.marrom,
-      texto: cores.laranjaClaro,
+      texto: '#FFFF',
       suave: 'rgba(255, 234, 200, 0.72)',
       rotulo: '#D18B5F',
       anel: 'rgba(250, 159, 42, 0.13)',
@@ -1000,7 +1000,7 @@ const definirIntervaloAgua = !intervaloAgua || escolhendoIntervaloAgua;
 const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
     ? {
         fundo: cores.laranja,
-        texto: cores.textoSobrePrincipal,
+        texto: '#FFFF',
         suave: cores.textoSobrePrincipal,
         rotulo: cores.textoSobrePrincipal,
         anel: 'rgba(255, 234, 200, 0.28)',
@@ -1013,7 +1013,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
     }
     : {
         fundo: cores.marrom,
-        texto: cores.laranjaClaro,
+        texto: '#FFFF',
         suave: 'rgba(255, 234, 200, 0.72)',
         rotulo: '#D18B5F',
         anel: 'rgba(250, 159, 42, 0.13)',
@@ -1300,7 +1300,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
               </Pressable>
 
               <Pressable
-                onPress={onAbrirCuidados}
+                onPress={() => onAbrirCuidados('alimentacao')}
                 accessibilityRole="button"
                 accessibilityLabel="Registrar refeição"
                 style={({ pressed }) => [
@@ -1435,7 +1435,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
                           </Pressable>
 
                           <Pressable
-                              onPress={onAbrirCuidados}
+                              onPress={() => onAbrirCuidados('agua')}
                               style={[styles.refeicaoBotao, {
                                   backgroundColor: paletaAgua.botao
                               }]}
@@ -1541,7 +1541,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
           return (
             <Pressable
               key={item.id}
-              onPress={onAbrirCuidados}
+              onPress={() => onAbrirCuidados(item.tipo === 'Vacina' ? 'vacinas' : 'consulta')}
               accessibilityRole="button"
               style={({ pressed }) => [
                 styles.agendaItem,
@@ -1590,7 +1590,7 @@ const paletaAgua = reposicaoAgua.estado === 'passou' && !definirIntervaloAgua
           {calculos.medicamentosAtivos.map(item => (
             <Pressable
               key={String(item.id)}
-              onPress={onAbrirCuidados}
+              onPress={() => onAbrirCuidados('medicamento')}
               accessibilityRole="button"
               style={({ pressed }) => [
                 styles.emUsoPilula,

@@ -305,7 +305,7 @@ export const criarStyle = (cores) => StyleSheet.create({
     },
 
     textoVerPerfil: {
-        color: cores.fundo,
+        color: '#FFFF',
         fontSize: 20,
         fontFamily: "Ruwudu-Bold",
     },

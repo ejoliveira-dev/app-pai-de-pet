@@ -243,7 +243,7 @@ export default function CadastroPet({ navigation, route }) {
 
                 const destino = new File(
                     Paths.document,
-                    `pet-${idPet}.${extensao}`
+                    `pet-${idPet}-${Date.now()}.${extensao}`
                 );
 
                 await origem.copy(destino);
@@ -295,8 +295,10 @@ export default function CadastroPet({ navigation, route }) {
             console.error("Erro ao salvar pet:", erro);
 
             Alert.alert(
-                "Erro ao salvar",
-                "Não foi possível cadastrar o pet. Tente novamente."
+                modoEdicao ? "Erro ao salvar alterações" : "Erro ao cadastrar",
+                modoEdicao
+                    ? "Não foi possível salvar as alterações do pet. Tente novamente."
+                    : "Não foi possível cadastrar o pet. Tente novamente."
             );
         } finally {
             setSalvando(false);
@@ -588,6 +590,7 @@ export default function CadastroPet({ navigation, route }) {
                             <TouchableOpacity
                                 style={[
                                     style.opcaoModo,
+                                    { marginTop: 10 },
                                     usarDataEspecial && style.opcaoModoSelecionada,
                                 ]}
                                 onPress={() => setUsarDataEspecial((atual) => !atual)}

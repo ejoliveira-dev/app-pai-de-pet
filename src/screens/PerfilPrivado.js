@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 
@@ -22,26 +22,27 @@ import { buscarPet, obterPetSelecionadoId } from '../database/Database';
 import { useFocusEffect } from '@react-navigation/native';
 import { categoriaPermitida } from '../utils/categoriasPet';
 
-export default function PerfilPrivado({ navigation }) {
+export default function PerfilPrivado({ navigation, route }) {
 
     const { cores } = useTema();
     const styles = criarStyles(cores);
 
     const CATEGORIAS = [
-        { id: 'alimentacao', nome: 'Alimentação', icone: 'bone'},
+        { id: 'alimentacao', nome: 'Alimentação', icone: 'bone' },
         { id: 'agua', nome: 'Água', icone: 'water' },
         { id: 'peso', nome: 'Peso', icone: 'scale-bathroom' },
         { id: 'vacinas', nome: 'Vacinas', icone: 'needle' },
         { id: 'consulta', nome: 'Consultas', icone: 'calendar-outline' },
         { id: 'medicamento', nome: 'Remédios', icone: 'pill' },
         { id: 'higiene', nome: 'Higiene', icone: 'shower-head' },
-    ]; 
+    ];
 
     const db = useSQLiteContext();
 
     const [pet, setPet] = useState(null);
     const [carregando, setCarregando] = useState(true);
     const [categoria, setCategoria] = useState('alimentacao');
+    const menuRef = useRef(null);
 
     useFocusEffect(
         useCallback(() => {
@@ -60,11 +61,19 @@ export default function PerfilPrivado({ navigation }) {
                     if (ativo) {
                         setPet(petEncontrado || null);
 
-                    setCategoria(anterior =>
-                        categoriaPermitida(petEncontrado?.especie, anterior)
-                            ? anterior
-                            : 'alimentacao'
-                    );
+                        // se o Início pediu uma aba (ex.: "Repor água"), abre nela...
+                        const pedida = route.params?.aba;
+
+                        setCategoria(anterior => {
+                            const alvo = pedida || anterior;
+
+                            return categoriaPermitida(petEncontrado?.especie, alvo)
+                                ? alvo
+                                : 'alimentacao';
+                        });
+
+                        // limpa o pedido, para não voltar sempre para a mesma aba.
+                        if (pedida) navigation.setParams({ aba: undefined });
 
                     }
 
@@ -89,8 +98,27 @@ export default function PerfilPrivado({ navigation }) {
                 ativo = false;
             };
 
-        }, [db])
+                    }, [db, route.params?.aba, route.params?.quando])
     );
+
+    // rola o carrossel até deixar o cartão escolhido visível
+    useEffect(() => {
+        if (!pet || carregando) return;
+
+        const visiveis = CATEGORIAS.filter(item => categoriaPermitida(pet.especie, item.id));
+        const indice = visiveis.findIndex(item => item.id === categoria);
+
+        if (indice < 0) return;
+
+        const espera = setTimeout(() => {
+            menuRef.current?.scrollTo({
+                x: Math.max(0, indice * 122 - 40),
+                animated: true,
+            });
+        }, 150);
+
+        return () => clearTimeout(espera);
+    }, [categoria, pet, carregando]);
 
     return (
         <TelaComTopo
@@ -102,7 +130,7 @@ export default function PerfilPrivado({ navigation }) {
                         accessibilityLabel="Editar foto e dados do pet"
                         style={({ pressed }) => [styles.fotoTopo, pressed && styles.pressionado]}
                     >
-                        <AvatarPet foto={pet.foto_perfil} tamanho={100}  />
+                        <AvatarPet foto={pet.foto_perfil} tamanho={100} />
 
                         <View style={styles.badgeFoto}>
                             <Ionicons name="camera" size={14} color={cores.textoSobrePrincipal} />
@@ -235,6 +263,7 @@ export default function PerfilPrivado({ navigation }) {
                 <>
                     {/* Menu horizontal de categorias */}
                     <ScrollView
+                        ref={menuRef}
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         style={{ flexGrow: 0 }}
@@ -270,7 +299,7 @@ export default function PerfilPrivado({ navigation }) {
                                         )}
                                     </View>
 
-                                   <Text style={[styles.categoriaTexto, ativo && { color: cores.textoSobrePrincipal }]}>
+                                    <Text style={[styles.categoriaTexto, ativo && { color: cores.textoSobrePrincipal }]}>
                                         {item.nome}
                                     </Text>
 
@@ -287,7 +316,7 @@ export default function PerfilPrivado({ navigation }) {
                         />
                     )}
 
-                    {categoria === 'agua' && categoriaPermitida(pet.especie, 'agua') && (                        <AguaPet key={pet.id_pet} />
+                    {categoria === 'agua' && categoriaPermitida(pet.especie, 'agua') && (<AguaPet key={pet.id_pet} />
                     )}
 
                     {categoria === 'vacinas' && (
@@ -571,5 +600,5 @@ const criarStyles = (cores) => StyleSheet.create({
         fontFamily: fontes.negrito,
         fontSize: 15,
         color: cores.marrom,
-    },   
+    },
 });

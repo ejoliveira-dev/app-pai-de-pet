@@ -15,7 +15,7 @@ import Botao from "../componentes/Botao";
 import AvatarPet from "../componentes/AvatarPet";
 import { fontes, sombra } from "../styles/tema";
 import { useTema } from "../styles/TemaContext";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl, ActivityIndicator, Alert as AlertNativo } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Image, Modal, TextInput, Animated, StatusBar, RefreshControl, ActivityIndicator, Alert as AlertNativo, KeyboardAvoidingView, Platform } from 'react-native';
 import { Alert } from "../componentes/AlertaTutus";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -1057,7 +1057,7 @@ export default function Comunidade() {
                 transparent
                 onRequestClose={() => setPostComentario(null)}
             >
-                <View style={styles.fundoComentarios}>
+                <KeyboardAvoidingView style={styles.fundoComentarios} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 
                     {/* Tocar fora fecha os comentários */}
                     <Pressable
@@ -1158,7 +1158,7 @@ export default function Comunidade() {
                         </View>
 
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
             {/* faixa marrom fixa atrás da barra de status */}
@@ -1172,7 +1172,10 @@ export default function Comunidade() {
                 transparent
                 onRequestClose={fecharPublicacao}
             >
-                <View style={styles.modalFundo}>
+                <KeyboardAvoidingView
+                    style={styles.modalFundo}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
 
                     {/* tocar fora fecha */}
                     <Pressable style={styles.preencherFundoComentarios} onPress={fecharPublicacao} />
@@ -1250,7 +1253,7 @@ export default function Comunidade() {
                         />
 
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
         </View>
@@ -1296,7 +1299,7 @@ const criarStyles = (cores) => StyleSheet.create({
     },
 
     cardPublicacao: {
-        backgroundColor: cores.laranjaClaro,
+        backgroundColor: '#FFFFFF',
         borderRadius: 25,
         overflow: 'hidden',
         marginBottom: 18,

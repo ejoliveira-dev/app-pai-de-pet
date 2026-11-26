@@ -442,7 +442,7 @@ export default function CalendarioHigiene({ pet, onAbrirCuidados, agora }) {
 
                 {/* Atalho para a tela Meu Pet. */}
                 <Pressable
-                    onPress={onAbrirCuidados}
+                    onPress={() => onAbrirCuidados('higiene')}
                     style={styles.botao}
                     accessibilityRole="button"
                 >
