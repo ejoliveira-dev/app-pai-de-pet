@@ -115,7 +115,7 @@ export default function MainTabs() {
                     tabBarBadge: naoLidas > 0 ? naoLidas : undefined,
                     tabBarBadgeStyle: {
                         backgroundColor: cores.laranja,
-                        color: cores.marrom,
+                        color: cores.textoSobrePrincipal,
                         fontSize: 12,
                     },
                 }}

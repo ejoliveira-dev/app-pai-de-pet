@@ -105,7 +105,7 @@ export default function PerfilPrivado({ navigation }) {
                         <AvatarPet foto={pet.foto_perfil} tamanho={100}  />
 
                         <View style={styles.badgeFoto}>
-                            <Ionicons name="camera" size={14} color={cores.fundo} />
+                            <Ionicons name="camera" size={14} color={cores.textoSobrePrincipal} />
                         </View>
                     </Pressable>
                 ) : (
@@ -152,7 +152,7 @@ export default function PerfilPrivado({ navigation }) {
                             hitSlop={8}
                             style={({ pressed }) => [styles.botaoTrocar, pressed && styles.pressionado]}
                         >
-                            <Ionicons name="swap-horizontal" size={22} color={cores.marrom} />
+                            <Ionicons name="swap-horizontal" size={22} color={cores.textoSobrePrincipal} />
                         </Pressable>
 
                     </View>
@@ -161,7 +161,7 @@ export default function PerfilPrivado({ navigation }) {
 
                         <View style={styles.numeroBloco}>
                             <View style={styles.numeroBola}>
-                                <Ionicons name="calendar-outline" size={18} color={cores.marrom} />
+                                <Ionicons name="calendar-outline" size={18} color={cores.textoSobrePrincipal} />
                             </View>
                             <View style={styles.numeroTextos}>
                                 <Text style={styles.numeroValor} numberOfLines={1}>
@@ -258,19 +258,19 @@ export default function PerfilPrivado({ navigation }) {
                                         <MaterialCommunityIcons
                                             name={item.icone}
                                             size={28}
-                                            color={cores.marrom}
+                                            color={ativo ? cores.textoSobrePrincipal : cores.marrom}
                                         />
 
                                         {ativo && (
                                             <Ionicons
                                                 name="checkmark-circle"
                                                 size={16}
-                                                color={cores.marrom}
+                                                color={cores.textoSobrePrincipal}
                                             />
                                         )}
                                     </View>
 
-                                    <Text style={styles.categoriaTexto}>
+                                   <Text style={[styles.categoriaTexto, ativo && { color: cores.textoSobrePrincipal }]}>
                                         {item.nome}
                                     </Text>
 

@@ -52,6 +52,7 @@ export default function Notificacoes({ onAtualizarContador }) {
         laranja: cores.laranja,
         oliva: cores.marromClaro,
         creme: cores.laranjaClaro,
+        textoSobrePrincipal: cores.textoSobrePrincipal,
     };
 
     const styles = criarStyles(COR);
@@ -174,7 +175,7 @@ export default function Notificacoes({ onAtualizarContador }) {
                                     <Ionicons
                                         name={iconeNotificacao(item.tipo)}
                                         size={23}
-                                        color={COR.marrom}
+                                        color={COR.textoSobrePrincipal}
                                     />
                                 </View>
 
@@ -297,7 +298,7 @@ const criarStyles = (COR) => StyleSheet.create({
     cartao: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: COR.branco,
+        backgroundColor: COR.creme,
         borderRadius: 22,
         padding: 15,
         gap: 12,

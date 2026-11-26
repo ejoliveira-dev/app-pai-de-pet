@@ -36,9 +36,11 @@ function LinhaConfig({ icone, texto, onPress, perigo }) {
     const cor = perigo ? cores.erro : cores.marrom;
     return (
         <Pressable style={styles.linhaConfig} onPress={onPress}>
-            <View style={styles.bolinha}>
-                <Ionicons name={icone} size={20} color={cor} />
-            </View>
+
+        <View style={[styles.bolinha, perigo && styles.bolinhaPerigo]}>
+            <Ionicons name={icone} size={20} color={perigo ? cores.branco : cores.textoSobrePrincipal} />
+        </View>
+        
             <Text style={[styles.textoConfig, { color: cor }]}>{texto}</Text>
             <Ionicons name="chevron-forward" size={20} color={cor} />
         </Pressable>
@@ -333,7 +335,7 @@ export default function Tutor({ navigation }) {
                         {perfil.fotoPerfil ? (
                             <Image source={{ uri: perfil.fotoPerfil }} style={styles.fotoTutor} />
                         ) : (
-                            <Ionicons name="person" size={40} color={cores.laranja} />
+                           <Ionicons name="person" size={40} color={cores.laranjaClaro} />
                         )}
                     </View>
 
@@ -341,7 +343,7 @@ export default function Tutor({ navigation }) {
                         <Ionicons
                             name={perfil.fotoPerfil ? 'pencil' : 'add'}
                             size={16}
-                            color={cores.branco}
+                            color={cores.textoSobrePrincipal}
                         />
                     </View>
                 </Pressable>
@@ -384,7 +386,7 @@ export default function Tutor({ navigation }) {
                 <View style={styles.numeros}>
                     <View style={styles.numeroBloco}>
                         <View style={styles.numeroBola}>
-                            <Ionicons name="paw" size={18} color={cores.marrom} />
+                           <Ionicons name="paw" size={18} color={cores.textoSobrePrincipal} />
                         </View>
                         <View>
                             <Text style={styles.numeroValor}>{pets.length}</Text>
@@ -491,7 +493,7 @@ export default function Tutor({ navigation }) {
 
                 <View style={styles.linhaSwitch}>
                     <View style={styles.bolinha}>
-                        <Ionicons name="eye-outline" size={20} color={cores.marrom} />
+                        <Ionicons name="eye-outline" size={20} color={cores.textoSobrePrincipal} />
                     </View>
 
                     <View style={styles.textosSwitch}>
@@ -546,7 +548,7 @@ export default function Tutor({ navigation }) {
 
                 <View style={styles.linhaSwitch}>
                     <View style={styles.bolinha}>
-                        <Ionicons name="color-palette-outline" size={20} color={cores.marrom} />
+                        <Ionicons name="color-palette-outline" size={20} color={cores.textoSobrePrincipal} />
                     </View>
 
                     <View style={styles.textosSwitch}>
