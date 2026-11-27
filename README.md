@@ -26,45 +26,96 @@ A proposta também busca minimizar problemas como a desorganização das informa
 - Perfil do Tutor com dados da conta, lista de pets e preferências;
 - Comunidade com feed, publicações com foto e legenda, curtidas e perfil público do pet;
 - Pop-ups de alerta e componentes visuais padronizados no estilo do app.
+- Central de notificações com lembretes de cuidados dos pets;
+- Personalização das cores e do tema do aplicativo;
+- Recuperação de senha por código de verificação enviado por e-mail;
+- Compartilhamento remoto de publicações entre diferentes dispositivos;
+- Armazenamento de publicações, curtidas e comentários em PostgreSQL;
+- Adição, alteração e exclusão da foto de perfil do tutor;
+- Exclusão de publicações na Comunidade.
+
+## Interface do aplicativo
+
+O Tutus possui o laranja como cor padrão de sua identidade visual, permitindo também a personalização do tema conforme a preferência do tutor.
+
+### Telas de acesso
+
+<p align="center"><em>Boas-vindas • Login • Criar conta • Recuperação de senha</em></p>
 
 <p align="center">
-  <img src="assets/images/prints/print_7.png" alt="Boas-vindas" width="200">
-  <img src="assets/images/prints/print_8.png" alt="Login" width="200">
-  <img src="assets/images/prints/print_9.png" alt="Criar conta" width="200">
+  <img src="assets/images/prints/print_7.jpeg" alt="Boas-vindas" width="150">
+  <img src="assets/images/prints/print_8.jpeg" alt="Login" width="150">
+  <img src="assets/images/prints/print_9.jpeg" alt="Criar conta" width="150">
+  <img src="assets/images/prints/print_10.jpeg" alt="Recuperação de senha" width="150">
 </p>
-<p align="center"><em>Boas-vindas • Login • Criar conta</em></p>
+
+### Tema padrão — Laranja
+
+<p align="center"><em>Início • Meu Pet • Comunidade • Perfil público</em></p>
 
 <p align="center">
-  <img src="assets/images/prints/print_2.png" alt="Início" width="200">
-  <img src="assets/images/prints/print_3.png" alt="Meu Pet" width="200">
-  <img src="assets/images/prints/print_1.png" alt="Tutor" width="200">
+  <img src="assets/images/prints/print.jpeg" alt="Início" width="150">
+  <img src="assets/images/prints/print2.jpeg" alt="Meu Pet" width="150">
+  <img src="assets/images/prints/print3.jpeg" alt="Comunidade" width="150">
+  <img src="assets/images/prints/print4.jpeg" alt="Perfil público" width="150">
 </p>
+
+### Personalização — Tema azul
+
 <p align="center"><em>Início • Meu Pet • Tutor</em></p>
 
 <p align="center">
-  <img src="assets/images/prints/print_6.png" alt="Comunidade" width="200">
-  <img src="assets/images/prints/print_5.png" alt="Perfil público" width="200">
-  <img src="assets/images/prints/print_10.png" alt="Esqueci a senha" width="200">
+  <img src="assets/images/prints/print11.jpeg" alt="Início" width="200">
+  <img src="assets/images/prints/print7.jpeg" alt="Meu Pet" width="200">
+  <img src="assets/images/prints/print12.jpeg" alt="Tutor" width="200">
 </p>
-<p align="center"><em>Comunidade • Perfil público • Esqueci a senha</em></p>
+
+<p align="center"><em>Gráficos e agenda • Calendário de higiene</em></p>
+
+<p align="center">
+  <img src="assets/images/prints/print15.jpeg" alt="Gráficos e agenda" width="200">
+  <img src="assets/images/prints/print14.jpeg" alt="Calendário de higiene" width="200">
+</p>
+
+<p align="center"><em>Comunidade • Publicações • Perfil público</em></p>
+
+<p align="center">
+  <img src="assets/images/prints/print13.jpeg" alt="Comunidade" width="200">
+  <img src="assets/images/prints/print5.jpeg" alt="Publicações" width="200">
+  <img src="assets/images/prints/print6.jpeg" alt="Perfil público" width="200">
+</p>
+
+### Personalização — Tema verde
+
+<p align="center"><em>Início • Meu Pet • Comunidade</em></p>
+
+<p align="center">
+  <img src="assets/images/prints/print10.jpeg" alt="Início" width="200">
+  <img src="assets/images/prints/print9.jpeg" alt="Meu Pet" width="200">
+  <img src="assets/images/prints/print8.jpeg" alt="Comunidade" width="200">
+</p>
 
 ## Funcionalidades planejadas
 
 - Aprimoramento do perfil público do pet e da experiência na Comunidade;
-- Publicações de vídeos e interação entre tutores de diferentes dispositivos;
-- Implementação de uma comunidade com compartilhamento remoto de publicações;
-- Personalização geral do tema do aplicativo;
-- Finalização das informações da conta, privacidade e personalização do Perfil do Tutor;
-- Integração com serviços remotos para armazenamento e compartilhamento de dados;
+- Publicações de vídeos na Comunidade;
+- Integração completa com serviços remotos para armazenamento e compartilhamento de dados;
+- Aprimoramento da segurança e da autenticação dos usuários;
 - Aprimoramento das interfaces, design e experiência de navegação.
 
-## Tecnologias utilizadas (até o momento)
+## Tecnologias utilizadas
 
 - React Native e Expo;
 - React Navigation;
 - JavaScript;
 - SQLite (expo-sqlite);
 - Git & Github.
+- Node.js;
+- Express;
+- PostgreSQL;
+- Render (hospedagem do backend e banco de dados);
+- Brevo (envio de e-mails);
+- Expo Notifications (notificações e lembretes).
 
 ## Como executar
 
@@ -85,7 +136,7 @@ A proposta também busca minimizar problemas como a desorganização das informa
 
 ## Status do projeto
 
-**Em desenvolvimento.**
+**Versão funcional concluída, com melhorias futuras planejadas.**
 
 ## Equipe 👩‍💻
 
